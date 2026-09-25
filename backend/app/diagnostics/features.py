@@ -102,7 +102,7 @@ def scalogram(x: np.ndarray, fs: float, n_scales: int = 32, max_points: int = 25
     freqs = np.geomspace(50, fs / 2.5, n_scales)
     wavelet = "cmor1.5-1.0"
     scales = pywt.central_frequency(wavelet) * fs / freqs
-    coef, _ = pywt.cwt(np.asarray(x, dtype=np.float64), scales, wavelet, sampling_period=1 / fs)
+    coef, _ = pywt.cwt(np.asarray(x, dtype=np.float64), scales, wavelet, sampling_period=1 / fs, method="fft")
     mag = np.abs(coef)
     step = max(1, mag.shape[1] // max_points)
     return {"freqs": freqs.round(1).tolist(), "values": mag[:, ::step].round(4).tolist(), "dt": step / fs}

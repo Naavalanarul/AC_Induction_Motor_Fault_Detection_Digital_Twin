@@ -1,0 +1,55 @@
+groups:
+  - name: digital-twin
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Backend replica {{ $labels.instance }} is down"}
+
+      - alert: SimulationLoopStalled
+        expr: sum by (motor_id) (rate(dt_sim_ticks_total[1m])) == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Motor {{ $labels.motor_id }} simulation loop is not ticking"}
+
+      - alert: SimulationLagging
+        expr: max by (motor_id) (dt_sim_lag_seconds) > 1
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Motor {{ $labels.motor_id }} runs >1 s behind real time (CPU saturated?)"}
+
+      - alert: DBPoolNearlyExhausted
+        expr: max(dt_db_pool_checked_out / dt_db_pool_capacity) > 0.9
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "DB connection pool >90% in use"}
+
+      - alert: DBWriteErrors
+        expr: increase(dt_db_write_errors_total[5m]) > 0
+        labels: {severity: warning}
+        annotations: {summary: "Telemetry DB writes are failing or being dropped"}
+
+      - alert: HTTPErrorRateHigh
+        expr: |
+          sum(rate(dt_http_request_seconds_count{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(dt_http_request_seconds_count[5m])), 1e-9) > 0.05
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "More than 5% of API requests return 5xx"}
+
+      - alert: WorkerRestartLoop
+        expr: increase(dt_worker_restarts_total[10m]) > 3
+        labels: {severity: warning}
+        annotations: {summary: "Motor {{ $labels.motor_id }} worker keeps crashing"}
+
+      - alert: MLFallbackActive
+        expr: max(dt_ml_backend_available) == 0
+        for: 10m
+        labels: {severity: info}
+        annotations: {summary: "Vibration channel is on the rule-based fallback (ML model not loaded)"}
+
+      - alert: MotorTripped
+        expr: increase(dt_sada_trips_total[5m]) > 0
+        labels: {severity: info}
+        annotations: {summary: "SADA tripped motor {{ $labels.motor_id }}"}

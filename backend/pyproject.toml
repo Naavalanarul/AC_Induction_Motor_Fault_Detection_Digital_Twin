@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "0.1.0"
+version = "1.0.0"
 description = "AC induction motor fault-detection digital twin: simulation, diagnostics, supervisory control and API"
 authors = [
     {name = "Naavalanarul",email = "101957723+Naavalanarul@users.noreply.github.com"}

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -44,7 +45,7 @@ def severity_from_features(fault: str, vec: np.ndarray) -> float:
 
 def rule_classify(vec: np.ndarray) -> tuple[str, float]:
     env = {"bearing_outer": _f(vec, "env_bpfo"), "bearing_inner": _f(vec, "env_bpfi"), "bearing_ball": _f(vec, "env_2bsf")}
-    best = max(env, key=env.get)
+    best = max(env, key=lambda k: env[k])
     if env[best] > 0.3 and _f(vec, "kurtosis") > 4.0:
         return best, float(min(1.0, 0.5 + env[best] / 2))
     o1, o2, z1 = _f(vec, "order_1x"), _f(vec, "order_2x"), _f(vec, "order_1x", _Z)
@@ -57,8 +58,10 @@ def rule_classify(vec: np.ndarray) -> tuple[str, float]:
 
 class MechanicalClassifier:
     def __init__(self, artifact: Path = ARTIFACT, use_ml: bool = True):
-        self.model = None
-        self.mean = self.std = None
+        self.model: Any = None
+        self._torch: Any = None
+        self.mean: np.ndarray | None = None
+        self.std: np.ndarray | None = None
         self.backend = "rules"
         self.load_error: str | None = None
         if use_ml:
@@ -103,7 +106,7 @@ class MechanicalClassifier:
         if probs is None:
             fault, conf = rule_classify(latest)
             backend = "rules"
-        details = {"backend": backend}
+        details: dict[str, Any] = {"backend": backend}
         if probs is not None:
             details["probabilities"] = {c: round(float(p), 4) for c, p in zip(CLASSES, probs, strict=True)}
         return ChannelVerdict(DiagSource.ML_CLASSIFIER, DiagFault(fault), conf,

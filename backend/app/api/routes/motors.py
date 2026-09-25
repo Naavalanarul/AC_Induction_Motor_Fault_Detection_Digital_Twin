@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 from datetime import datetime
 
@@ -71,13 +72,14 @@ def list_motors(_: Principal = Depends(require("viewer")), db: Session = Depends
 
 
 @router.post("", response_model=MotorOut, status_code=201)
-def create_motor(body: MotorIn, request: Request, _: Principal = Depends(require("admin")),
-                 db: Session = Depends(get_db)):
+async def create_motor(body: MotorIn, request: Request, _: Principal = Depends(require("admin")),
+                       db: Session = Depends(get_db)):
     params = body.params.model_dump() if body.params else dataclasses.asdict(DEFAULT_MOTOR)
     try:
-        m = create_motor_row(db, body.name, params, body.base_load_nm)
+        m = await asyncio.to_thread(create_motor_row, db, body.name, params, body.base_load_nm)
     except IntegrityError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, "motor name exists") from exc
+    # the worker task must be created on the event loop, hence this handler is async
     rt = request.app.state.runtime
     if rt.settings.run_simulation:
         rt.manager.start(m.id)
@@ -194,7 +196,7 @@ def list_diagnoses(motor_id: int, start: datetime | None = None, end: datetime |
         q = q.where(Diagnosis.fault_type == fault_type.value)
     total = db.scalar(select(func.count()).select_from(q.subquery()))
     rows = db.scalars(q.order_by(Diagnosis.ts.desc(), Diagnosis.id.desc()).limit(limit).offset(offset)).all()
-    return Page(total=total, limit=limit, offset=offset, items=[DiagnosisOut.model_validate(r) for r in rows])
+    return Page(total=total or 0, limit=limit, offset=offset, items=[DiagnosisOut.model_validate(r) for r in rows])
 
 
 @router.get("/{motor_id}/history", response_model=list[HistoryEvent])

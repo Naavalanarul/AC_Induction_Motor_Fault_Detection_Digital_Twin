@@ -11,6 +11,7 @@ import math
 import numpy as np
 
 from app.sensors.base import Sensor, SensorFrame, SensorMode, SensorType
+from app.simulation.plant import PlantChunk
 from app.simulation.twin_state import MotorTwinState
 
 
@@ -23,6 +24,12 @@ class _SimBase(Sensor):
         if noise is not None:
             self.noise = noise
 
+    @property
+    def chunk(self) -> PlantChunk:
+        if self.state.electrical is None:
+            raise RuntimeError("simulation has not produced data yet")
+        return self.state.electrical
+
     def _noisy(self, x: np.ndarray) -> np.ndarray:
         return x + self.rng.normal(0.0, self.noise, size=x.shape)
 
@@ -34,8 +41,8 @@ class SimulatedCurrentSensor(_SimBase):
     lsb = 100.0 / 4096
 
     async def read(self) -> SensorFrame:
-        ch = self.state.electrical
-        i = np.round(self._noisy(ch.i_abc) / self.lsb) * self.lsb
+        ch = self.chunk
+        i = np.round(self._noisy(ch.i_abc) / self.lsb).astype(np.float64) * self.lsb
         return SensorFrame(self.sensor_type, float(ch.t[0]), ch.fs, {"a": i[0], "b": i[1], "c": i[2]}, self.unit)
 
 
@@ -43,7 +50,7 @@ class SimulatedVoltageSensor(_SimBase):
     sensor_type, unit, noise = SensorType.VOLTAGE, "V", 0.5
 
     async def read(self) -> SensorFrame:
-        ch = self.state.electrical
+        ch = self.chunk
         u = self._noisy(ch.u_abc)
         return SensorFrame(self.sensor_type, float(ch.t[0]), ch.fs, {"a": u[0], "b": u[1], "c": u[2]}, self.unit)
 
@@ -55,7 +62,7 @@ class SimulatedSpeedSensor(_SimBase):
     decimate = 5
 
     async def read(self) -> SensorFrame:
-        ch = self.state.electrical
+        ch = self.chunk
         rpm = ch.omega_m[self.decimate - 1 :: self.decimate] * 30.0 / math.pi
         return SensorFrame(self.sensor_type, float(ch.t[self.decimate - 1]), ch.fs / self.decimate,
                            {"rpm": self._noisy(rpm)}, self.unit)

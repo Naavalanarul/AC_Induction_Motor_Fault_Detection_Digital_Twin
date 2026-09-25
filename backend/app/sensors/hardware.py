@@ -99,7 +99,7 @@ class UnimplementedHardwareSensor(HardwareSensor):
         raise NotImplementedError(f"no hardware driver for {self.sensor_type.value}")
 
 
-HARDWARE_SENSORS = {
+HARDWARE_SENSORS: dict[SensorType, type[ADS1115CurrentSensor] | type[MQTTVibrationSensor]] = {
     SensorType.CURRENT: ADS1115CurrentSensor,
     SensorType.VIBRATION: MQTTVibrationSensor,
 }

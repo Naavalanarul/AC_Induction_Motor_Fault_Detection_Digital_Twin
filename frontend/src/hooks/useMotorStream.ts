@@ -29,7 +29,12 @@ export function useMotorStream(motorId: number | null, historyLen = 120) {
       }
       ws.onmessage = (ev) => {
         const f = JSON.parse(ev.data) as Frame
-        setFrame(f)
+        // spectra/scalogram are only sent when they change: keep the previous ones otherwise
+        setFrame((prev) => ({
+          ...f,
+          spectra: f.spectra ?? prev?.spectra ?? {},
+          scalogram: f.scalogram !== undefined ? f.scalogram : (prev?.scalogram ?? null),
+        }))
         setTrend((prev) => {
           const next = [
             ...prev,

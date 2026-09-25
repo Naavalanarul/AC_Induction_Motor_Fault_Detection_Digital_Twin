@@ -195,19 +195,19 @@ POST   /motors/{id}/supervisory/override manual operator override (ack/reset)
 
 ## 9. Build Order (phased, each phase ends in something runnable)
 
-- [tick] **Phase 0** — repo scaffold: FastAPI app, MySQL via Docker Compose, Alembic init, React app skeleton
-- [ ] **Phase 1** — simulation core: RK4 induction motor twin, healthy-state validated (twin current ≈ simulated "real" motor current)
-- [ ] **Phase 2** — sensor abstraction layer + all 6 simulated sensors wired to `MotorTwinState`
-- [ ] **Phase 3** — fault injectors for all fault types, verified each produces the expected signature (MCSA sideband, BPFO/BPFI peak, thermal ramp, etc.)
-- [ ] **Phase 4** — electrical diagnostic (current residual FD/FL) — no ML, fastest win
-- [ ] **Phase 5** — vibration/acoustic feature pipeline + Conv-BiLSTM, leak-safe evaluation
-- [ ] **Phase 6** — fusion layer, frozen output schema
-- [ ] **Phase 7** — MySQL persistence + REST API
-- [ ] **Phase 8** — WebSocket live streaming
-- [ ] **Phase 9** — SADA supervisory layer (severity smoothing, confidence gating, graded derate, emergency trip)
-- [ ] **Phase 10** — React dashboard: per-sensor panels → fused panel → SADA panel → fault injection console
-- [ ] **Phase 11** — Docker Compose packaging, docs, test suite (pytest + Vitest), CI
-- [ ] **Phase 12 (future)** — swap in real `HardwareSensor` implementations one channel at a time; nothing above this layer changes
+- [x] **Phase 0** — repo scaffold: FastAPI app, MySQL via Docker Compose, Alembic init, React app skeleton
+- [x] **Phase 1** — simulation core: RK4 induction motor twin, healthy-state validated (twin current ≈ simulated "real" motor current) — *averaged plant within 5 % of PWM twin; healthy-twin residual < 0.5 %*
+- [x] **Phase 2** — sensor abstraction layer + all 6 simulated sensors wired to `MotorTwinState`
+- [x] **Phase 3** — fault injectors for all fault types, verified each produces the expected signature (MCSA sideband, BPFO/BPFI peak, thermal ramp, etc.)
+- [x] **Phase 4** — electrical diagnostic (current residual FD/FL) — no ML, fastest win
+- [x] **Phase 5** — vibration/acoustic feature pipeline + Conv-BiLSTM, leak-safe evaluation — *simulated data only; 100 % test accuracy reflects easy simulated signatures, not real-world performance*
+- [x] **Phase 6** — fusion layer, frozen output schema (v1.0)
+- [x] **Phase 7** — MySQL persistence + REST API
+- [x] **Phase 8** — WebSocket live streaming
+- [x] **Phase 9** — SADA supervisory layer (severity smoothing, confidence gating, graded derate, emergency trip)
+- [x] **Phase 10** — React dashboard: per-sensor panels → fused panel → SADA panel → fault injection console
+- [x] **Phase 11** — Docker Compose packaging, docs, test suite (pytest + Vitest), CI
+- [ ] **Phase 12 (future)** — swap in real `HardwareSensor` implementations one channel at a time; nothing above this layer changes — *interfaces + circuit breaker in place; drivers not written*
 
 
 # AC Motor Digital Twin — Production-Grade Architecture Addendum
@@ -372,12 +372,22 @@ Keep `alembic upgrade head` as an explicit, separate deploy step (never auto-run
 
 Everything from the earlier 12-phase plan stays, with these production-hardening phases inserted/appended:
 
-- [tick] Phase 0 — repo scaffold **including** CI pipeline skeleton, Docker Compose for local dev, Alembic, `.env.example`
-- [ ] Phases 1–11 — as before (simulation → sensors → faults → diagnostics → fusion → persistence → streaming → SADA → frontend)
-- [ ] **Phase 12 — Auth & RBAC**: JWT login, role-gated endpoints and WebSocket
-- [ ] **Phase 13 — Observability**: structured logging, `/metrics`, health/readiness endpoints, basic Grafana dashboard
-- [ ] **Phase 14 — Resilience**: supervised simulation workers, graceful shutdown, retention/partitioning job for MySQL
-- [ ] **Phase 15 — Testing & CI hardening**: coverage thresholds, integration tests against real MySQL, load test baseline
-- [ ] **Phase 16 — Staging deploy**: full topology (Nginx/TLS/Redis/MySQL) mirrored, smoke-tested
-- [ ] **Phase 17 — Production cutover**: backups verified via test restore, alerting wired, versioned release
+- [x] Phase 0 — repo scaffold **including** CI pipeline skeleton, Docker Compose for local dev, Alembic, `.env.example`
+- [x] Phases 1–11 — as before (simulation → sensors → faults → diagnostics → fusion → persistence → streaming → SADA → frontend)
+- [x] **Phase 12 — Auth & RBAC**: JWT login, role-gated endpoints and WebSocket
+- [x] **Phase 13 — Observability**: structured logging, `/metrics`, health/readiness endpoints, basic Grafana dashboard
+- [x] **Phase 14 — Resilience**: supervised simulation workers, graceful shutdown, retention/partitioning job for MySQL — *retention purge done; MySQL partitioning not implemented*
+- [x] **Phase 15 — Testing & CI hardening**: coverage thresholds, integration tests against real MySQL, load test baseline
+- [ ] **Phase 16 — Staging deploy**: full topology (Nginx/TLS/Redis/MySQL) mirrored, smoke-tested — *config, deploy script and CI jobs prepared; needs a real VM, domain and secrets*
+- [ ] **Phase 17 — Production cutover**: backups verified via test restore, alerting wired, versioned release — *backup/restore scripts tested locally; alert rules validated; cutover itself not performed*
 - [ ] **Phase 18 (future)** — swap in real hardware sensors per channel, behind the abstraction layer, staged through the same CI/staging/prod pipeline as any other change
+
+
+---
+
+## Implementation status (2026-09-25)
+
+Phases 0–15 are implemented and tested. Phases 16–17 have their deployment artifacts (TLS edge
+config, production Compose overlay, deploy script, CI deploy jobs, backup/restore scripts, alert
+rules) but need real infrastructure to execute. Phase 18 (real hardware drivers) is future work.
+See `README.md` → *Limitations*, `docs/operations.md` and `loadtest/RESULTS.md`.

@@ -15,4 +15,6 @@ FAULT_INJECTIONS = Counter("dt_fault_injections_total", "Fault injections", ["fa
 SADA_TRIPS = Counter("dt_sada_trips_total", "SADA trips", ["motor_id"])
 WORKER_RESTARTS = Counter("dt_worker_restarts_total", "Supervised worker restarts", ["motor_id"])
 HTTP_REQUESTS = Histogram("dt_http_request_seconds", "HTTP request latency", ["method", "route", "status"])
+DB_POOL_CHECKED_OUT = Gauge("dt_db_pool_checked_out", "DB connections currently checked out of the pool")
+DB_POOL_CAPACITY = Gauge("dt_db_pool_capacity", "pool_size + max_overflow")
 ML_BACKEND = Gauge("dt_ml_backend_available", "1 if the Conv-BiLSTM backend is loaded, 0 if on rule fallback")

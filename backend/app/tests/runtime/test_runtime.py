@@ -33,11 +33,13 @@ def test_redis_broker_pubsub_and_ownership():
         assert await a.acquire(7) is True   # renewal
         await a.release(7)
         assert await b.acquire(7) is True
-        async with b.subscribe("motor:7") as stream:
+        async with b.subscribe("motor:7") as stream, b.subscribe("cmd:7") as cmds:
             await asyncio.sleep(0.1)
-            await a.publish("motor:7", {"hello": 1})
-            msg = await asyncio.wait_for(stream.__aiter__().__anext__(), 5)
-        assert msg == {"hello": 1}
+            await a.publish("motor:7", '{"hello":1}')  # frames travel pre-encoded
+            await a.publish("cmd:7", {"cmd": "ack"})
+            frame = await asyncio.wait_for(stream.__aiter__().__anext__(), 5)
+            cmd = await asyncio.wait_for(cmds.__aiter__().__anext__(), 5)
+        assert frame == '{"hello":1}' and cmd == {"cmd": "ack"}
         await a.set_latest(7, {"t": 1.0})
         assert await b.get_latest(7) == {"t": 1.0}
         await a.close()

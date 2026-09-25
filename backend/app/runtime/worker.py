@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import io
+import json
 import logging
 import math
 import time
@@ -105,6 +106,7 @@ class MotorWorker:
         self._spectra: dict = {}
         self._scalogram: dict | None = None
         self._operator_ack = False
+        self._spectra_dirty = self._scalogram_dirty = False
 
     # ------------------------------------------------------------------ commands
     def _inject(self, f: dict) -> None:
@@ -191,7 +193,15 @@ class MotorWorker:
         msg = self._build_message(st, frames, diag, out)
         every = max(1, round((1.0 / self.sim.chunk_s) / self.cfg.stream_hz))
         if self._chunk_idx % every == 0:
-            await self.broker.publish(f"motor:{self.cfg.motor_id}", msg)
+            # Spectra/scalogram change at 2 Hz / 1 Hz: send them only when updated (clients keep the
+            # last ones) and encode each frame ONCE for all viewers.
+            wire = dict(msg)
+            if not self._spectra_dirty:
+                wire.pop("spectra")
+            if not self._scalogram_dirty:
+                wire.pop("scalogram")
+            self._spectra_dirty = self._scalogram_dirty = False
+            await self.broker.publish(f"motor:{self.cfg.motor_id}", json.dumps(wire, separators=(",", ":")))
             await self.broker.set_latest(self.cfg.motor_id, msg)
         return msg
 
@@ -292,8 +302,10 @@ class MotorWorker:
                     f, p = welch(np.concatenate(buf), fs=fs, nperseg=512)
                     spectra[key] = {"f": np.round(f, 1).tolist(), "db": np.round(10 * np.log10(p + 1e-12), 1).tolist()}
             self._spectra = spectra
+            self._spectra_dirty = True
         if self._chunk_idx % 10 == 0 and len(self._vib_buf) >= 3:
             self._scalogram = scalogram(np.concatenate(list(self._vib_buf)[-3:]), st.vib_fs, n_scales=24, max_points=128)
+            self._scalogram_dirty = True
 
     def _build_message(self, st, frames, diag, out) -> dict:
         self._update_spectra(st, frames)

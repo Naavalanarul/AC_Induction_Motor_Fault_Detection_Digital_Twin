@@ -13,19 +13,34 @@ import contextlib
 import json
 import logging
 import uuid
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import AsyncIterator
 
 log = logging.getLogger(__name__)
 
 
-class Broker:
-    async def publish(self, topic: str, msg: dict) -> None: ...
-    def subscribe(self, topic: str) -> contextlib.AbstractAsyncContextManager[AsyncIterator[dict]]: ...
+class Broker(ABC):
+    @abstractmethod
+    async def publish(self, topic: str, msg: dict | str) -> None:
+        """`msg` is a dict, or an already JSON-encoded string (encode once, fan out many)."""
+
+    @abstractmethod
+    def subscribe(self, topic: str) -> contextlib.AbstractAsyncContextManager[AsyncIterator[dict | str]]: ...
+
+    @abstractmethod
     async def set_latest(self, motor_id: int, msg: dict) -> None: ...
+
+    @abstractmethod
     async def get_latest(self, motor_id: int) -> dict | None: ...
+
+    @abstractmethod
     async def acquire(self, motor_id: int) -> bool: ...
+
+    @abstractmethod
     async def release(self, motor_id: int) -> None: ...
+
+    @abstractmethod
     async def close(self) -> None: ...
 
 
@@ -35,7 +50,7 @@ class InMemoryBroker(Broker):
         self._latest: dict[int, dict] = {}
         self._queue_size = queue_size
 
-    async def publish(self, topic: str, msg: dict) -> None:
+    async def publish(self, topic: str, msg: dict | str) -> None:
         for q in list(self._subs.get(topic, ())):
             if q.full():  # slow consumer: drop its oldest message rather than block the publisher
                 with contextlib.suppress(asyncio.QueueEmpty):
@@ -79,12 +94,15 @@ class RedisBroker(Broker):
         if client is None:
             import redis.asyncio as redis
 
+            if not url:
+                raise ValueError("RedisBroker needs a URL or a client")
+
             client = redis.from_url(url, decode_responses=True)
         self.r = client
         self.node_id = uuid.uuid4().hex
 
-    async def publish(self, topic: str, msg: dict) -> None:
-        await self.r.publish(topic, json.dumps(msg, default=float))
+    async def publish(self, topic: str, msg: dict | str) -> None:
+        await self.r.publish(topic, msg if isinstance(msg, str) else json.dumps(msg, default=float))
 
     @contextlib.asynccontextmanager
     async def subscribe(self, topic: str):
@@ -94,7 +112,9 @@ class RedisBroker(Broker):
         async def gen():
             async for m in pubsub.listen():
                 if m.get("type") == "message":
-                    yield json.loads(m["data"])
+                    data = m["data"]
+                    # keep frames as the original JSON text (no decode/re-encode per viewer)
+                    yield data if topic.startswith("motor:") else json.loads(data)
 
         try:
             yield gen()

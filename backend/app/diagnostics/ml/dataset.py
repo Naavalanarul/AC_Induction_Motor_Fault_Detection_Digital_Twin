@@ -45,6 +45,7 @@ def simulate_run(cls: str, severity: float, load: float, noise: float, seed: int
         st = sim.step()
         vs.append(st.vibration)
         acs.append(st.acoustic)
+        assert st.electrical is not None
         ws.append(st.electrical.omega_m)
     v, a = np.hstack(vs), np.hstack(acs)
     w = np.concatenate(ws)

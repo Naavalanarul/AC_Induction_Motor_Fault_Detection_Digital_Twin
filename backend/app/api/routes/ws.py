@@ -74,7 +74,11 @@ async def stream(ws: WebSocket, motor_id: int):
                     recv.result()  # raises WebSocketDisconnect on close
                     recv = asyncio.create_task(ws.receive_text())  # ignore client chatter (e.g. pings)
                     continue
-                await ws.send_json(nxt.result())
+                item = nxt.result()
+                if isinstance(item, str):
+                    await ws.send_text(item)  # pre-encoded once by the worker
+                else:
+                    await ws.send_json(item)
     except (WebSocketDisconnect, RuntimeError):
         pass
     finally:

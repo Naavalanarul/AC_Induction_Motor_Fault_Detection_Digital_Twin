@@ -132,9 +132,10 @@ class SadaSupervisor:
             load = 1.0 - frac * (1.0 - c.min_load)
         else:
             load = 1.0
-        manual = self.manual_load is not None and self.state != SadaState.TRIP
-        if manual:
-            load = min(load, self.manual_load) if self.state == SadaState.DERATE else self.manual_load
+        manual_load = self.manual_load
+        manual = manual_load is not None and self.state != SadaState.TRIP
+        if manual_load is not None and manual:
+            load = min(load, manual_load) if self.state == SadaState.DERATE else manual_load
         out = SadaOutput(self.state, round(load, 4), "MANUAL_OVERRIDE" if manual else self.reason,
                          self.state == SadaState.TRIP, round(s, 4), self.fault.value, manual,
                          changed=prev != self.state)

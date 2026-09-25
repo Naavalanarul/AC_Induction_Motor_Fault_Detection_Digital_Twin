@@ -115,6 +115,7 @@ def run(runs_per_class: int, seeds: list[int], epochs: int, seconds: float, out_
         "per_seed": per_seed,
     }
     out_dir.mkdir(parents=True, exist_ok=True)
+    assert final is not None
     model, mean, std = final
     torch.save({"state_dict": model.state_dict(), "mean": torch.tensor(mean), "std": torch.tensor(std),
                 "n_features": int(data.X.shape[-1]), "classes": CLASSES, "seq_len": SEQ_LEN},

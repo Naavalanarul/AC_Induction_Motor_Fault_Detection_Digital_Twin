@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import secrets
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -34,7 +35,7 @@ class Settings(BaseSettings):
     admin_username: str | None = None
     admin_password: str | None = None
 
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
     # Simulation / streaming
     run_simulation: bool = True
@@ -54,7 +55,7 @@ class Settings(BaseSettings):
     fault_rate_per_min: int = 30
 
     # Feature flags (comma-separated), e.g. "experimental_fault_x"
-    feature_flags: set[str] = set()
+    feature_flags: Annotated[set[str], NoDecode] = set()
 
     @field_validator("cors_origins", "feature_flags", mode="before")
     @classmethod

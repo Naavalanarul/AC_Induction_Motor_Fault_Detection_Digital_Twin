@@ -108,3 +108,13 @@ def test_history_contains_faults_and_supervisory(client, auth):
     events = client.get("/api/v1/motors/1/history", headers=auth("viewer")).json()
     kinds = {e["kind"] for e in events}
     assert {"fault_injected", "supervisory"} <= kinds
+
+
+def test_create_motor_starts_a_streaming_worker(client, auth):
+    r = client.post("/api/v1/motors", json={"name": "Second Motor", "base_load_nm": 4.0}, headers=auth("admin"))
+    assert r.status_code == 201, r.text
+    mid = r.json()["id"]
+    assert client.post("/api/v1/motors", json={"name": "x"}, headers=auth("operator")).status_code == 403
+    st = wait_for(lambda: client.get(f"/api/v1/motors/{mid}", headers=auth("viewer")).json().get("state"))
+    assert st and st["supervisory"]["base_load_nm"] == 4.0
+    assert len(client.get(f"/api/v1/motors/{mid}/sensors", headers=auth("viewer")).json()) == 6
