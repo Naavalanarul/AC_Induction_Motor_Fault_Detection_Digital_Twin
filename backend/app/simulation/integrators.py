@@ -9,8 +9,11 @@ References:
 """
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Callable, Protocol, Union
+from collections.abc import Callable
+from typing import Protocol, Union
+
 import numpy as np
 
 

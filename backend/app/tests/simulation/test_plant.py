@@ -63,7 +63,7 @@ def test_averaged_plant_matches_pwm_twin_fundamental():
 def test_healthy_twin_tracks_healthy_plant():
     plant = MotorPlant(DEFAULT_MOTOR)
     twin = HealthyTwinObserver(DEFAULT_MOTOR, plant.fs)
-    for step in range(20):
+    for _ in range(20):
         c = plant.simulate(500, 8.0)
         ua, ub = abc_to_alphabeta(c.u_abc)
         pa, pb = twin.run(ua, ub, c.omega_m * DEFAULT_MOTOR.pole_pairs)

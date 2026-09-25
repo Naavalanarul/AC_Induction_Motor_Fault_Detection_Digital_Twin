@@ -9,28 +9,30 @@ Reference:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import numpy as np
 
-from app.simulation.params import MotorParams
-from app.simulation.transforms import ClarkeTransformer, PhaseABC, AlphaBeta
-from app.simulation.pwm import (
-    InverterLegStates,
-    phase_voltages,
-    CarrierWaveGenerator,
-    ModulatingWaveGenerator,
-    find_earliest_inverter_event,
-    get_instantaneous_switches,
-)
 from app.simulation.dynamics import (
     ElectricalState,
     InductionMotorElectricalDynamics,
 )
+from app.simulation.integrators import EventDrivenStepController, RungeKutta4
 from app.simulation.mechanical import (
-    MechanicalState,
     InductionMotorMechanicalDynamics,
+    MechanicalState,
 )
-from app.simulation.integrators import RungeKutta4, EventDrivenStepController
+from app.simulation.params import MotorParams
+from app.simulation.pwm import (
+    CarrierWaveGenerator,
+    InverterLegStates,
+    ModulatingWaveGenerator,
+    find_earliest_inverter_event,
+    get_instantaneous_switches,
+    phase_voltages,
+)
+from app.simulation.transforms import AlphaBeta, ClarkeTransformer, PhaseABC
 
 
 @dataclass(frozen=True)

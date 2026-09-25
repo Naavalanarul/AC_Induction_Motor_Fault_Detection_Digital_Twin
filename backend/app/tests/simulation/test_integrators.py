@@ -6,10 +6,10 @@ against the analytical benchmark problem: dy/dt = -y.
 """
 
 import math
-import numpy as np
-import pytest
 
-from app.simulation.integrators import RungeKutta4, EventDrivenStepController
+import numpy as np
+
+from app.simulation.integrators import EventDrivenStepController, RungeKutta4
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ class TestRungeKutta4:
         convergence_ratios = [errors[i] / errors[i + 1] for i in range(len(errors) - 1)]
 
         print("\nRK4 Step-Size Convergence Analysis (t = 1.0 s):")
-        for h, err in zip(step_sizes, errors):
+        for h, err in zip(step_sizes, errors, strict=True):
             print(f"  h = {h:6.4f} s | Absolute Error = {err:12.6e}")
 
         print("Error reduction ratios (expected ~16.0 for 4th order):")

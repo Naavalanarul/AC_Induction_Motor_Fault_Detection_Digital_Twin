@@ -32,6 +32,7 @@ from app.simulation.params import MotorParams
 TWO_PI = 2.0 * math.pi
 SQRT3_2 = math.sqrt(3.0) / 2.0
 INV_SQRT3 = 1.0 / math.sqrt(3.0)
+HOT_SPOT_FACTOR = 4.0
 
 
 @dataclass
@@ -105,20 +106,29 @@ class MotorPlant:
         return ua, ub
 
     # -- ODE -------------------------------------------------------------
-    def _deriv(self, x, ua, ub, rr, lm, tl):
+    def _deriv(self, x, ua, ub, r11, r12, r22, lm, tl):
+        """General form allowing an asymmetric rotor resistance matrix [[r11, r12], [r12, r22]].
+
+        Rotor:  dpsi_r/dt = -R_r (psi_r - Lm i_s) / Lr + omega_r J psi_r
+        Stator: di_s/dt   = (u_s - Rs i_s - (Lm/Lr) dpsi_r/dt) / (sigma Ls)
+        With R_r = Rr * I this is exactly Chen et al. Eq. (3).
+        """
         p = self.p
-        ls, lr, rs = p.Ls, p.Lr, p.Rs
+        rs = p.Rs
+        # Leakage inductances stay fixed when the magnetizing path is modulated
+        ls = p.Ls - p.Lm + lm
+        lr = p.Lr - p.Lm + lm
         ia, ib, pa, pb, wm = x
-        inv_tr = rr / lr
-        sls = (1.0 - lm * lm / (ls * lr)) * ls
-        gamma = (rs + lm * lm * rr / (lr * lr)) / sls
-        k = lm / (sls * lr)
         wr = p.pole_pairs * wm
-        dia = -gamma * ia + k * inv_tr * pa + k * wr * pb + ua / sls
-        dib = -gamma * ib + k * inv_tr * pb - k * wr * pa + ub / sls
-        dpa = lm * inv_tr * ia - inv_tr * pa - wr * pb
-        dpb = lm * inv_tr * ib - inv_tr * pb + wr * pa
-        te = 1.5 * p.pole_pairs * (lm / lr) * (pa * ib - pb * ia)
+        ira = (pa - lm * ia) / lr
+        irb = (pb - lm * ib) / lr
+        dpa = -(r11 * ira + r12 * irb) - wr * pb
+        dpb = -(r12 * ira + r22 * irb) + wr * pa
+        sls = (1.0 - lm * lm / (ls * lr)) * ls
+        klr = lm / lr
+        dia = (ua - rs * ia - klr * dpa) / sls
+        dib = (ub - rs * ib - klr * dpb) / sls
+        te = 1.5 * p.pole_pairs * klr * (pa * ib - pb * ia)
         dwm = (te - tl - self.B * wm) / p.J
         return (dia, dib, dpa, dpb, dwm), te
 
@@ -146,16 +156,22 @@ class MotorPlant:
         x = self.x
         t = self.t
         th_m = self.theta_m
-        w_supply = TWO_PI * self.supply_freq
         for j in range(n):
             # Fault-modulated parameters, piecewise constant over one step
-            slip_angle = w_supply * t - tr * th_m
-            rr = p.Rr * (1.0 + brb * (1.0 + math.cos(2.0 * slip_angle)) * 0.5) if brb else p.Rr
+            if brb:
+                # Broken bars: resistance rises along one rotor axis. Rotated into the
+                # stationary frame this is R_r = Rr[(1+d/2)I + d/2 [[c2, s2], [s2, -c2]]].
+                c2, s2 = math.cos(2.0 * tr * th_m), math.sin(2.0 * tr * th_m)
+                half = 0.5 * brb * p.Rr
+                r11, r12, r22 = p.Rr + half * (1.0 + c2), half * s2, p.Rr + half * (1.0 - c2)
+            else:
+                r11, r12, r22 = p.Rr, 0.0, p.Rr
             lm = p.Lm
-            if ecc_dyn:
-                lm *= 1.0 + ecc_dyn * math.cos(th_m)
-            if ecc_stat:
-                lm *= 1.0 + ecc_stat * math.cos(2.0 * w_supply * t)
+            # Pure static eccentricity is not observable in a lumped alpha-beta model;
+            # it is modelled as mixed eccentricity with a weaker rotating component.
+            ecc = ecc_dyn + 0.5 * ecc_stat
+            if ecc:
+                lm *= 1.0 + ecc * math.cos(th_m)
             tl = load_torque + (fric if x[4] > 1.0 else 0.0)
             if unb:
                 tl += 0.6 * unb * math.cos(th_m)
@@ -165,13 +181,13 @@ class MotorPlant:
             u0 = self._supply_ab(t)
             u1 = self._supply_ab(t + hh)
             u2 = self._supply_ab(t + h)
-            k1, te = self._deriv(x, u0[0], u0[1], rr, lm, tl)
+            k1, te = self._deriv(x, u0[0], u0[1], r11, r12, r22, lm, tl)
             x2 = [x[i] + hh * k1[i] for i in range(5)]
-            k2, _ = self._deriv(x2, u1[0], u1[1], rr, lm, tl)
+            k2, _ = self._deriv(x2, u1[0], u1[1], r11, r12, r22, lm, tl)
             x3 = [x[i] + hh * k2[i] for i in range(5)]
-            k3, _ = self._deriv(x3, u1[0], u1[1], rr, lm, tl)
+            k3, _ = self._deriv(x3, u1[0], u1[1], r11, r12, r22, lm, tl)
             x4 = [x[i] + h * k3[i] for i in range(5)]
-            k4, _ = self._deriv(x4, u2[0], u2[1], rr, lm, tl)
+            k4, _ = self._deriv(x4, u2[0], u2[1], r11, r12, r22, lm, tl)
             wm_old = x[4]
             x = [x[i] + (h / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) for i in range(5)]
             if x[4] < 0.0 and load_torque >= 0.0:
@@ -199,7 +215,9 @@ class MotorPlant:
             # load on the faulted phase, returning through the other two (KCL holds).
             i_abc = i_abc - 0.5 * i_f
             i_abc[phase] += 1.5 * i_f
-            fault_heat += float(np.mean(i_f**2)) * r_f
+            # Shorted-turn loss is dissipated locally around the embedded winding sensor;
+            # HOT_SPOT_FACTOR approximates that local concentration (lumped-model assumption).
+            fault_heat += HOT_SPOT_FACTOR * float(np.mean(i_f**2)) * (r_f + eta * p.Rs)
         wm_mean = float(np.mean(wm_arr)) if n else 0.0
         fault_heat += fric * wm_mean
         i_sq = float(np.mean(ia_arr**2 + ib_arr**2)) if n else 0.0

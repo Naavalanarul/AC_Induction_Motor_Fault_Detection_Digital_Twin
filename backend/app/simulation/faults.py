@@ -6,8 +6,8 @@ the vibration/acoustic generators and the thermal model all read from the same
 container, so cross-sensor consistency is automatic.
 
 Modelling notes (simplified, documented honestly):
-    * Broken rotor bar   -> rotor resistance modulated at twice slip angle
-                            (produces the classic (1 +/- 2s)f current sidebands).
+    * Broken rotor bar   -> rotor resistance asymmetry fixed to the rotor axes
+                            (backward field -> classic (1 +/- 2s)f current sidebands).
     * Inter-turn short   -> shorted-turn loop current added to the faulted phase
                             (i_f = eta * u_k / (R_f + eta * Rs)) plus loop heat.
     * Eccentricity       -> magnetizing inductance modulated by rotor angle
@@ -117,7 +117,7 @@ class FaultState:
     # --- aggregated physical coefficients ---------------------------------
     @property
     def brb_delta(self) -> float:
-        """Relative rotor-resistance modulation depth from broken bars."""
+        """Relative rise of rotor resistance along the faulted rotor axis."""
         bars = sum(int(f.params.get("count", 1)) for f in self.of_type(FaultType.BROKEN_ROTOR_BAR))
         return min(0.9, 3.0 * bars / self.N_ROTOR_BARS)
 
@@ -129,8 +129,8 @@ class FaultState:
             return None
         f = max(faults, key=lambda x: x.severity)
         phase = "abc".index(str(f.params.get("phase", "a")).lower())
-        eta = float(f.params.get("eta", 0.02 + 0.18 * f.severity))
-        r_f = float(f.params.get("r_fault", 10.0))
+        eta = float(f.params.get("eta", 0.005 + 0.095 * f.severity))
+        r_f = float(f.params.get("r_fault", 20.0))
         return phase, eta, r_f
 
     @property

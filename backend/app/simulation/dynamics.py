@@ -9,10 +9,12 @@ Reference:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import numpy as np
 
-from app.simulation.params import MotorParams, DerivedConstants
+from app.simulation.params import DerivedConstants, MotorParams
 from app.simulation.transforms import AlphaBeta
 
 

@@ -7,6 +7,7 @@ Reference: Chen et al. (Energies 2025, 'Digital Twin-Based Online Diagnosis...')
 
 from dataclasses import dataclass
 
+
 @dataclass(frozen = True)
 class DerivedConstants:
 
