@@ -8,11 +8,12 @@ Reference:
 """
 
 from __future__ import annotations
-from dataclasses import dataclass
-import math
 
-from simulation.params import MotorParams
-from simulation.transforms import AlphaBeta
+import math
+from dataclasses import dataclass
+
+from app.simulation.params import MotorParams
+from app.simulation.transforms import AlphaBeta
 
 
 @dataclass(frozen=True)

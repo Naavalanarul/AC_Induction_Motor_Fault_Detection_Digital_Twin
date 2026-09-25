@@ -9,10 +9,11 @@ Architecture:
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Optional
 
-from simulation.motor_twin import MotorTwin, MotorState, InverterCommand
+from app.simulation.motor_twin import InverterCommand, MotorState, MotorTwin
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,6 @@ class AsyncSimulationDriver:
 
         loop = asyncio.get_running_loop()
         wall_start_time = loop.time()
-        wall_elapsed = 0.0
 
         logger.info(
             "Starting Async MotorTwin Driver at %.1f Hz (RT factor: %.2fx)",

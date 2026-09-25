@@ -9,11 +9,13 @@ Reference:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import numpy as np
 
-from simulation.params import MotorParams, DerivedConstants
-from simulation.transforms import AlphaBeta
+from app.simulation.params import DerivedConstants, MotorParams
+from app.simulation.transforms import AlphaBeta
 
 
 @dataclass(frozen=True)
@@ -85,7 +87,7 @@ class InductionMotorElectricalDynamics:
         self._k_over_tr: float = self.derived.K * self._inv_tr
         self._inv_sigma_ls: float = 1.0 / (self.derived.sigma * self.params.Ls)
         self._lm_over_tr: float = self.params.Lm * self._inv_tr
-        self._lambda: float = self.derived.lambda_
+        self._lambda: float = self.derived.gamma
         self._k: float = self.derived.K
 
     def evaluate_derivatives(

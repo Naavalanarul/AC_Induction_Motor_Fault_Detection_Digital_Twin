@@ -7,8 +7,8 @@ Conventions:
     Standard amplitude-invariant Clarke transform (peak amplitude of alpha equals peak of a).
 """
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,10 @@
+# Minimal routing. Replace the receiver with your pager/email/Slack integration.
+route:
+  receiver: default
+  group_by: [alertname, motor_id]
+  group_wait: 30s
+  repeat_interval: 4h
+receivers:
+  - name: default
+    # webhook_configs:
+    #   - url: https://hooks.example.com/alerts

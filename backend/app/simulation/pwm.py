@@ -1,4 +1,4 @@
-"""simulation/inverter.py
+"""simulation/pwm.py
 
 Models the 2-level three-phase Voltage Source Inverter (VSI), SPWM generation,
 and event-driven switching instant (crossing) detection.
@@ -8,11 +8,13 @@ References:
     Zhu et al. (IEEE TPEL 2019), "Discrete state event-driven framework..."
 """
 
-from dataclasses import dataclass
-from typing import Callable
-import math
+from __future__ import annotations
 
-from simulation.transforms import PhaseABC
+import math
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from app.simulation.transforms import PhaseABC
 
 
 @dataclass(frozen=True)

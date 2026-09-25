@@ -9,8 +9,11 @@ References:
 """
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Callable, Protocol, Union
+from collections.abc import Callable
+from typing import Protocol, Union
+
 import numpy as np
 
 
@@ -153,7 +156,7 @@ if __name__ == "__main__":
         next_event = t_event if t_sim < t_event else None
         h = controller.compute_step(t_sim, next_event)
 
-        state = rk4.step(state, t_sim, h, model.derivatives, u_zero)
+        state = rk4.step(state, t_sim, h, model.derivatives, u_zero)  # type: ignore[arg-type]
         t_sim += h
         steps_taken.append((t_sim, h, state[0]))
 
