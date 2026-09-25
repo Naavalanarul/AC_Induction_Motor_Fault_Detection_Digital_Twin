@@ -1,2 +1,10 @@
 .venv
-.env.example
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+*.db
+.ruff_cache/
+.mypy_cache/

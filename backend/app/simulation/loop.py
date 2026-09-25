@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from simulation.motor_twin import MotorTwin, MotorState, InverterCommand
+from app.simulation.motor_twin import MotorTwin, MotorState, InverterCommand
 
 logger = logging.getLogger(__name__)
 

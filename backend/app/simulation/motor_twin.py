@@ -1,4 +1,4 @@
-"""simulation/twin.py
+"""simulation/motor_twin.py
 
 Stateful digital twin wrapper for the inverter-driven induction motor.
 Integrates coordinate transforms, PWM switching, electrical RK4 integration,
@@ -12,9 +12,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 
-from simulation.params import MotorParams
-from simulation.transforms import ClarkeTransformer, PhaseABC, AlphaBeta
-from simulation.inverter import (
+from app.simulation.params import MotorParams
+from app.simulation.transforms import ClarkeTransformer, PhaseABC, AlphaBeta
+from app.simulation.pwm import (
     InverterLegStates,
     phase_voltages,
     CarrierWaveGenerator,
@@ -22,15 +22,15 @@ from simulation.inverter import (
     find_earliest_inverter_event,
     get_instantaneous_switches,
 )
-from simulation.dynamics import (
+from app.simulation.dynamics import (
     ElectricalState,
     InductionMotorElectricalDynamics,
 )
-from simulation.mechanical import (
+from app.simulation.mechanical import (
     MechanicalState,
     InductionMotorMechanicalDynamics,
 )
-from simulation.integrators import RungeKutta4, EventDrivenStepController
+from app.simulation.integrators import RungeKutta4, EventDrivenStepController
 
 
 @dataclass(frozen=True)

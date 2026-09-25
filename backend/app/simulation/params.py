@@ -12,8 +12,13 @@ class DerivedConstants:
 
     sigma: float        # Leakage Factor
     Tr: float           # Rotor Time Constant (Tr), seconds
-    gamma: float        # Damping / equivalent stator coefficient
+    gamma: float        # Damping / equivalent stator coefficient (lambda in Chen et al.)
     K: float            # Coupling Factor (K)
+
+    @property
+    def lambda_(self) -> float:
+        """Alias matching the symbol used in Chen et al. Eq. (3)."""
+        return self.gamma
 
 @dataclass(frozen = True)
 class MotorParams:
@@ -70,4 +75,30 @@ CHEN_2025_MOTOR = MotorParams(
     rated_current=3.5,    # Approximate rated phase current [A]
     rated_speed=1420.0,   # 1420 rpm (typical 4-pole 50 Hz induction motor)
     rated_torque=10.1,    # T = P / ω_mech ≈ 1500 / (1420 * 2π / 60) ≈ 10.09 N·m
+)
+
+
+# NOTE: The CHEN_2025_MOTOR values above give a total leakage factor sigma ~= 0.77
+# (Lm is less than half of Ls), which limits direct-on-line starting current to ~5 A
+# and produces almost no starting torque. These values have not been re-verified
+# against the paper; they are kept for traceability only.
+#
+# DEFAULT_MOTOR is a widely used 1.5 kW, 4-pole, 50 Hz parameter set from the
+# field-oriented / DTC control literature (Rs=1.405, Rr=1.395, Lls=Llr=5.839 mH,
+# Lm=172.2 mH, J=0.0131). It yields realistic starting, slip and rated current,
+# so it drives the live digital twin. Verify against your own motor nameplate and
+# no-load/locked-rotor tests before trusting absolute values.
+DEFAULT_MOTOR = MotorParams(
+    Rs=1.405,
+    Rr=1.395,
+    Ls=0.178039,
+    Lr=0.178039,
+    Lm=0.1722,
+    J=0.0131,
+    pole_pairs=2,
+    rated_power=1500.0,
+    rated_voltage=380.0,
+    rated_current=4.7,     # what this parameter set draws at 10 N*m / 380 V star (simulated)
+    rated_speed=1474.0,    # simulated speed at 10 N*m
+    rated_torque=10.0,
 )

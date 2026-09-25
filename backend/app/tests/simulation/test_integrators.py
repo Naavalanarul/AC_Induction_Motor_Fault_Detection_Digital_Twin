@@ -9,7 +9,7 @@ import math
 import numpy as np
 import pytest
 
-from simulation.integrators import RungeKutta4, EventDrivenStepController
+from app.simulation.integrators import RungeKutta4, EventDrivenStepController
 
 
 # ---------------------------------------------------------------------------
@@ -92,9 +92,10 @@ class TestRungeKutta4:
             h_curr, h_next = step_sizes[i], step_sizes[i + 1]
             print(f"  Ratio (h={h_curr} -> h={h_next}): {ratio:.2f}")
 
-        # Assert that all ratios are tightly clustered near 16.0 (e.g., between 15.0 and 16.5)
+        # Assert that all ratios cluster near 16.0
         for ratio in convergence_ratios:
-            assert 15.0 <= ratio <= 16.5, (
+            # ~16 asymptotically; the coarsest step is pre-asymptotic (~17.4). 3rd order would give ~8.
+            assert 14.5 <= ratio <= 18.0, (
                 f"Convergence ratio {ratio:.2f} deviates from expected ~16.0. "
                 "Integrator may have dropped order."
             )
