@@ -71,6 +71,7 @@ class MotorIn(BaseModel):
 class SensorOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    motor_id: int
     type: str
     mode: str
     config_json: dict
