@@ -112,6 +112,8 @@ class Diagnosis(Base):
     per_sensor_scores_json: Mapped[dict] = mapped_column(JSON)
     source: Mapped[DiagSourceEnum] = mapped_column(Enum(DiagSourceEnum, name="diag_source"),
                                                    default=DiagSourceEnum.fused)
+    health_index: Mapped[float | None] = mapped_column(Float, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(24), nullable=True)
     __table_args__ = (Index("ix_diagnoses_motor_ts", "motor_id", "ts"),)
 
 

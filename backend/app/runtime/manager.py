@@ -15,6 +15,7 @@ import logging
 import time
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.config import Settings
 from app.core.metrics import ML_BACKEND, WORKER_RESTARTS
@@ -142,3 +143,54 @@ class WorkerManager:
         await asyncio.to_thread(shared_classifier, self.settings.use_ml)  # load the model once, up front
         for mid in motor_ids:
             self.start(mid)
+
+    def get_prognosis(
+        self,
+        motor_id: int,
+        db: Session | None = None,
+        derate_thresh: float = 0.5,
+        trip_thresh: float = 0.8,
+    ) -> dict:
+        w = self.workers.get(motor_id)
+        if w is not None and len(w.severity_history) >= 5:
+            return w.get_prognosis(derate_thresh, trip_thresh)
+        if db is not None:
+            from app.db.models import Diagnosis
+
+            rows = db.scalars(
+                select(Diagnosis)
+                .where(Diagnosis.motor_id == motor_id)
+                .order_by(Diagnosis.ts.desc())
+                .limit(120)
+            ).all()
+            if len(rows) >= 5:
+                history = [(r.ts.timestamp(), r.severity_score) for r in reversed(rows)]
+                from app.diagnostics.prognosis import estimate_time_to_threshold
+
+                return estimate_time_to_threshold(history, derate_thresh, trip_thresh)
+        if w is not None:
+            return w.get_prognosis(derate_thresh, trip_thresh)
+        from app.diagnostics.prognosis import estimate_time_to_threshold
+
+        return estimate_time_to_threshold([], derate_thresh, trip_thresh)
+
+    def get_recommendation(self, motor_id: int, db: Session | None = None) -> dict:
+        w = self.workers.get(motor_id)
+        if w is not None and w._last_fault is not None:
+            return w.get_recommendation()
+        from app.diagnostics.recommendations import get_recommendation
+
+        if db is not None:
+            from app.db.models import Diagnosis
+
+            latest = db.scalar(
+                select(Diagnosis)
+                .where(Diagnosis.motor_id == motor_id)
+                .order_by(Diagnosis.ts.desc())
+                .limit(1)
+            )
+            if latest is not None:
+                mhi = latest.health_index if latest.health_index is not None else 100.0
+                zone = "D" if mhi < 50 else ("C" if mhi < 70 else ("B" if mhi < 85 else "A"))
+                return get_recommendation(motor_id, latest.fault_type, zone, mhi)
+        return get_recommendation(motor_id, "healthy", "A", 100.0)

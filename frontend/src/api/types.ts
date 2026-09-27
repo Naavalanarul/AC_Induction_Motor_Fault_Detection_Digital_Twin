@@ -20,6 +20,9 @@ export type Diagnosis = {
   secondary: { fault_type: string; confidence: number; severity: number; sources: string[] }[]
   source: string
   schema_version: string
+  health_index?: number
+  error_code?: string
+  zone?: string
 }
 
 export type SadaStateName = 'NORMAL' | 'WATCH' | 'DERATE' | 'TRIP'
@@ -54,6 +57,9 @@ export type Frame = {
   motor_id: number
   name: string
   t: number
+  health_index?: number
+  error_code?: string
+  zone?: string
   sensors: Record<string, SensorEntry>
   spectra: Partial<Record<'current_a' | 'vibration_y' | 'acoustic', Spectrum>>
   scalogram: { freqs: number[]; values: number[][]; dt: number } | null
@@ -88,6 +94,31 @@ export type DiagnosisRow = {
   fault_type: string
   confidence: number
   severity_score: number
+  per_sensor_scores_json?: Record<string, unknown>
+  health_index?: number
+  error_code?: string
+}
+
+export type ConditionZone = 'A' | 'B' | 'C' | 'D'
+
+export type Prognosis = {
+  current_severity: number
+  slope_per_s: number
+  time_to_derate_s: number | null
+  time_to_trip_s: number | null
+  trend: 'increasing' | 'decreasing' | 'stable'
+  sample_count: number
+}
+
+export type Recommendation = {
+  motor_id: number
+  fault_type: string
+  zone: ConditionZone
+  mhi: number
+  urgency: 'routine' | 'planned' | 'prompt' | 'immediate'
+  title: string
+  action: string
+  checklist: string[]
 }
 
 export type Page<T> = { total: number; limit: number; offset: number; items: T[] }
@@ -105,4 +136,15 @@ export const FAULT_TYPES = [
 ] as const
 export type FaultType = (typeof FAULT_TYPES)[number]
 
-export const label = (s: string) => s.replaceAll('_', ' ')
+export const label = (s?: string | null): string => {
+  if (!s) return ''
+  return String(s).replaceAll('_', ' ')
+}
+
+export const getZoneFromMHI = (val: number): ConditionZone => {
+  if (val >= 85) return 'A'
+  if (val >= 70) return 'B'
+  if (val >= 50) return 'C'
+  return 'D'
+}
+

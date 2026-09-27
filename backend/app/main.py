@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 
-from app.api.routes import auth, health, motors, ws
+from app.api.routes import admin, auth, health, motors, ws
 from app.config import Settings, get_settings
 from app.core.logging import configure_logging, request_id_var
 from app.core.metrics import HTTP_REQUESTS
@@ -126,5 +126,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router, prefix=API_PREFIX)
     app.include_router(motors.router, prefix=API_PREFIX)
+    app.include_router(admin.router, prefix=API_PREFIX)
     app.include_router(ws.router, prefix=API_PREFIX)
     return app

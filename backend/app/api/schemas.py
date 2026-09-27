@@ -65,7 +65,7 @@ class MotorParamsIn(BaseModel):
 class MotorIn(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     params: MotorParamsIn | None = None  # default: the built-in 1.5 kW parameter set
-    base_load_nm: float = Field(default=8.0, ge=0, le=50)
+    base_load_nm: float = Field(default=8.0, ge=0, le=2000.0)
 
 
 class SensorOut(BaseModel):
@@ -99,7 +99,7 @@ class MotorDetail(MotorOut):
 
 
 class LoadPatch(BaseModel):
-    base_load_nm: float = Field(ge=0, le=50)
+    base_load_nm: float = Field(ge=0, le=2000.0)
 
 
 class FaultIn(BaseModel):
@@ -151,6 +151,8 @@ class DiagnosisOut(BaseModel):
     severity_score: float
     per_sensor_scores_json: dict
     source: str
+    health_index: float | None = None
+    error_code: str | None = None
 
 
 class Page(BaseModel):
@@ -196,4 +198,25 @@ class HistoryEvent(BaseModel):
     ts: datetime
     kind: Literal["fault_injected", "fault_cleared", "supervisory"]
     data: dict
+
+
+class PrognosisOut(BaseModel):
+    current_severity: float
+    slope_per_s: float
+    time_to_derate_s: float | None = None
+    time_to_trip_s: float | None = None
+    trend: str
+    sample_count: int
+
+
+class RecommendationOut(BaseModel):
+    motor_id: int
+    fault_type: str
+    zone: str
+    mhi: float
+    urgency: str
+    title: str
+    action: str
+    checklist: list[str]
+
 

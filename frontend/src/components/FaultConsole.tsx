@@ -41,6 +41,7 @@ export function FaultConsole({ motorId, faults, canOperate }: { motorId: number;
       setBusy(false)
     }
   }
+
   const clear = async (id: number) => {
     try {
       await api(`/motors/${motorId}/faults/${id}`, { method: 'DELETE' })
@@ -50,81 +51,176 @@ export function FaultConsole({ motorId, faults, canOperate }: { motorId: number;
   }
 
   return (
-    <section className="card" aria-labelledby="fault-h">
-      <h2 id="fault-h" className="text-sm font-semibold muted uppercase tracking-wide">Fault injection</h2>
-      {canOperate ? (
-        <div className="mt-2 grid gap-2 text-sm">
-          <label className="flex items-center gap-2">
-            <span className="muted w-16">Type</span>
-            <select className="input flex-1" value={ft} onChange={(e) => setFt(e.target.value as FaultType)} aria-label="fault type">
-              {FAULT_TYPES.map((f) => (
-                <option key={f} value={f}>{label(f)}</option>
-              ))}
-            </select>
-          </label>
-          {ft === 'broken_rotor_bar' ? (
+    <section className="card flex flex-col justify-between" aria-labelledby="fault-h">
+      <div>
+        <header className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+          <h2 id="fault-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] flex items-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--ink-2)]" />
+            Fault Injection Bench
+          </h2>
+          <span className="text-[11px] num px-2 py-0.5 rounded bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--muted)]">
+            {faults.length} Active
+          </span>
+        </header>
+
+        {canOperate ? (
+          <div className="mt-3 grid gap-2.5 text-xs">
             <label className="flex items-center gap-2">
-              <span className="muted w-16">Bars</span>
-              <input className="input w-20" type="number" min={1} max={8} value={p.count} aria-label="broken bars"
-                onChange={(e) => setP({ ...p, count: Math.max(1, Math.min(8, Number(e.target.value))) })} />
+              <span className="text-[var(--muted)] font-medium w-16">Type</span>
+              <select
+                className="input flex-1 bg-[var(--surface-raised)]"
+                value={ft}
+                onChange={(e) => setFt(e.target.value as FaultType)}
+                aria-label="fault type"
+              >
+                {FAULT_TYPES.map((f) => (
+                  <option key={f} value={f}>
+                    {label(f)}
+                  </option>
+                ))}
+              </select>
             </label>
+
+            {ft === 'broken_rotor_bar' ? (
+              <label className="flex items-center gap-2">
+                <span className="text-[var(--muted)] font-medium w-16">Bars</span>
+                <input
+                  className="input w-24 num bg-[var(--surface-raised)]"
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={p.count}
+                  aria-label="broken bars"
+                  onChange={(e) => setP({ ...p, count: Math.max(1, Math.min(8, Number(e.target.value))) })}
+                />
+                <span className="text-[var(--muted)] text-[11px] num">(1–8 bars)</span>
+              </label>
+            ) : (
+              <label className="flex items-center gap-2">
+                <span className="text-[var(--muted)] font-medium w-16">Severity</span>
+                <input
+                  className="flex-1 cursor-pointer"
+                  type="range"
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  value={severity}
+                  aria-label="fault severity"
+                  onChange={(e) => setSeverity(Number(e.target.value))}
+                />
+                <span className="tabular num text-xs w-10 text-right text-[var(--ink)]">
+                  {severity.toFixed(2)}
+                </span>
+              </label>
+            )}
+
+            {ft === 'interturn_short' && (
+              <label className="flex items-center gap-2">
+                <span className="text-[var(--muted)] font-medium w-16">Phase</span>
+                <select
+                  className="input w-24 bg-[var(--surface-raised)]"
+                  value={p.phase}
+                  onChange={(e) => setP({ ...p, phase: e.target.value })}
+                  aria-label="phase"
+                >
+                  {['a', 'b', 'c'].map((x) => (
+                    <option key={x} value={x}>Phase {x.toUpperCase()}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {ft === 'eccentricity' && (
+              <label className="flex items-center gap-2">
+                <span className="text-[var(--muted)] font-medium w-16">Kind</span>
+                <select
+                  className="input flex-1 bg-[var(--surface-raised)]"
+                  value={p.ecc}
+                  onChange={(e) => setP({ ...p, ecc: e.target.value })}
+                  aria-label="eccentricity type"
+                >
+                  <option value="dynamic">Dynamic Eccentricity</option>
+                  <option value="static">Static Eccentricity</option>
+                </select>
+              </label>
+            )}
+
+            {ft === 'voltage_anomaly' && (
+              <label className="flex items-center gap-2">
+                <span className="text-[var(--muted)] font-medium w-16">Kind</span>
+                <select
+                  className="input flex-1 bg-[var(--surface-raised)]"
+                  value={p.volt}
+                  onChange={(e) => setP({ ...p, volt: e.target.value })}
+                  aria-label="voltage anomaly type"
+                >
+                  <option value="sag">Voltage Sag</option>
+                  <option value="imbalance">Phase Imbalance</option>
+                  <option value="harmonic">Harmonic Distortion</option>
+                </select>
+              </label>
+            )}
+
+            <button
+              className="btn btn-primary justify-self-start mt-1 px-4 py-1.5 text-xs font-medium"
+              onClick={inject}
+              disabled={busy}
+            >
+              Inject fault
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 p-3 rounded-md bg-[var(--surface-raised)] border border-[var(--border)] text-xs text-[var(--muted)]">
+            Operator role required to inject faults into simulation.
+          </div>
+        )}
+
+        {/* Active Ground-Truth Faults */}
+        <div className="mt-4 pt-3 border-t border-[var(--border)]">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-2">
+            Active faults (ground truth)
+          </h3>
+          {faults.length === 0 ? (
+            <div className="p-3 rounded-md bg-[var(--surface-raised)] border border-dashed border-[var(--border)] text-center text-xs text-[var(--muted)]">
+              No faults active — motor running nominal
+            </div>
           ) : (
-            <label className="flex items-center gap-2">
-              <span className="muted w-16">Severity</span>
-              <input className="flex-1" type="range" min={0.05} max={1} step={0.05} value={severity} aria-label="fault severity"
-                onChange={(e) => setSeverity(Number(e.target.value))} />
-              <span className="tabular w-10 text-right">{severity.toFixed(2)}</span>
-            </label>
+            <ul className="text-xs grid gap-1.5">
+              {faults.map((f) => (
+                <li
+                  key={f.id}
+                  className="flex items-center justify-between gap-2 p-2 rounded-md bg-[var(--surface-raised)] border border-rose-500/20"
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="capitalize font-medium text-rose-400 truncate">
+                      {label(f.fault_type)}
+                    </span>
+                    <span className="text-[11px] text-[var(--muted)] tabular num">
+                      sev {f.severity.toFixed(2)}
+                      {Object.keys(f.params).length ? ` · ${JSON.stringify(f.params)}` : ''}
+                    </span>
+                  </div>
+                  {canOperate && (
+                    <button
+                      className="btn text-[11px] py-0.5 px-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/20"
+                      onClick={() => clear(f.id)}
+                      aria-label={`clear fault ${f.id}`}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
-          {ft === 'interturn_short' && (
-            <label className="flex items-center gap-2">
-              <span className="muted w-16">Phase</span>
-              <select className="input" value={p.phase} onChange={(e) => setP({ ...p, phase: e.target.value })} aria-label="phase">
-                {['a', 'b', 'c'].map((x) => <option key={x}>{x}</option>)}
-              </select>
-            </label>
-          )}
-          {ft === 'eccentricity' && (
-            <label className="flex items-center gap-2">
-              <span className="muted w-16">Kind</span>
-              <select className="input" value={p.ecc} onChange={(e) => setP({ ...p, ecc: e.target.value })} aria-label="eccentricity type">
-                <option>dynamic</option>
-                <option>static</option>
-              </select>
-            </label>
-          )}
-          {ft === 'voltage_anomaly' && (
-            <label className="flex items-center gap-2">
-              <span className="muted w-16">Kind</span>
-              <select className="input" value={p.volt} onChange={(e) => setP({ ...p, volt: e.target.value })} aria-label="voltage anomaly type">
-                <option>sag</option>
-                <option>imbalance</option>
-                <option>harmonic</option>
-              </select>
-            </label>
-          )}
-          <button className="btn btn-primary justify-self-start" onClick={inject} disabled={busy}>Inject fault</button>
         </div>
-      ) : (
-        <p className="text-sm muted mt-2">Operator role required to inject faults.</p>
+      </div>
+
+      {msg && (
+        <p className="text-xs text-rose-300 mt-3 p-2 rounded bg-rose-500/10 border border-rose-500/20" role="status">
+          {msg}
+        </p>
       )}
-      <h3 className="text-xs muted mt-3 mb-1">Active faults (ground truth)</h3>
-      {faults.length === 0 ? (
-        <p className="text-sm muted">None</p>
-      ) : (
-        <ul className="text-sm grid gap-1">
-          {faults.map((f) => (
-            <li key={f.id} className="flex items-center justify-between gap-2">
-              <span className="capitalize">
-                {label(f.fault_type)} <span className="muted tabular">sev {f.severity.toFixed(2)}
-                  {Object.keys(f.params).length ? ` ${JSON.stringify(f.params)}` : ''}</span>
-              </span>
-              {canOperate && <button className="btn" onClick={() => clear(f.id)} aria-label={`clear fault ${f.id}`}>Clear</button>}
-            </li>
-          ))}
-        </ul>
-      )}
-      {msg && <p className="text-xs muted mt-2" role="status">{msg}</p>}
     </section>
   )
 }

@@ -25,6 +25,7 @@ class DiagFault(str, Enum):
     MISALIGNMENT = "misalignment"
     OVERHEATING = "overheating"
     SUPPLY_ANOMALY = "supply_anomaly"
+    INDETERMINATE = "indeterminate"
     UNKNOWN = "unknown"
 
 

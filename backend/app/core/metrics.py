@@ -18,3 +18,4 @@ HTTP_REQUESTS = Histogram("dt_http_request_seconds", "HTTP request latency", ["m
 DB_POOL_CHECKED_OUT = Gauge("dt_db_pool_checked_out", "DB connections currently checked out of the pool")
 DB_POOL_CAPACITY = Gauge("dt_db_pool_capacity", "pool_size + max_overflow")
 ML_BACKEND = Gauge("dt_ml_backend_available", "1 if the Conv-BiLSTM backend is loaded, 0 if on rule fallback")
+MOTOR_HEALTH_INDEX = Gauge("dt_motor_health_index", "Motor Health Index in [0, 100]", ["motor_id", "motor_name"])

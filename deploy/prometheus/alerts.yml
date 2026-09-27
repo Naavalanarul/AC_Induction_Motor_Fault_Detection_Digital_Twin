@@ -53,3 +53,10 @@ groups:
         expr: increase(dt_sada_trips_total[5m]) > 0
         labels: {severity: info}
         annotations: {summary: "SADA tripped motor {{ $labels.motor_id }}"}
+
+      - alert: MotorHealthIndexCritical
+        expr: dt_motor_health_index < 30
+        for: 30s
+        labels: {severity: critical}
+        annotations: {summary: "Motor {{ $labels.motor_name }} (id: {{ $labels.motor_id }}) health index critical (MHI < 30)"}
+

@@ -22,6 +22,8 @@ from app.api.schemas import (
     MotorOut,
     OverrideIn,
     Page,
+    PrognosisOut,
+    RecommendationOut,
     SensorOut,
     SensorPatch,
     SupervisoryOut,
@@ -275,3 +277,27 @@ async def override(motor_id: int, body: OverrideIn, p: Principal = Depends(requi
     await rt.broker.publish(f"cmd:{motor_id}", {"cmd": "override", "action": body.action, "load": body.load,
                                                 "actor": p.username})
     return row
+
+
+# ---------------------------------------------------------------- prognosis & recommendation
+@router.get("/{motor_id}/prognosis", response_model=PrognosisOut)
+def get_motor_prognosis(
+    motor_id: int,
+    _: Principal = Depends(require("viewer")),
+    db: Session = Depends(get_db),
+    rt=Depends(runtime),
+):
+    _motor(db, motor_id)
+    return rt.manager.get_prognosis(motor_id, db=db)
+
+
+@router.get("/{motor_id}/recommendation", response_model=RecommendationOut)
+def get_motor_recommendation(
+    motor_id: int,
+    _: Principal = Depends(require("viewer")),
+    db: Session = Depends(get_db),
+    rt=Depends(runtime),
+):
+    _motor(db, motor_id)
+    return rt.manager.get_recommendation(motor_id, db=db)
+

@@ -24,12 +24,22 @@ import numpy as np
 from scipy.signal import welch
 
 from app.core.logging import motor_id_var
-from app.core.metrics import DIAG_SECONDS, SADA_TRIPS, SIM_LAG_SECONDS, SIM_TICK_SECONDS, SIM_TICKS
+from app.core.metrics import (
+    DIAG_SECONDS,
+    MOTOR_HEALTH_INDEX,
+    SADA_TRIPS,
+    SIM_LAG_SECONDS,
+    SIM_TICK_SECONDS,
+    SIM_TICKS,
+)
 from app.db.models import Alert, Diagnosis, SensorReading, SupervisoryAction
 from app.diagnostics.engine import DiagnosticEngine
 from app.diagnostics.features import CHANNELS, FEATURE_NAMES, N_FEATURES, scalogram
+from app.diagnostics.health_index import compute_mhi, error_code
 from app.diagnostics.ml.classifier import MechanicalClassifier
-from app.diagnostics.schema import DiagFault
+from app.diagnostics.prognosis import estimate_time_to_threshold
+from app.diagnostics.recommendations import get_recommendation
+from app.diagnostics.schema import DiagFault, FusedDiagnosis
 from app.runtime.broker import Broker
 from app.runtime.writer import DBWriter
 from app.sensors import SensorMode, SensorRegistry, SensorType
@@ -107,6 +117,10 @@ class MotorWorker:
         self._scalogram: dict | None = None
         self._operator_ack = False
         self._spectra_dirty = self._scalogram_dirty = False
+        self.severity_history: deque[tuple[float, float]] = deque(maxlen=120)
+        self._last_mhi: float = 100.0
+        self._last_error_code: str = "SYS-OK-A"
+        self._last_zone: str = "A"
 
     # ------------------------------------------------------------------ commands
     def _inject(self, f: dict) -> None:
@@ -183,14 +197,57 @@ class MotorWorker:
         diag = await asyncio.to_thread(self.engine.process, st.t, frames, self.sim.chunk_s)
         DIAG_SECONDS.observe(time.perf_counter() - t1)
         out = self.sada.update(diag)
+        # --- SADA-trip override: don't persist "healthy" when channels are starved ---
+        # After a trip, fault-sensitive channels (electrical, ML) mark themselves
+        # unavailable because the motor is de-energised.  If only benign channels
+        # (e.g. thermal) remain and they say HEALTHY, the fusion result is
+        # misleading.  Override it to INDETERMINATE so the persisted diagnoses
+        # table does not contradict the SADA panel.
+        if (
+            out.trip
+            and diag.fault_type == DiagFault.HEALTHY
+            and self.sada.fault not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
+        ):
+            override_meta = {
+                "sada_latched_fault": self.sada.fault.value,
+                "sada_latched_severity": round(out.smoothed_severity, 4),
+                "reason": "channels_starved_during_trip",
+                "fault_type": self.sada.fault.value,
+                "confidence": round(diag.confidence, 4),
+                "severity": round(out.smoothed_severity, 4),
+                "sources": ["sada_latched"],
+            }
+            per_scores = {**diag.per_sensor_scores, "sada_override": override_meta}
+            diag = FusedDiagnosis(
+                t=diag.t,
+                fault_type=DiagFault.INDETERMINATE,
+                confidence=diag.confidence,
+                severity=diag.severity,
+                per_sensor_scores=per_scores,
+                secondary=[override_meta] + diag.secondary,
+                source=diag.source,
+                schema_version=diag.schema_version,
+            )
+        # Rolling severity history (Phase 21)
+        self.severity_history.append((st.t, out.smoothed_severity))
+
+        # Health index & error codes (Phase 20)
+        mhi, zone = compute_mhi(diag, out.state, {k.value: v.status for k, v in frames.items()})
+        err = error_code(diag.source.value, diag.fault_type.value, zone)
+        self._last_mhi = mhi
+        self._last_error_code = err
+        self._last_zone = zone
+
+        MOTOR_HEALTH_INDEX.labels(motor_id=str(self.cfg.motor_id), motor_name=self.cfg.name).set(mhi)
+
         st.load_cmd = out.load_cmd
         st.tripped = out.trip
         SIM_TICKS.labels(str(self.cfg.motor_id)).inc()
         self.last_tick = time.monotonic()
         self._chunk_idx += 1
 
-        self._record(st, frames, diag, out)
-        msg = self._build_message(st, frames, diag, out)
+        self._record(st, frames, diag, out, mhi, err)
+        msg = self._build_message(st, frames, diag, out, mhi, err, zone)
         every = max(1, round((1.0 / self.sim.chunk_s) / self.cfg.stream_hz))
         if self._chunk_idx % every == 0:
             # Spectra/scalogram change at 2 Hz / 1 Hz: send them only when updated (clients keep the
@@ -206,7 +263,7 @@ class MotorWorker:
         return msg
 
     # ------------------------------------------------------------------ persistence
-    def _record(self, st, frames, diag, out) -> None:
+    def _record(self, st, frames, diag, out, mhi: float, err: str) -> None:
         if self.writer is None:
             return
         mid = self.cfg.motor_id
@@ -222,8 +279,8 @@ class MotorWorker:
                                       message=f"SADA {self._last_state.value} -> {out.state.value}: {out.reason_code}"))
             self._last_state = out.state
 
-        anomaly_onset = diag.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN) and diag.fault_type != self._last_fault
-        if diag.fault_type != DiagFault.UNKNOWN:
+        anomaly_onset = diag.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN, DiagFault.INDETERMINATE) and diag.fault_type != self._last_fault
+        if diag.fault_type not in (DiagFault.UNKNOWN, DiagFault.INDETERMINATE):
             self._last_fault = diag.fault_type
         if anomaly_onset:
             # Raw waveforms only on anomaly onset (too heavy to store continuously)
@@ -245,7 +302,8 @@ class MotorWorker:
             return
         self._last_persist = st.t
         self.writer.put(Diagnosis(motor_id=mid, fault_type=diag.fault_type.value, confidence=diag.confidence,
-                                  severity_score=diag.severity, per_sensor_scores_json=diag.per_sensor_scores))
+                                  severity_score=diag.severity, per_sensor_scores_json=diag.per_sensor_scores,
+                                  health_index=mhi, error_code=err))
         for stype, feats in self._sensor_features(frames, diag).items():
             sid = self.cfg.sensor_ids.get(stype)
             if sid is not None and feats:
@@ -307,7 +365,7 @@ class MotorWorker:
             self._scalogram = scalogram(np.concatenate(list(self._vib_buf)[-3:]), st.vib_fs, n_scales=24, max_points=128)
             self._scalogram_dirty = True
 
-    def _build_message(self, st, frames, diag, out) -> dict:
+    def _build_message(self, st, frames, diag, out, mhi: float, err: str, zone: str) -> dict:
         self._update_spectra(st, frames)
         sensors = {}
         for stype, frame in frames.items():
@@ -328,11 +386,18 @@ class MotorWorker:
                     entry["value"] = round(float(frame.data["winding"][-1]), 2)
             sensors[stype.value] = entry
         chunk = st.electrical
+        diag_dict = diag.to_dict()
+        diag_dict["health_index"] = mhi
+        diag_dict["error_code"] = err
+        diag_dict["zone"] = zone
         return {
             "type": "frame",
             "motor_id": self.cfg.motor_id,
             "name": self.cfg.name,
             "t": round(st.t, 3),
+            "health_index": mhi,
+            "error_code": err,
+            "zone": zone,
             "sensors": sensors,
             "spectra": self._spectra,
             "scalogram": self._scalogram,
@@ -340,8 +405,15 @@ class MotorWorker:
             "mechanics": {"torque_nm": round(float(np.mean(chunk.te)), 3),
                           "load_nm": round(float(np.mean(chunk.load_torque)), 3),
                           "rpm": round(float(np.mean(chunk.omega_m)) * 30 / math.pi, 2)},
-            "diagnosis": diag.to_dict(),
+            "diagnosis": diag_dict,
             "supervisory": {**out.to_dict(), "base_load_nm": st.base_load_nm, "acknowledged": self.sada.acknowledged},
             "faults": list(self.fault_meta.values()),
             "ml_backend": self.engine.classifier.backend,
         }
+
+    def get_prognosis(self, derate_thresh: float = 0.5, trip_thresh: float = 0.8) -> dict:
+        return estimate_time_to_threshold(list(self.severity_history), derate_thresh, trip_thresh)
+
+    def get_recommendation(self) -> dict:
+        fault = self._last_fault.value if hasattr(self._last_fault, "value") else str(self._last_fault)
+        return get_recommendation(self.cfg.motor_id, fault, self._last_zone, self._last_mhi)

@@ -95,7 +95,7 @@ class SadaSupervisor:
         target = d.severity if gated else 0.0
         if d.fault_type != DiagFault.UNKNOWN:
             self.smoothed += c.ema_alpha * (target - self.smoothed)
-        if gated:
+        if gated and self.state != SadaState.TRIP:
             self.fault = d.fault_type
 
         thermal = d.per_sensor_scores.get(DiagSource.THERMAL.value, {})
