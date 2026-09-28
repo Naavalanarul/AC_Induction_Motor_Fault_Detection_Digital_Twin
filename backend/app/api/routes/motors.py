@@ -17,6 +17,7 @@ from app.api.schemas import (
     FaultOut,
     HistoryEvent,
     LoadPatch,
+    MCSAResultOut,
     MotorDetail,
     MotorIn,
     MotorOut,
@@ -27,6 +28,8 @@ from app.api.schemas import (
     SensorOut,
     SensorPatch,
     SupervisoryOut,
+    TransientSolveIn,
+    TransientSolveOut,
 )
 from app.config import get_settings
 from app.core.metrics import FAULT_INJECTIONS
@@ -44,8 +47,10 @@ from app.db.models import (
 )
 from app.db.session import get_db
 from app.diagnostics.schema import DiagFault
-from app.simulation.params import DEFAULT_MOTOR
+from app.simulation.params import DEFAULT_MOTOR, MotorParams
+from app.simulation.state_space_solver import StateSpaceMotorSolver
 from app.supervisory.sada import SadaConfig
+import numpy as np
 
 router = APIRouter(prefix="/motors", tags=["motors"])
 _fault_limit = rate_limit("faults", lambda: get_settings().fault_rate_per_min)
@@ -300,4 +305,75 @@ def get_motor_recommendation(
 ):
     _motor(db, motor_id)
     return rt.manager.get_recommendation(motor_id, db=db)
+
+
+# ---------------------------------------------------------------- transient simulation & MCSA
+def _run_transient_sim(motor_params_dict: dict, body: TransientSolveIn, motor_id: int) -> TransientSolveOut:
+    p = MotorParams(**motor_params_dict)
+    solver = StateSpaceMotorSolver(
+        params=p,
+        supply_freq=50.0,
+        itsc_mu=body.itsc_mu,
+        itsc_rf=body.itsc_rf,
+        brb_delta=body.brb_delta,
+        ecc_dynamic=body.ecc_dynamic,
+    )
+    res = solver.solve(
+        t_span=(0.0, body.duration_s),
+        load_torque=body.load_torque_nm,
+        method=body.method,
+    )
+    n = len(res.t)
+    step = max(1, n // 300)
+    idx = np.arange(0, n, step)
+
+    ss_slice = slice(int(0.8 * n), n)
+    ss_rpm = float(np.mean(res.rpm[ss_slice]))
+    ss_te = float(np.mean(res.te[ss_slice]))
+    f_sync = (50.0 / p.pole_pairs) * 60.0
+    slip = max(0.0, (f_sync - ss_rpm) / f_sync)
+
+    return TransientSolveOut(
+        motor_id=motor_id,
+        duration_s=body.duration_s,
+        steady_state_rpm=round(ss_rpm, 2),
+        steady_state_torque=round(ss_te, 2),
+        slip=round(slip, 4),
+        t=np.round(res.t[idx], 4).tolist(),
+        rpm=np.round(res.rpm[idx], 1).tolist(),
+        te=np.round(res.te[idx], 2).tolist(),
+        load_torque=np.round(res.load_torque[idx], 2).tolist(),
+        ia=np.round(res.i_abc[0][idx], 2).tolist(),
+        ib=np.round(res.i_abc[1][idx], 2).tolist(),
+        ic=np.round(res.i_abc[2][idx], 2).tolist(),
+        id=np.round(res.i_dq[0][idx], 2).tolist(),
+        iq=np.round(res.i_dq[1][idx], 2).tolist(),
+        psi_rd=np.round(res.psi_r_dq[0][idx], 4).tolist(),
+        psi_rq=np.round(res.psi_r_dq[1][idx], 4).tolist(),
+        copper_loss_w=np.round(res.copper_loss_w[idx], 1).tolist(),
+        fault_heat_w=np.round(res.fault_heat_w[idx], 1).tolist(),
+    )
+
+
+@router.post("/{motor_id}/simulation/transient-solve", response_model=TransientSolveOut)
+async def solve_transient(
+    motor_id: int,
+    body: TransientSolveIn,
+    _: Principal = Depends(require("viewer")),
+    db: Session = Depends(get_db),
+):
+    m = _motor(db, motor_id)
+    return await asyncio.to_thread(_run_transient_sim, m.params_json, body, motor_id)
+
+
+@router.get("/{motor_id}/mcsa", response_model=MCSAResultOut)
+def get_motor_mcsa(
+    motor_id: int,
+    _: Principal = Depends(require("viewer")),
+    db: Session = Depends(get_db),
+    rt=Depends(runtime),
+):
+    _motor(db, motor_id)
+    return rt.manager.get_mcsa(motor_id)
+
 

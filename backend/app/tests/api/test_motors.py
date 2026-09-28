@@ -118,3 +118,27 @@ def test_create_motor_starts_a_streaming_worker(client, auth):
     st = wait_for(lambda: client.get(f"/api/v1/motors/{mid}", headers=auth("viewer")).json().get("state"))
     assert st and st["supervisory"]["base_load_nm"] == 4.0
     assert len(client.get(f"/api/v1/motors/{mid}/sensors", headers=auth("viewer")).json()) == 6
+
+
+def test_transient_solve_endpoint(client, auth):
+    r = client.post(
+        "/api/v1/motors/1/simulation/transient-solve",
+        json={"duration_s": 0.5, "load_torque_nm": 8.0, "brb_delta": 0.2},
+        headers=auth("viewer"),
+    )
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["motor_id"] == 1
+    assert "rpm" in d and len(d["rpm"]) > 0
+    assert "ia" in d and len(d["ia"]) > 0
+    assert "te" in d and len(d["te"]) > 0
+    assert d["steady_state_rpm"] > 1400.0
+
+
+def test_mcsa_endpoint(client, auth):
+    r = client.get("/api/v1/motors/1/mcsa", headers=auth("viewer"))
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert "status" in d
+    assert "peaks" in d
+

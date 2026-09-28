@@ -81,6 +81,7 @@ function Shell() {
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
   const isMotorView = tab !== 'fleet' && tab !== 'dsa'
+  const isHardwareStream = sensors.data?.some((s) => s.mode === 'hardware') ?? false
 
   if (!session) return <LoginForm />
 
@@ -235,6 +236,25 @@ function Shell() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  className="live-pill"
+                  data-testid="telemetry-mode-badge"
+                  style={{
+                    borderColor: isHardwareStream ? 'rgba(0, 229, 255, 0.4)' : 'rgba(16, 185, 129, 0.4)',
+                    background: isHardwareStream ? 'rgba(0, 229, 255, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                    color: isHardwareStream ? 'var(--accent)' : 'var(--good)',
+                    fontSize: 11,
+                    letterSpacing: '0.04em',
+                    fontWeight: 600,
+                  }}
+                  title={isHardwareStream ? 'Ingesting from physical DAQ hardware' : 'Coupled nonlinear RK45 state-space dynamic model'}
+                >
+                  <span
+                    className="live-dot"
+                    style={{ background: isHardwareStream ? 'var(--accent)' : 'var(--good)' }}
+                  />
+                  <span>{isHardwareStream ? 'Mode: Real Hardware Stream' : 'Mode: Dynamic State-Space Emulation'}</span>
+                </div>
                 <button className="btn" onClick={() => setTab('fleet')}>
                   ← Motor fleet
                 </button>

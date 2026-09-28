@@ -220,3 +220,60 @@ class RecommendationOut(BaseModel):
     checklist: list[str]
 
 
+class TransientSolveIn(BaseModel):
+    duration_s: float = Field(default=0.8, ge=0.05, le=3.0)
+    load_torque_nm: float = Field(default=8.0, ge=0.0, le=50.0)
+    itsc_mu: float = Field(default=0.0, ge=0.0, le=0.5)
+    itsc_rf: float = Field(default=20.0, ge=0.01)
+    brb_delta: float = Field(default=0.0, ge=0.0, le=2.0)
+    ecc_dynamic: float = Field(default=0.0, ge=0.0, le=0.9)
+    method: Literal["RK45", "DOP853", "Radau"] = "RK45"
+
+
+class TransientSolveOut(BaseModel):
+    motor_id: int
+    duration_s: float
+    steady_state_rpm: float
+    steady_state_torque: float
+    slip: float
+    t: list[float]
+    rpm: list[float]
+    te: list[float]
+    load_torque: list[float]
+    ia: list[float]
+    ib: list[float]
+    ic: list[float]
+    id: list[float]
+    iq: list[float]
+    psi_rd: list[float]
+    psi_rq: list[float]
+    copper_loss_w: list[float]
+    fault_heat_w: list[float]
+
+
+class MCSAPeakOut(BaseModel):
+    freq_hz: float
+    magnitude_db: float
+    label: str
+    harmonic_k: int | None = None
+    expected_freq_hz: float | None = None
+    deviation_hz: float | None = None
+
+
+class MCSAResultOut(BaseModel):
+    status: str
+    fundamental_freq: float = 50.0
+    fundamental_mag_db: float = 0.0
+    slip: float = 0.02
+    rotor_freq_hz: float = 24.5
+    brb_fault_detected: bool = False
+    eccentricity_detected: bool = False
+    worst_brb_sideband_db: float | None = None
+    peaks: list[MCSAPeakOut] = []
+    brb_peaks: list[MCSAPeakOut] = []
+    ecc_peaks: list[MCSAPeakOut] = []
+    freqs: list[float] = []
+    psd_db: list[float] = []
+
+
+

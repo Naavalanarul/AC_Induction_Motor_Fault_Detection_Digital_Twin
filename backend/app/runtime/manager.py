@@ -194,3 +194,10 @@ class WorkerManager:
                 zone = "D" if mhi < 50 else ("C" if mhi < 70 else ("B" if mhi < 85 else "A"))
                 return get_recommendation(motor_id, latest.fault_type, zone, mhi)
         return get_recommendation(motor_id, "healthy", "A", 100.0)
+
+    def get_mcsa(self, motor_id: int) -> dict:
+        w = self.workers.get(motor_id)
+        if w is not None:
+            return w.get_mcsa()
+        return {"status": "offline", "peaks": [], "brb_fault_detected": False}
+

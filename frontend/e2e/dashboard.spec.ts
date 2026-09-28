@@ -49,3 +49,36 @@ test('inject fault -> see it in the dashboard -> see SADA derate', async ({ page
     await resetBtn.click().catch(() => {})
   }
 })
+
+test('mode badge, 4-node LPTN thermal network and Arrhenius RUL meter render without error', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (err) => errors.push(err.message))
+
+  await page.goto('/')
+  await page.getByLabel('Username').fill(USER)
+  await page.getByLabel('Password').fill(PASS)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+
+  // Navigate to motor digital twin
+  await page.getByRole('button', { name: /Open digital twin for/i }).first().click()
+
+  // 1. Verify Telemetry ingestion mode badge
+  await expect(page.getByTestId('telemetry-mode-badge')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByTestId('telemetry-mode-badge')).toHaveText(/Mode: Dynamic State-Space Emulation|Mode: Real Hardware Stream/)
+
+  // 2. Open Maintenance tab
+  await page.getByRole('button', { name: 'Maintenance', exact: true }).click()
+
+  // 3. Verify 4-Node LPTN model and Arrhenius thermal life card
+  await expect(page.getByText('4-Node Coupled Thermal Model')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByText('Stator Winding (Tw)', { exact: true })).toBeVisible()
+  await expect(page.getByText('Stator Teeth Core (Tt)', { exact: true })).toBeVisible()
+  await expect(page.getByText('Rotor Cage (Tr)', { exact: true })).toBeVisible()
+  await expect(page.getByText('Bearings (Tb)', { exact: true })).toBeVisible()
+  await expect(page.getByText('Arrhenius Thermal Aging')).toBeVisible()
+  await expect(page.getByText('Arrhenius RUL')).toBeVisible()
+
+  // Ensure zero runtime tracebacks or unhandled exceptions
+  expect(errors).toHaveLength(0)
+})
+

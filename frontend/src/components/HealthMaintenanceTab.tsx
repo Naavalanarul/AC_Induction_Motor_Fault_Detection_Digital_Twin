@@ -176,6 +176,190 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
         </div>
       </div>
 
+      {/* 4-Node Lumped Parameter Thermal Network (LPTN) & Arrhenius Insulation Life Model */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* 4-Node LPTN Card */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-neutral-400">
+                Lumped Parameter Thermal Network (LPTN)
+              </span>
+              <h3 className="text-base font-semibold text-neutral-100">
+                4-Node Coupled Thermal Model
+              </h3>
+            </div>
+            <span className="rounded-md border border-neutral-700 bg-neutral-800/80 px-2 py-0.5 font-mono text-[11px] text-neutral-300">
+              Class F (155°C Limit)
+            </span>
+          </div>
+
+          <p className="mt-2 text-xs text-neutral-400">
+            Heat dissipation across coupled nodes: Winding (Tw), Stator Teeth (Tt), Rotor Cage (Tr), and Bearing Housing (Tb).
+          </p>
+
+          <div className="mt-5 space-y-4">
+            {/* Winding Node */}
+            <div>
+              <div className="flex justify-between text-xs font-mono mb-1">
+                <span className="text-neutral-300 font-semibold">Stator Winding (Tw)</span>
+                <span className={`font-bold ${
+                  (frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) > 130
+                    ? 'text-rose-400'
+                    : (frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) > 105
+                    ? 'text-amber-400'
+                    : 'text-emerald-400'
+                }`}>
+                  {(frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45.0).toFixed(1)} °C
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(5, ((frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) / 155) * 100))}%`,
+                    backgroundColor:
+                      (frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) > 130
+                        ? '#ef4444'
+                        : (frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) > 105
+                        ? '#f59e0b'
+                        : '#10b981',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Stator Teeth Node */}
+            <div>
+              <div className="flex justify-between text-xs font-mono mb-1">
+                <span className="text-neutral-300">Stator Teeth Core (Tt)</span>
+                <span className="text-neutral-200">
+                  {(frame?.thermal_lptn?.t_teeth ?? 42.0).toFixed(1)} °C
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-cyan-500/80 transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(5, ((frame?.thermal_lptn?.t_teeth ?? 42.0) / 155) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Rotor Cage Node */}
+            <div>
+              <div className="flex justify-between text-xs font-mono mb-1">
+                <span className="text-neutral-300">Rotor Cage (Tr)</span>
+                <span className="text-neutral-200">
+                  {(frame?.thermal_lptn?.t_rotor ?? 48.0).toFixed(1)} °C
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-amber-500/80 transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(5, ((frame?.thermal_lptn?.t_rotor ?? 48.0) / 155) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Bearing Node */}
+            <div>
+              <div className="flex justify-between text-xs font-mono mb-1">
+                <span className="text-neutral-300">Bearings (Tb)</span>
+                <span className="text-neutral-200">
+                  {(frame?.thermal_lptn?.t_bearing ?? 38.0).toFixed(1)} °C
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-teal-500/80 transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(5, ((frame?.thermal_lptn?.t_bearing ?? 38.0) / 155) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between border-t border-neutral-800 pt-3 text-[11px] text-neutral-400">
+            <span>Ambient: {(frame?.thermal_lptn?.ambient ?? 25.0).toFixed(1)} °C</span>
+            <span>Hotspot delta: {((frame?.thermal_lptn?.t_winding ?? 45.0) - (frame?.thermal_lptn?.ambient ?? 25.0)).toFixed(1)} K</span>
+          </div>
+        </div>
+
+        {/* Arrhenius Thermal Life Model Card */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-wider text-neutral-400">
+                  Arrhenius Thermal Aging
+                </span>
+                <h3 className="text-base font-semibold text-neutral-100">
+                  Insulation Life &amp; Degradation
+                </h3>
+              </div>
+              <span className="rounded-md border border-neutral-700 bg-neutral-800/80 px-2 py-0.5 font-mono text-[11px] text-cyan-400">
+                Life = A · exp(Ea / kB·Tw)
+              </span>
+            </div>
+
+            <p className="mt-2 text-xs text-neutral-400">
+              Degradation kinetics based on activation energy Ea/kB = 12,000 K with 20,000 h baseline design life at rated 155°C.
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-4">
+              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+                <span className="text-xs text-neutral-400 block">Aging Acceleration</span>
+                <span className={`mt-1 font-mono text-2xl font-bold block ${
+                  (frame?.thermal_lptn?.aging_acceleration ?? 0.05) > 2.0
+                    ? 'text-rose-400'
+                    : (frame?.thermal_lptn?.aging_acceleration ?? 0.05) > 1.0
+                    ? 'text-amber-400'
+                    : 'text-emerald-400'
+                }`}>
+                  {(frame?.thermal_lptn?.aging_acceleration ?? 0.05).toFixed(3)}×
+                </span>
+                <span className="text-[11px] text-neutral-500 block mt-1">
+                  {(frame?.thermal_lptn?.aging_acceleration ?? 0.05) <= 1.0 ? 'Slower than rated' : 'Accelerated aging!'}
+                </span>
+              </div>
+
+              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+                <span className="text-xs text-neutral-400 block">Arrhenius RUL</span>
+                <span className="mt-1 font-mono text-2xl font-bold text-cyan-400 block">
+                  {Math.round(frame?.thermal_lptn?.rul_hours ?? 20000).toLocaleString()} h
+                </span>
+                <span className="text-[11px] text-neutral-500 block mt-1">
+                  ≈ {Math.round((frame?.thermal_lptn?.rul_hours ?? 20000) / 24).toLocaleString()} days
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-neutral-800 pt-3">
+            <div className="flex justify-between text-xs font-mono text-neutral-400 mb-1">
+              <span>Insulation Life Remaining</span>
+              <span className="text-cyan-300 font-semibold">
+                {Math.min(100, Math.round(((frame?.thermal_lptn?.rul_hours ?? 20000) / 20000) * 100))}%
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-cyan-400 to-emerald-400 transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.max(5, ((frame?.thermal_lptn?.rul_hours ?? 20000) / 20000) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       {/* Prescriptive Maintenance Guidance */}
       {recommendation && (
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 shadow-sm">

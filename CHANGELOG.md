@@ -24,6 +24,21 @@ tagged with the git SHA and with the release tag.
   - Real-time database connection status indicator ("DATABASE CONNECTED / DISCONNECTED") showing dialect, active database, host/port, latency, and all persistence schema tables.
   - Dedicated MySQL credential management with password visibility toggle, non-destructive link testing (`POST /api/v1/system/db-test`), and runtime connection hot-reload.
   - Harmonized modal dialog card styling to match the application page background color (`var(--page)` / `#050505`) across Add Motor, Sign Out, and Database Profile dialogs.
+- Phase 26: Core Physics Engine Reconstruction:
+  - Non-linear 5-state electromechanical ODE solver using `scipy.integrate.solve_ivp(method="RK45")` in stationary ($\alpha$-$\beta$) and synchronous ($d$-$q$) frames, integrating $[i_{ds}, i_{qs}, \psi_{dr}, \psi_{qr}, \omega_m]^T$ (`state_space_solver.py`).
+  - Mathematical fault injection: Stator Inter-turn Short Circuit (ITSC: $\mu = N_{sc}/N_s$ with circulating current matrix $\mathbf{v}_s = \mathbf{R}_s \mathbf{i}_s + d\boldsymbol{\psi}_s/dt$), Broken Rotor Bars (BRB: $R_r(\theta_r)$ rotor asymmetry matrix producing $(1 \pm 2ks)f_s$ sidebands), and Dynamic Eccentricity ($L_m(\theta_m) = L_{m0}(1 + \delta_{ecc}\cos\theta_m)$ angular permeance model).
+- Phase 27: MCSA Analytical Pipeline & 4-Node Lumped Parameter Thermal Network:
+  - High-resolution stator current acquisition ($F_s \ge 5000\text{ Hz}$), flat-top / Hann windowing, Welch PSD, and automated peak detection with `scipy.signal.find_peaks` targeting $f_{BRB} = f_s(1 \pm 2ks)$ ($k \in \{1,2,3\}$) and dynamic eccentricity sidebands $f_s \pm f_r$ (`mcsa.py`).
+  - 4-Node Lumped Parameter Thermal Network (`thermal_lptn.py`): tracks Stator Winding ($T_w$), Teeth Core ($T_t$), Rotor Cage ($T_r$), and Bearings ($T_b$).
+  - Classical Arrhenius insulation thermal life model $\text{Life} = A \cdot \exp(E_a / (k_B T_w))$ calculating instantaneous thermal acceleration factor and Remaining Useful Life (RUL hours).
+- Phase 28: UI/UX Refactoring & Telemetry Ingestion Modes:
+  - Decoupled solver execution from UI rendering thread via asynchronous simulation endpoints `POST /api/v1/motors/{id}/simulation/transient-solve` and `GET /api/v1/motors/{id}/mcsa`.
+  - Prominent Telemetry Ingestion Mode badge (`Mode: Real Hardware Stream` vs. `Mode: Dynamic State-Space Emulation`) in the motor overview header and live deck.
+  - 4-Node LPTN thermal matrix visualization with temperature bars and Arrhenius RUL meter in `HealthMaintenanceTab.tsx`.
+  - Automated MCSA peak markers overlay targeting $f_s(1 \pm 2ks)$ and dynamic eccentricity sidebands in `SensorPanels.tsx`.
+- Phase 29: Physics Engine Verification & Automated Testing:
+  - Comprehensive physics test suite (`test_physics_engine.py`) verifying steady-state speed convergence under no-load ($1499.2\text{ RPM}$) and rated load ($1474.0\text{ RPM}$), BRB sideband harmonic power increase $\ge 15\text{ dB}$ ($+76.5\text{ dB}$ delta), ITSC localized heat, dynamic eccentricity permeance, 4-node LPTN thermodynamic stability, and Arrhenius degradation kinetics.
+  - Playwright E2E smoke tests verifying zero syntax or runtime console tracebacks when toggling UI views, inspecting the mode badge, and monitoring thermal dynamics.
 
 ### Fixed
 - Fixed parameter cards scrolling bug in `AddMotorModal` by enforcing `flex-shrink: 0` on form cards and `min-height: 0` on the scrollable container, preventing flexbox from squeezing inputs down to 91px.

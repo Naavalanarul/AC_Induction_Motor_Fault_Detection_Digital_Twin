@@ -22,6 +22,7 @@ from app.simulation.mechanical_signals import (
 )
 from app.simulation.params import DEFAULT_MOTOR, MotorParams
 from app.simulation.plant import MotorPlant, PlantChunk
+from app.simulation.thermal_lptn import FourNodeThermalLPTN, LPTNState
 
 
 @dataclass
@@ -37,6 +38,7 @@ class MotorTwinState:
     acoustic: np.ndarray = field(default_factory=lambda: np.zeros(0))
     acoustic_fs: float = ACOUSTIC_FS
     temperature_c: float = 25.0
+    lptn: LPTNState | None = None
     load_cmd: float = 1.0          # supervisory load command (fraction of base load)
     base_load_nm: float = 8.0      # process load demand [N*m]
     tripped: bool = False
@@ -60,6 +62,7 @@ class MotorSimulator:
         self.vib = VibrationGenerator(seed=None if seed is None else seed + 1)
         self.ac = AcousticGenerator(seed=None if seed is None else seed + 2)
         self.thermal = ThermalModel(tau_s=thermal_tau_s)
+        self.lptn = FourNodeThermalLPTN(t_ambient=25.0)
         self.fs = fs
         self.chunk_s = chunk_s
         self.n_elec = int(round(fs * chunk_s))
@@ -84,11 +87,26 @@ class MotorSimulator:
         vib = self.vib.generate(th_v, w_v, chunk.supply_freq, load_frac, self.faults)
         _, th_a, w_a = interp_shaft(t_e, th_e, w_e, t0, self.n_ac, ACOUSTIC_FS)
         ac = self.ac.generate(th_a, w_a, chunk.supply_freq, load_frac, self.faults)
-        temp = self.thermal.step(self.chunk_s, chunk.copper_loss_w + chunk.fault_heat_w)
+
+        # 4-Node Lumped Parameter Thermal Network (LPTN) & Arrhenius RUL calculation
+        p_cu_s = 0.55 * chunk.copper_loss_w
+        p_cu_r = 0.45 * chunk.copper_loss_w
+        p_fe = 0.025 * st.params.rated_power if not st.tripped else 0.0
+        p_fric = 0.005 * st.params.rated_power + self.faults.bearing_friction_torque * abs(float(np.mean(chunk.omega_m)))
+        lptn_state = self.lptn.step(
+            dt=self.chunk_s,
+            p_copper_s=p_cu_s,
+            p_iron=p_fe,
+            p_copper_r=p_cu_r,
+            p_friction=p_fric,
+            itsc_extra_w=chunk.fault_heat_w,
+        )
+        self.thermal.step(self.chunk_s, chunk.copper_loss_w + chunk.fault_heat_w)
 
         st.t = self.plant.t
         st.electrical = chunk
         st.vibration = vib
         st.acoustic = ac
-        st.temperature_c = temp
+        st.temperature_c = lptn_state.t_winding
+        st.lptn = lptn_state
         return st

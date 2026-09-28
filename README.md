@@ -49,18 +49,19 @@ cd frontend && npm ci && npm run dev         # http://localhost:5173 (proxies /a
 
 | Area | Where | Notes |
 |---|---|---|
-| Motor model | `backend/app/simulation/` | α-β state-space model (Chen et al. Eq. 3/13/14). The event-driven PWM twin (`motor_twin.py`) is the high-fidelity reference. The live system runs a fixed-step RK4 averaged-inverter plant (`plant.py`), checked against the PWM twin within 5 % on fundamental current and speed. |
-| Fault injectors | `simulation/faults.py` | Broken rotor bar, inter-turn short, eccentricity, bearing IR/OR/ball, unbalance, misalignment, voltage sag/imbalance/harmonics. Each is parameterized by severity. Tests assert each fault's spectral signature. |
+| Motor model | `backend/app/simulation/` | State-space dynamic motor solver with `scipy.integrate.solve_ivp(method="RK45")` in stationary ($\alpha$-$\beta$) and synchronous ($d$-$q$) frames, integrating $[i_{ds}, i_{qs}, \psi_{dr}, \psi_{qr}, \omega_m]^T$ (`state_space_solver.py`). Validated under no-load (1499.2 RPM) and rated-load (1474.0 RPM) steady-state. |
+| Fault injectors | `simulation/faults.py`, `state_space_solver.py` | Mathematical fault models: Stator Inter-turn Short Circuit (ITSC: $\mu = N_{sc}/N_s$ with circulating current matrix $\mathbf{v}_s = \mathbf{R}_s \mathbf{i}_s + d\boldsymbol{\psi}_s/dt$), Broken Rotor Bars (BRB: $R_r(\theta_r)$ rotor asymmetry yielding $\ge 15\text{ dB}$ sidebands), Dynamic Eccentricity ($L_m(\theta_m)$ angular permeance model), bearing defects, unbalance, misalignment. |
+| MCSA & Thermal | `diagnostics/mcsa.py`, `simulation/thermal_lptn.py` | High-resolution MCSA pipeline ($F_s \ge 5000\text{ Hz}$) with flat-top/Hann windowing, Welch PSD, and automated peak detection for $f_{BRB} = f_s(1 \pm 2ks)$ and $f_{ecc} = f_s \pm f_r$. 4-Node Lumped Parameter Thermal Network ($T_w, T_t, T_r, T_b$) coupled with classical Arrhenius thermal insulation degradation model ($\text{Life} = A \cdot \exp(E_a / (k_B T_w))$). |
 | Sensors | `backend/app/sensors/` | Current, voltage, speed, temperature, tri-axial vibration, acoustic. `SensorRegistry` switches each channel between simulated and hardware. The hardware classes are placeholders behind a circuit breaker and report `stale`. |
 | Electrical diagnosis | `diagnostics/electrical.py` | A frozen healthy twin is driven by the measured voltage and speed. It computes the FD/FL indices and classifies the fault from the residual spectrum. No ML. |
 | Vibration/acoustic ML | `diagnostics/features.py`, `diagnostics/ml/` | 28 features × 4 channels per 0.5 s window with a 0.2 s hop. The model is Conv(32)→Conv(64)→BiLSTM(64). Training is leak-safe: grouped by run, normalization fitted on training data only, 3 seeds. A rule-based fallback takes over if torch or the model is unavailable. |
 | Thermal / supply | `diagnostics/thermal.py`, `supply.py` | Thermal uses a threshold plus rate-of-rise check. Supply uses VUF, THD and sag, so supply problems are not mistaken for motor faults. |
 | Fusion | `diagnostics/fusion.py`, `schema.py` | Weighted voting. The output schema is frozen at v1.0. |
 | SADA | `supervisory/sada.py` | Confidence gate, EMA smoothing, graded derate from 100 % to 50 %, latched trip, emergency and thermal trips, and operator ack, reset and manual load. |
-| API | `backend/app/api/` | `/api/v1/...` REST, and a WebSocket at `/api/v1/ws/motors/{id}/stream`. JWT auth with viewer/operator/admin roles on every route. Idempotency keys, rate limits, Pydantic validation. |
+| API | `backend/app/api/` | `/api/v1/...` REST, and a WebSocket at `/api/v1/ws/motors/{id}/stream`. JWT auth with viewer/operator/admin roles on every route. Idempotency keys, rate limits, Pydantic validation. Transient simulation solve and MCSA endpoints. |
 | Runtime | `backend/app/runtime/` | One supervised worker per motor with restart backoff. Batched DB writer. In-memory or Redis broker, with a per-motor ownership lock for multiple replicas. Retention job. |
 | Observability | `core/logging.py`, `core/metrics.py`, `deploy/` | JSON logs carry the request id and motor id. `/metrics`, `/healthz` and `/readyz` are exposed. Prometheus alert rules and a Grafana dashboard are provisioned. |
-| Frontend | `frontend/` | Fleet operations grid, motor provisioning modal (7 presets + custom dq physics), DSA priority queue, live telemetry deck, health & maintenance view (prognosis, RUL, recommendations), parameters studio, operator profile & live database inspector (MySQL configuration), and operator session controls. |
+| Frontend | `frontend/` | Fleet operations grid, motor provisioning modal (7 presets + custom dq physics), DSA priority queue, live telemetry deck with Telemetry Mode Badge (`Real Hardware Stream` vs. `Dynamic State-Space Emulation`), 4-node LPTN thermal matrix & Arrhenius RUL meter, parameters studio, and database inspector. |
 | Ops | `compose.yaml`, `compose.prod.yaml`, `deploy/`, `.github/workflows/ci.yml` | Local and production stacks, TLS edge, backups with a tested restore check, CI/CD. See [docs/operations.md](docs/operations.md). |
 
 ## API summary
@@ -70,6 +71,8 @@ POST /api/v1/auth/login | /auth/refresh      GET /api/v1/auth/me      GET|POST /
 GET  /api/v1/system/db-status                POST /api/v1/system/db-test (test/apply MySQL password)
 GET  /api/v1/motors                          POST /api/v1/motors (admin)
 GET  /api/v1/motors/{id}                     details + current state
+POST /api/v1/motors/{id}/simulation/transient-solve (on-demand RK45 state-space dynamic solve)
+GET  /api/v1/motors/{id}/mcsa                high-res MCSA spectral peaks and Welch PSD
 PATCH /api/v1/motors/{id}/load               process load demand (operator)
 POST /api/v1/motors/{id}/faults              inject (operator; Idempotency-Key supported)
 GET  /api/v1/motors/{id}/faults              DELETE /api/v1/motors/{id}/faults/{fault_id}

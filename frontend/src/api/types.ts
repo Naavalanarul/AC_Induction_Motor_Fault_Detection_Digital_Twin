@@ -52,6 +52,16 @@ export type Spectrum = { f: number[]; db: number[] }
 
 export type ActiveFault = { id: number; fault_type: string; severity: number; params: Record<string, unknown> }
 
+export type ThermalLPTNState = {
+  t_winding: number
+  t_teeth: number
+  t_rotor: number
+  t_bearing: number
+  ambient: number
+  aging_acceleration: number
+  rul_hours: number
+}
+
 export type Frame = {
   type: 'frame'
   motor_id: number
@@ -61,10 +71,11 @@ export type Frame = {
   error_code?: string
   zone?: string
   sensors: Record<string, SensorEntry>
-  spectra: Partial<Record<'current_a' | 'vibration_y' | 'acoustic', Spectrum>>
+  spectra: Partial<Record<'current_a' | 'vibration_y' | 'acoustic' | 'mcsa', Spectrum | any>>
   scalogram: { freqs: number[]; values: number[][]; dt: number } | null
   residual: { a: number[] } | null
   mechanics: { torque_nm: number; load_nm: number; rpm: number }
+  thermal_lptn?: ThermalLPTNState | null
   diagnosis: Diagnosis
   supervisory: Supervisory
   faults: ActiveFault[]
@@ -171,4 +182,51 @@ export interface DbTestResult {
   latency_ms: number | null
   applied: boolean
 }
+
+export type MCSAPeak = {
+  freq_hz: number
+  magnitude_db: number
+  label: string
+  harmonic_k?: number | null
+  expected_freq_hz?: number | null
+  deviation_hz?: number | null
+}
+
+export type MCSAResult = {
+  status: string
+  fundamental_freq: number
+  fundamental_mag_db: number
+  slip: number
+  rotor_freq_hz: number
+  brb_fault_detected: boolean
+  eccentricity_detected: boolean
+  worst_brb_sideband_db?: number | null
+  peaks: MCSAPeak[]
+  brb_peaks: MCSAPeak[]
+  ecc_peaks: MCSAPeak[]
+  freqs: number[]
+  psd_db: number[]
+}
+
+export type TransientSimulationResult = {
+  motor_id: number
+  duration_s: number
+  steady_state_rpm: number
+  steady_state_torque: number
+  slip: number
+  t: number[]
+  rpm: number[]
+  te: number[]
+  load_torque: number[]
+  ia: number[]
+  ib: number[]
+  ic: number[]
+  id: number[]
+  iq: number[]
+  psi_rd: number[]
+  psi_rq: number[]
+  copper_loss_w: number[]
+  fault_heat_w: number[]
+}
+
 

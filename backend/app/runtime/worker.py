@@ -39,6 +39,7 @@ from app.diagnostics.health_index import compute_mhi, error_code
 from app.diagnostics.ml.classifier import MechanicalClassifier
 from app.diagnostics.prognosis import estimate_time_to_threshold
 from app.diagnostics.recommendations import get_recommendation
+from app.diagnostics.mcsa import MCSAAnalyzer
 from app.diagnostics.schema import DiagFault, FusedDiagnosis
 from app.runtime.broker import Broker
 from app.runtime.writer import DBWriter
@@ -355,6 +356,30 @@ class MotorWorker:
                 m = f <= 150
                 spectra["current_a"] = {"f": np.round(f[m], 2).tolist(),
                                         "db": np.round(20 * np.log10(mag[m] + 1e-6), 1).tolist()}
+                try:
+                    omega_m = float(np.mean(st.electrical.omega_m)) if st.electrical is not None else 154.3
+                    analyzer = MCSAAnalyzer(fs=self.sim.fs, window="hann")
+                    res = analyzer.analyze(x, nominal_supply_freq=50.0, omega_m=omega_m, pole_pairs=self.cfg.params.pole_pairs)
+                    spectra["mcsa"] = {
+                        "fundamental_freq": res.fundamental_freq,
+                        "fundamental_mag_db": res.fundamental_mag_db,
+                        "slip": res.slip,
+                        "rotor_freq_hz": res.rotor_freq_hz,
+                        "brb_fault_detected": res.brb_fault_detected,
+                        "eccentricity_detected": res.eccentricity_detected,
+                        "worst_brb_sideband_db": res.worst_brb_sideband_db,
+                        "peaks": [
+                            {
+                                "freq_hz": p.freq_hz,
+                                "magnitude_db": p.magnitude_db,
+                                "label": p.label,
+                                "harmonic_k": p.harmonic_k,
+                            }
+                            for p in res.peaks
+                        ],
+                    }
+                except Exception as exc:
+                    log.debug("MCSA analysis non-fatal error: %s", exc)
             for key, buf, fs in (("vibration_y", self._vib_buf, st.vib_fs), ("acoustic", self._ac_buf, st.acoustic_fs)):
                 if len(buf) >= 3:
                     f, p = welch(np.concatenate(buf), fs=fs, nperseg=512)
@@ -390,6 +415,19 @@ class MotorWorker:
         diag_dict["health_index"] = mhi
         diag_dict["error_code"] = err
         diag_dict["zone"] = zone
+
+        thermal_lptn = None
+        if getattr(st, "lptn", None) is not None:
+            thermal_lptn = {
+                "t_winding": round(st.lptn.t_winding, 2),
+                "t_teeth": round(st.lptn.t_teeth, 2),
+                "t_rotor": round(st.lptn.t_rotor, 2),
+                "t_bearing": round(st.lptn.t_bearing, 2),
+                "ambient": round(st.lptn.ambient, 2),
+                "aging_acceleration": round(st.lptn.aging_acceleration, 3),
+                "rul_hours": round(st.lptn.rul_hours, 1),
+            }
+
         return {
             "type": "frame",
             "motor_id": self.cfg.motor_id,
@@ -405,6 +443,7 @@ class MotorWorker:
             "mechanics": {"torque_nm": round(float(np.mean(chunk.te)), 3),
                           "load_nm": round(float(np.mean(chunk.load_torque)), 3),
                           "rpm": round(float(np.mean(chunk.omega_m)) * 30 / math.pi, 2)},
+            "thermal_lptn": thermal_lptn,
             "diagnosis": diag_dict,
             "supervisory": {**out.to_dict(), "base_load_nm": st.base_load_nm, "acknowledged": self.sada.acknowledged},
             "faults": list(self.fault_meta.values()),
@@ -417,3 +456,51 @@ class MotorWorker:
     def get_recommendation(self) -> dict:
         fault = self._last_fault.value if hasattr(self._last_fault, "value") else str(self._last_fault)
         return get_recommendation(self.cfg.motor_id, fault, self._last_zone, self._last_mhi)
+
+    def get_mcsa(self) -> dict:
+        if len(self._cur_buf) < 5:
+            return {"status": "insufficient_data", "peaks": [], "brb_fault_detected": False}
+        x = np.concatenate(self._cur_buf)
+        omega_m = float(np.mean(self.sim.state.electrical.omega_m)) if self.sim.state.electrical is not None else 154.3
+        analyzer = MCSAAnalyzer(fs=self.sim.fs, window="hann")
+        res = analyzer.analyze(x, nominal_supply_freq=50.0, omega_m=omega_m, pole_pairs=self.cfg.params.pole_pairs)
+        return {
+            "status": "ok",
+            "fundamental_freq": res.fundamental_freq,
+            "fundamental_mag_db": res.fundamental_mag_db,
+            "slip": res.slip,
+            "rotor_freq_hz": res.rotor_freq_hz,
+            "brb_fault_detected": res.brb_fault_detected,
+            "eccentricity_detected": res.eccentricity_detected,
+            "worst_brb_sideband_db": res.worst_brb_sideband_db,
+            "peaks": [
+                {
+                    "freq_hz": p.freq_hz,
+                    "magnitude_db": p.magnitude_db,
+                    "label": p.label,
+                    "harmonic_k": p.harmonic_k,
+                    "expected_freq_hz": p.expected_freq_hz,
+                    "deviation_hz": p.deviation_hz,
+                }
+                for p in res.peaks
+            ],
+            "brb_peaks": [
+                {
+                    "freq_hz": p.freq_hz,
+                    "magnitude_db": p.magnitude_db,
+                    "label": p.label,
+                    "harmonic_k": p.harmonic_k,
+                }
+                for p in res.brb_peaks
+            ],
+            "ecc_peaks": [
+                {
+                    "freq_hz": p.freq_hz,
+                    "magnitude_db": p.magnitude_db,
+                    "label": p.label,
+                }
+                for p in res.ecc_peaks
+            ],
+            "freqs": np.round(res.freqs[res.freqs <= 150.0], 2).tolist(),
+            "psd_db": np.round(res.psd_db[res.freqs <= 150.0], 2).tolist(),
+        }

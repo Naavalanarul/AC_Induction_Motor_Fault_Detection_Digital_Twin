@@ -100,9 +100,34 @@ export function SensorPanels({
   const row = (t: string) => sensors.find((s) => s.type === t)
   const s = frame.sensors
   const rpm = frame.mechanics.rpm
-  const slip = Math.max(0, (50 - (2 * rpm) / 60) / 50)
+  const slip = Math.max(0.001, (50 - (2 * rpm) / 60) / 50)
   const sb = 2 * slip * 50
-  const currentMarkers = [{ f: 50, label: 'f' }, ...(sb > 0.5 ? [{ f: 50 - sb }, { f: 50 + sb }] : [])]
+  const fr = rpm / 60.0
+  const mcsaData = frame.spectra?.mcsa as {
+    peaks?: { freq_hz: number; magnitude_db: number; label: string; harmonic_k?: number }[]
+    brb_fault_detected?: boolean
+    worst_brb_sideband_db?: number
+    eccentricity_detected?: boolean
+  } | undefined
+
+  // Automated MCSA peak markers overlay: f_BRB = f_s * (1 +/- 2ks) for k in {1,2,3} and f_ecc = f_s +/- f_r
+  const currentMarkers = [
+    { f: 50, label: 'fs' },
+    ...(sb > 0.4
+      ? [
+          { f: Math.round((50 - sb) * 10) / 10, label: '-2sf' },
+          { f: Math.round((50 + sb) * 10) / 10, label: '+2sf' },
+          { f: Math.round((50 - 2 * sb) * 10) / 10, label: '-4sf' },
+          { f: Math.round((50 + 2 * sb) * 10) / 10, label: '+4sf' },
+        ]
+      : []),
+    ...(fr > 10.0
+      ? [
+          { f: Math.round((50 - fr) * 10) / 10, label: 'fs-fr' },
+          { f: Math.round((50 + fr) * 10) / 10, label: 'fs+fr' },
+        ]
+      : []),
+  ]
   const common = { canAdmin, onModeChanged }
 
   return (
@@ -116,7 +141,14 @@ export function SensorPanels({
         extra={<span>RMS {fmt(s.current?.rms, ' A')}</span>}
       >
         <WaveChart series={three(s.current, ['a', 'b', 'c'], ['Phase a', 'Phase b', 'Phase c'])} dtMs={1} unit="A" />
-        <p className="text-[11px] text-[var(--muted)] mt-2 num">Phase-a spectrum (2 s window) ; dashed lines: f and (1±2s)f rotor-bar sidebands</p>
+        <div className="flex items-center justify-between text-[11px] text-[var(--muted)] mt-2 num">
+          <span>MCSA Spectrum (Hann, 5 kHz) · f_BRB=(1±2ks)fs markers</span>
+          {mcsaData?.brb_fault_detected && (
+            <span className="text-rose-400 font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/30 text-[10px]">
+              BRB Sideband {mcsaData.worst_brb_sideband_db?.toFixed(1)} dBc
+            </span>
+          )}
+        </div>
         <SpectrumChart spectrum={frame.spectra.current_a} markers={currentMarkers} label="Current a" />
       </SensorCard>
 
