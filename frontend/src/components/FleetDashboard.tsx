@@ -12,10 +12,11 @@ export interface FleetDashboardProps {
   role?: Role
   onSelectMotor: (motorId: number) => void
   onRefreshMotors: () => Promise<void>
+  onOpenDsa?: () => void
 }
 
 export const FleetDashboard: React.FC<FleetDashboardProps> = ({
-  motors, frames, role, onSelectMotor, onRefreshMotors,
+  motors, frames, role, onSelectMotor, onRefreshMotors, onOpenDsa,
 }) => {
   const [seeding, setSeeding] = useState(false)
   const [seedResult, setSeedResult] = useState<string | null>(null)
@@ -84,6 +85,11 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
             <span className="live-dot" />
             <span>{totalMotors} ASSETS ONLINE</span>
           </div>
+          {onOpenDsa && (
+            <button className="btn" onClick={onOpenDsa}>
+              Fleet DSA Queue
+            </button>
+          )}
           {role === 'admin' && (
             <button className="btn" onClick={handleSeedPresets} disabled={seeding}>
               {seeding ? 'Seeding...' : 'Seed Fleet Presets'}
