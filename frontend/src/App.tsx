@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import { Box, Sun, Moon, Bell, Clock3, RotateCw } from 'lucide-react'
+import { Box, Sun, Moon, Bell, Clock3, RotateCw, User } from 'lucide-react'
 import { api } from './api/client'
 import type { Frame, Motor, Role, SensorRow } from './api/types'
 import { AuthProvider, useAuth } from './auth/AuthContext'
@@ -25,12 +25,6 @@ import { useMotorStream } from './hooks/useMotorStream'
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
 
 type TabKey = 'fleet' | 'live' | 'maintenance' | '3d' | 'dsa' | 'params' | 'history'
-
-const NAVBAR_TABS: { key: 'fleet' | 'params' | 'history'; label: string }[] = [
-  { key: 'fleet', label: 'Fleet' },
-  { key: 'params', label: 'Parameters Studio' },
-  { key: 'history', label: 'History' },
-]
 
 function Shell() {
   const { session, logout, can } = useAuth()
@@ -84,6 +78,8 @@ function Shell() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
+  const isMotorView = tab !== 'fleet' && tab !== 'dsa'
+
   if (!session) return <LoginForm />
 
   return (
@@ -94,58 +90,93 @@ function Shell() {
         onAcknowledged={() => { reconnect(); motors.refetch() }}
       />
 
-      {/* Floating Glass Navigation Bar (Streamlined) */}
-      <header className="floating-nav">
-        <div className="brand-lockup">
-          <div className="brand-node">
-            <Box size={18} strokeWidth={1.5} />
-          </div>
-          <div className="brand-copy">
-            <span className="brand-name">TWIN-CORE</span>
-            <span className="brand-asset">INDUSTRIAL INTELLIGENCE</span>
+      {/* Floating Navigation Bar with Separated Islands (No Continuous Bar) */}
+      <header className="floating-nav-bar">
+        {/* Left Island: Brand Capsule */}
+        <div className="nav-island nav-island--brand">
+          <div className="brand-lockup">
+            <div className="brand-node">
+              <Box size={18} strokeWidth={1.5} />
+            </div>
+            <div className="brand-copy">
+              <span className="brand-name">TWIN-CORE</span>
+              <span className="brand-asset">INDUSTRIAL INTELLIGENCE</span>
+            </div>
           </div>
         </div>
 
-        <div className="nav-capsule">
-          {/* Main Top Navigation Tabs */}
-          <nav className="nav-links" aria-label="views">
-            {NAVBAR_TABS.map((t) => (
+        {/* Center Island: Only rendered in Motor Dashboard */}
+        {isMotorView ? (
+          <div className="nav-island nav-island--center">
+            <nav className="nav-links" aria-label="motor views">
               <button
-                key={t.key}
-                className={`nav-link${tab === t.key ? ' is-active active' : ''}`}
-                onClick={() => setTab(t.key)}
+                className="nav-link"
+                onClick={() => setTab('fleet')}
               >
-                {t.label}
+                ← Fleet
               </button>
-            ))}
-          </nav>
-
-          {/* Right Actions */}
-          <div className="nav-actions">
-            <button
-              onClick={toggleTheme}
-              className="nav-icon-btn"
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-            </button>
-
-            <div className="notification-wrap">
-              <button className="nav-icon-btn" aria-label="Notifications">
-                <Bell size={17} />
+              <button
+                className={`nav-link${tab === 'live' ? ' is-active active' : ''}`}
+                onClick={() => setTab('live')}
+              >
+                Telemetry
               </button>
-              {trippedMotors.length > 0 && (
-                <span className="notification-count">{trippedMotors.length}</span>
-              )}
-            </div>
-
-            <div className="nav-session">
-              <span className="nav-username">{session.username}</span>
-              <span className="nav-role">{session.role}</span>
-              <button className="nav-signout" onClick={logout}>Sign out</button>
-            </div>
+              <button
+                className={`nav-link${tab === '3d' ? ' is-active active' : ''}`}
+                onClick={() => setTab('3d')}
+              >
+                3D Twin
+              </button>
+              <button
+                className={`nav-link${tab === 'maintenance' ? ' is-active active' : ''}`}
+                onClick={() => setTab('maintenance')}
+              >
+                Maintenance
+              </button>
+              <button
+                className={`nav-link${tab === 'params' ? ' is-active active' : ''}`}
+                onClick={() => setTab('params')}
+              >
+                Parameters Studio
+              </button>
+              <button
+                className={`nav-link${tab === 'history' ? ' is-active active' : ''}`}
+                onClick={() => setTab('history')}
+              >
+                History
+              </button>
+            </nav>
           </div>
+        ) : null}
+
+        {/* Right Island: Controls & User Profile (Shown Once as Profile, No Rectangular Box) */}
+        <div className="nav-island nav-island--actions">
+          <button
+            onClick={toggleTheme}
+            className="nav-icon-btn"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
+          <div className="notification-wrap">
+            <button className="nav-icon-btn" aria-label="Notifications">
+              <Bell size={17} />
+            </button>
+            {trippedMotors.length > 0 && (
+              <span className="notification-count">{trippedMotors.length}</span>
+            )}
+          </div>
+
+          <div className="nav-profile-chip" title={`Signed in as ${session.username} (${session.role})`}>
+            <div className="nav-avatar">
+              <User size={13} strokeWidth={2.2} />
+            </div>
+            <span className="nav-profile-name">{session.username}</span>
+          </div>
+
+          <button className="nav-signout" onClick={logout}>Sign out</button>
         </div>
       </header>
 
@@ -179,60 +210,10 @@ function Shell() {
             </div>
             <FleetPriorityQueue />
           </ErrorBoundary>
-        ) : tab === 'params' ? (
-          <ErrorBoundary fallbackTitle="Error loading Parameters Studio">
-            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <span className="eyebrow">DIGITAL TWIN TUNING</span>
-                <h1 className="fleet-title" style={{ fontSize: '1.25rem' }}>
-                  Parameters Studio: {selectedMotor?.name ?? `Motor ${motorId}`}
-                </h1>
-              </div>
-              {motors.data && motors.data.length > 1 && (
-                <select
-                  className="input"
-                  style={{ fontSize: 12, padding: '4px 8px', height: 30, background: 'var(--surface-raised)', borderColor: 'var(--border)' }}
-                  aria-label="Switch motor for params"
-                  value={motorId ?? ''}
-                  onChange={(e) => setSelected(Number(e.target.value))}
-                >
-                  {motors.data.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <MotorParamsStudio currentMotor={selectedMotor} />
-          </ErrorBoundary>
-        ) : tab === 'history' ? (
-          <ErrorBoundary fallbackTitle="Error loading History View">
-            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <span className="eyebrow">AUDIT &amp; DIAGNOSTIC ARCHIVE</span>
-                <h1 className="fleet-title" style={{ fontSize: '1.25rem' }}>
-                  Operational History: {selectedMotor?.name ?? `Motor ${motorId}`}
-                </h1>
-              </div>
-              {motors.data && motors.data.length > 1 && (
-                <select
-                  className="input"
-                  style={{ fontSize: 12, padding: '4px 8px', height: 30, background: 'var(--surface-raised)', borderColor: 'var(--border)' }}
-                  aria-label="Switch motor for history"
-                  value={motorId ?? ''}
-                  onChange={(e) => setSelected(Number(e.target.value))}
-                >
-                  {motors.data.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <HistoryView motorId={motorId} />
-          </ErrorBoundary>
         ) : (
-          /* Motor Digital Twin Views: 'live' | '3d' | 'maintenance' */
+          /* Motor Digital Twin Dashboard: 'live' | '3d' | 'maintenance' | 'params' | 'history' */
           <div className="motor-twin-container">
-            {/* Contextual Header with Sub-tabs */}
+            {/* Contextual Motor Dashboard Header with Navigation Tabs */}
             <section className="fleet-intro" style={{ marginBottom: 16 }}>
               <div>
                 <span className="eyebrow">ASSET DIGITAL TWIN &amp; TELEMETRY</span>
@@ -282,6 +263,20 @@ function Shell() {
                   >
                     Health &amp; Maintenance
                   </button>
+                  <button
+                    className={`btn ${tab === 'params' ? 'btn-primary' : ''}`}
+                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
+                    onClick={() => setTab('params')}
+                  >
+                    Parameters Studio
+                  </button>
+                  <button
+                    className={`btn ${tab === 'history' ? 'btn-primary' : ''}`}
+                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
+                    onClick={() => setTab('history')}
+                  >
+                    History
+                  </button>
                 </div>
                 <div className="live-pill">
                   <RotateCw size={12} style={{ animation: 'login-spin 3s linear infinite' }} />
@@ -290,7 +285,15 @@ function Shell() {
               </div>
             </section>
 
-            {tab === '3d' ? (
+            {tab === 'params' ? (
+              <ErrorBoundary fallbackTitle="Error loading Parameters Studio">
+                <MotorParamsStudio currentMotor={selectedMotor} />
+              </ErrorBoundary>
+            ) : tab === 'history' ? (
+              <ErrorBoundary fallbackTitle="Error loading History View">
+                <HistoryView motorId={motorId} />
+              </ErrorBoundary>
+            ) : tab === '3d' ? (
               <ErrorBoundary fallbackTitle="Error loading 3D Digital Twin Viewer">
                 <Motor3DViewer frame={frame} motorName={selectedMotor?.name} />
               </ErrorBoundary>
