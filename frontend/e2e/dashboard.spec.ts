@@ -14,8 +14,9 @@ test('fleet dashboard renders summary tiles and navigates to motor twin', async 
   await expect(page.getByText('Fleet Size')).toBeVisible()
   await expect(page.getByText('Avg Health Index')).toBeVisible()
 
-  // Navigate to motor digital twin
+  // Navigate to motor digital twin and open Maintenance section
   await page.getByRole('button', { name: /Open digital twin for/i }).first().click()
+  await page.getByRole('button', { name: 'Maintenance', exact: true }).click()
   await expect(page.getByTestId('fused-fault')).toBeVisible({ timeout: 20_000 })
 })
 
@@ -25,8 +26,9 @@ test('inject fault -> see it in the dashboard -> see SADA derate', async ({ page
   await page.getByLabel('Password').fill(PASS)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  // Navigate to motor digital twin
+  // Navigate to motor digital twin and open Maintenance section
   await page.getByRole('button', { name: /Open digital twin for/i }).first().click()
+  await page.getByRole('button', { name: 'Maintenance', exact: true }).click()
 
   await expect(page.getByTestId('fused-fault')).toBeVisible({ timeout: 20_000 })
   await expect(page.getByTestId('sada-state').first()).toHaveText(/Normal/, { timeout: 30_000 })

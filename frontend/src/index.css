@@ -183,13 +183,13 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 .floating-nav-bar,
 .floating-nav {
   position: fixed;
-  top: 16px;
-  left: 24px;
-  right: 24px;
+  top: 20px;
+  left: 28px;
+  right: 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
   pointer-events: none;
   z-index: 50;
 }
@@ -198,19 +198,19 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  background: rgba(18, 18, 18, 0.75);
+  gap: 12px;
+  background: rgba(18, 18, 18, 0.78);
   border: 1px solid var(--border);
   border-radius: var(--corner-full);
-  padding: 6px 14px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  padding: 8px 18px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
   transition: border-color 0.2s, background 0.2s;
 }
 :root[data-theme='light'] .nav-island {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 .nav-capsule {
@@ -244,9 +244,9 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   gap: var(--space-md);
 }
 .brand-node {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: var(--accent);
   display: inline-block;
 }
@@ -256,12 +256,14 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 }
 .brand-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.12rem;
   line-height: 1.2;
+  letter-spacing: 0.02em;
 }
 .brand-asset {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
 /* Metrics & Health Overview */
@@ -870,17 +872,17 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 .nav-link {
   color: var(--ink-2);
   background: transparent;
   border: none;
   font-weight: 500;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: var(--corner-full);
   transition: color 0.15s, background 0.15s;
-  font-size: 11px;
+  font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -898,16 +900,23 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   background: var(--ink);
 }
 
+.nav-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .nav-icon-btn {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--corner-full);
   background: transparent;
   border: 1px solid transparent;
@@ -957,8 +966,8 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   border-color: var(--border);
 }
 .nav-avatar {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(16, 185, 129, 0.25));
   border: 1.5px solid var(--accent);
@@ -966,14 +975,14 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   align-items: center;
   justify-content: center;
   color: var(--accent);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
   flex-shrink: 0;
 }
 .nav-profile-name {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -982,9 +991,9 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   border: 1px solid var(--border);
   border-radius: var(--corner-full);
   color: var(--ink-2);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 4px 10px;
+  padding: 5px 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1000,7 +1009,7 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   z-index: 1;
   width: min(1680px, 100%);
   margin: 0 auto;
-  padding: 92px 24px 40px;
+  padding: 104px 28px 40px;
 }
 
 /* KPI HUD Banner */

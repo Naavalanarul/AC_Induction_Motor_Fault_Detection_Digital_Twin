@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import { Box, Sun, Moon, Bell, Clock3, RotateCw, User } from 'lucide-react'
+import { Box, Sun, Moon, Bell, Clock3, User } from 'lucide-react'
 import { api } from './api/client'
 import type { Frame, Motor, Role, SensorRow } from './api/types'
 import { AuthProvider, useAuth } from './auth/AuthContext'
@@ -17,8 +17,6 @@ import { Motor3DViewer } from './components/Motor3DViewer'
 import { MotorParamsStudio } from './components/MotorParamsStudio'
 import { SadaPanel } from './components/SadaPanel'
 import { SensorPanels } from './components/SensorPanels'
-import { StatusBadge } from './components/StatusBadge'
-import { TripBanner } from './components/TripBanner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useMotorStream } from './hooks/useMotorStream'
 
@@ -84,19 +82,13 @@ function Shell() {
 
   return (
     <main ref={shellRef} className="app-shell" onPointerMove={handleGridPointer}>
-      {/* Persistent Emergency Trip Banner */}
-      <TripBanner
-        trippedMotors={trippedMotors}
-        onAcknowledged={() => { reconnect(); motors.refetch() }}
-      />
-
-      {/* Floating Navigation Bar with Separated Islands (No Continuous Bar) */}
+      {/* Floating Navigation Bar with Separated Islands (No Continuous Bar, Gap across Center) */}
       <header className="floating-nav-bar">
         {/* Left Island: Brand Capsule */}
         <div className="nav-island nav-island--brand">
           <div className="brand-lockup">
             <div className="brand-node">
-              <Box size={18} strokeWidth={1.5} />
+              <Box size={20} strokeWidth={1.5} />
             </div>
             <div className="brand-copy">
               <span className="brand-name">TWIN-CORE</span>
@@ -105,27 +97,15 @@ function Shell() {
           </div>
         </div>
 
-        {/* Center Island: Only rendered in Motor Dashboard */}
-        {isMotorView ? (
-          <div className="nav-island nav-island--center">
+        {/* Right Island: Motor Navigation Menu (Kept at Right End with Profile, No Fleet, No 3D Twin) */}
+        <div className="nav-island nav-island--actions">
+          {isMotorView && (
             <nav className="nav-links" aria-label="motor views">
-              <button
-                className="nav-link"
-                onClick={() => setTab('fleet')}
-              >
-                ← Fleet
-              </button>
               <button
                 className={`nav-link${tab === 'live' ? ' is-active active' : ''}`}
                 onClick={() => setTab('live')}
               >
                 Telemetry
-              </button>
-              <button
-                className={`nav-link${tab === '3d' ? ' is-active active' : ''}`}
-                onClick={() => setTab('3d')}
-              >
-                3D Twin
               </button>
               <button
                 className={`nav-link${tab === 'maintenance' ? ' is-active active' : ''}`}
@@ -146,23 +126,22 @@ function Shell() {
                 History
               </button>
             </nav>
-          </div>
-        ) : null}
+          )}
 
-        {/* Right Island: Controls & User Profile (Shown Once as Profile, No Rectangular Box) */}
-        <div className="nav-island nav-island--actions">
+          {isMotorView && <div className="nav-divider" />}
+
           <button
             onClick={toggleTheme}
             className="nav-icon-btn"
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
           <div className="notification-wrap">
             <button className="nav-icon-btn" aria-label="Notifications">
-              <Bell size={17} />
+              <Bell size={18} />
             </button>
             {trippedMotors.length > 0 && (
               <span className="notification-count">{trippedMotors.length}</span>
@@ -171,7 +150,7 @@ function Shell() {
 
           <div className="nav-profile-chip" title={`Signed in as ${session.username} (${session.role})`}>
             <div className="nav-avatar">
-              <User size={13} strokeWidth={2.2} />
+              <User size={15} strokeWidth={2.2} />
             </div>
             <span className="nav-profile-name">{session.username}</span>
           </div>
@@ -211,9 +190,9 @@ function Shell() {
             <FleetPriorityQueue />
           </ErrorBoundary>
         ) : (
-          /* Motor Digital Twin Dashboard: 'live' | '3d' | 'maintenance' | 'params' | 'history' */
+          /* Motor Digital Twin Dashboard: 'live' | 'maintenance' | 'params' | 'history' | '3d' */
           <div className="motor-twin-container">
-            {/* Contextual Motor Dashboard Header with Navigation Tabs */}
+            {/* Contextual Motor Dashboard Header: Second navbar removed, only ← Motor fleet button stands alone */}
             <section className="fleet-intro" style={{ marginBottom: 16 }}>
               <div>
                 <span className="eyebrow">ASSET DIGITAL TWIN &amp; TELEMETRY</span>
@@ -241,47 +220,6 @@ function Shell() {
                 <button className="btn" onClick={() => setTab('fleet')}>
                   ← Motor fleet
                 </button>
-                <div style={{ display: 'flex', background: 'var(--surface-raised)', padding: 3, borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <button
-                    className={`btn ${tab === 'live' ? 'btn-primary' : ''}`}
-                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
-                    onClick={() => setTab('live')}
-                  >
-                    Telemetry Deck
-                  </button>
-                  <button
-                    className={`btn ${tab === '3d' ? 'btn-primary' : ''}`}
-                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
-                    onClick={() => setTab('3d')}
-                  >
-                    3D Motor Twin
-                  </button>
-                  <button
-                    className={`btn ${tab === 'maintenance' ? 'btn-primary' : ''}`}
-                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
-                    onClick={() => setTab('maintenance')}
-                  >
-                    Health &amp; Maintenance
-                  </button>
-                  <button
-                    className={`btn ${tab === 'params' ? 'btn-primary' : ''}`}
-                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
-                    onClick={() => setTab('params')}
-                  >
-                    Parameters Studio
-                  </button>
-                  <button
-                    className={`btn ${tab === 'history' ? 'btn-primary' : ''}`}
-                    style={{ padding: '4px 10px', fontSize: 12, height: 26, border: 'none' }}
-                    onClick={() => setTab('history')}
-                  >
-                    History
-                  </button>
-                </div>
-                <div className="live-pill">
-                  <RotateCw size={12} style={{ animation: 'login-spin 3s linear infinite' }} />
-                  <span>Synchronized</span>
-                </div>
               </div>
             </section>
 
@@ -297,14 +235,6 @@ function Shell() {
               <ErrorBoundary fallbackTitle="Error loading 3D Digital Twin Viewer">
                 <Motor3DViewer frame={frame} motorName={selectedMotor?.name} />
               </ErrorBoundary>
-            ) : tab === 'maintenance' ? (
-              <ErrorBoundary fallbackTitle="Error loading Health & Maintenance">
-                {selectedMotor ? (
-                  <HealthMaintenanceTab motor={selectedMotor} frame={frame} />
-                ) : (
-                  <div className="glass-card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>Select a motor to view health analysis.</div>
-                )}
-              </ErrorBoundary>
             ) : !frame ? (
               <div className="glass-card" style={{ textAlign: 'center', padding: '64px' }}>
                 <div style={{ width: 32, height: 32, border: '2px solid var(--ink)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'login-spin 900ms linear infinite', margin: '0 auto 12px' }} />
@@ -317,9 +247,47 @@ function Shell() {
                   </div>
                 )}
               </div>
+            ) : tab === 'maintenance' ? (
+              /* Maintenance Section with Transferred Diagnostic, Supervisory, and Fault Console Cards */
+              <div className="space-y-6">
+                <ErrorBoundary fallbackTitle="Error loading Health & Maintenance">
+                  {selectedMotor ? (
+                    <HealthMaintenanceTab motor={selectedMotor} frame={frame} />
+                  ) : (
+                    <div className="glass-card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>Select a motor to view health analysis.</div>
+                  )}
+                </ErrorBoundary>
+
+                {/* Transferred Tri-Panel Diagnostic & Supervisory Control Deck */}
+                <div className="tri-panel" style={{ marginTop: 24 }}>
+                  <ErrorBoundary fallbackTitle="Error loading Diagnosis Panel">
+                    <DiagnosisPanel diagnosis={frame.diagnosis} mlBackend={frame.ml_backend} />
+                  </ErrorBoundary>
+                  <div className="tri-panel__mid">
+                    <ErrorBoundary fallbackTitle="Error loading Supervisory SADA Panel">
+                      <SadaPanel motorId={motorId} sup={frame.supervisory} canOperate={can('operator')} />
+                    </ErrorBoundary>
+                    <section className="card">
+                      <header className="flex items-center justify-between mb-2">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                          Smoothed Severity Trend (Last 12 s)
+                        </h2>
+                        <span className="text-[10px] num text-[var(--muted)] bg-[var(--surface-raised)] px-1.5 py-0.5 rounded border border-[var(--border)]">
+                          EMA α=0.25
+                        </span>
+                      </header>
+                      <TrendChart data={trend} dataKey="severity" unit="" label="Smoothed severity" height={95} domain={[0, 1]} />
+                    </section>
+                  </div>
+                  <ErrorBoundary fallbackTitle="Error loading Fault Injection Console">
+                    <FaultConsole motorId={motorId} faults={frame.faults} canOperate={can('operator')} />
+                  </ErrorBoundary>
+                </div>
+              </div>
             ) : (
+              /* Telemetry Deck: 3-Card Symmetrical KPI Overview & 6-Sensor Network */
               <ErrorBoundary fallbackTitle="Error displaying Live Telemetry Deck">
-                {/* Enterprise Symmetrical 4-Card Health Overview */}
+                {/* Symmetrical 3-Card Health & Dynamics Overview (Supervisory SADA card removed) */}
                 <section className="health-overview" aria-label="Motor health index">
                   {/* Health Index Card */}
                   <MetricCard
@@ -360,18 +328,6 @@ function Shell() {
                     </div>
                   </MetricCard>
 
-                  {/* Supervisory SADA State */}
-                  <MetricCard
-                    eyebrow="SUPERVISORY SADA"
-                    value={frame.supervisory?.state ?? 'NORMAL'}
-                    status={frame.supervisory?.trip ? 'TRIP LATCHED' : `LOAD ${Math.round((frame.supervisory?.load_cmd ?? 1) * 100)}%`}
-                    tone={frame.supervisory?.trip ? 'amber' : frame.supervisory?.state !== 'NORMAL' ? 'amber' : 'cyan'}
-                  >
-                    <div style={{ marginTop: 4 }}>
-                      <StatusBadge state={frame.supervisory?.state ?? 'NORMAL'} />
-                    </div>
-                  </MetricCard>
-
                   {/* Operational Dynamics */}
                   <MetricCard
                     eyebrow="SHAFT DYNAMICS"
@@ -406,32 +362,6 @@ function Shell() {
                     onModeChanged={() => sensors.refetch()}
                   />
                 </section>
-
-                {/* Primary Tri-Panel Control Deck */}
-                <div className="tri-panel">
-                  <ErrorBoundary fallbackTitle="Error loading Diagnosis Panel">
-                    <DiagnosisPanel diagnosis={frame.diagnosis} mlBackend={frame.ml_backend} />
-                  </ErrorBoundary>
-                  <div className="tri-panel__mid">
-                    <ErrorBoundary fallbackTitle="Error loading Supervisory SADA Panel">
-                      <SadaPanel motorId={motorId} sup={frame.supervisory} canOperate={can('operator')} />
-                    </ErrorBoundary>
-                    <section className="card">
-                      <header className="flex items-center justify-between mb-2">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                          Smoothed Severity Trend (Last 12 s)
-                        </h2>
-                        <span className="text-[10px] num text-[var(--muted)] bg-[var(--surface-raised)] px-1.5 py-0.5 rounded border border-[var(--border)]">
-                          EMA α=0.25
-                        </span>
-                      </header>
-                      <TrendChart data={trend} dataKey="severity" unit="" label="Smoothed severity" height={95} domain={[0, 1]} />
-                    </section>
-                  </div>
-                  <ErrorBoundary fallbackTitle="Error loading Fault Injection Console">
-                    <FaultConsole motorId={motorId} faults={frame.faults} canOperate={can('operator')} />
-                  </ErrorBoundary>
-                </div>
               </ErrorBoundary>
             )}
           </div>
