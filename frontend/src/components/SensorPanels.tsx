@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Activity, Mic, RotateCw, Thermometer, Waves, Zap } from 'lucide-react'
 import { api } from '../api/client'
 import type { Frame, SensorEntry, SensorRow } from '../api/types'
 import { SpectrumChart } from './charts/SpectrumChart'
@@ -13,9 +14,9 @@ function three(entry: SensorEntry | undefined, keys: string[], names: string[]):
 }
 
 function SensorCard({
-  title, entry, row, canAdmin, onModeChanged, children, extra,
+  title, icon, entry, row, canAdmin, onModeChanged, children, extra,
 }: {
-  title: string; entry?: SensorEntry; row?: SensorRow; canAdmin: boolean; onModeChanged: () => void
+  title: string; icon: ReactNode; entry?: SensorEntry; row?: SensorRow; canAdmin: boolean; onModeChanged: () => void
   children: ReactNode; extra?: ReactNode
 }) {
   const stale = entry && entry.status !== 'ok'
@@ -34,34 +35,41 @@ function SensorCard({
     <section className="card min-w-0 flex flex-col justify-between" aria-label={`${title} sensor`}>
       <div>
         <header className="flex items-center justify-between gap-2 pb-2.5 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                stale ? 'bg-rose-500' : 'bg-emerald-400'
-              }`}
-            />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink)] truncate">{title}</h3>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="sensor-icon">
+              {icon}
+            </span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span
+                className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                  stale ? 'bg-rose-500' : 'bg-emerald-400'
+                }`}
+              />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink)] truncate">{title}</h3>
+            </div>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span
-              className={`text-[10px] num px-1.5 py-0.5 rounded border uppercase tracking-wider ${
-                isHardware
-                  ? 'bg-purple-500/10 border-purple-500/20 text-purple-300'
-                  : 'bg-[var(--surface-raised)] border-[var(--border)] text-[var(--muted)]'
-              }`}
-            >
-              {entry?.mode ?? row?.mode}
-            </span>
-            {stale && <span className="text-rose-400 num">● {entry?.status}</span>}
-            {canAdmin && row && (
+            {stale && <span className="text-rose-400 num text-[11px]">● {entry?.status}</span>}
+            <div className="sensor-source-toggle" aria-label={`${title} data source`}>
               <button
-                className="btn text-[11px] py-0.5 px-2 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)]"
-                onClick={toggle}
-                title="Switch between simulated and hardware implementation"
+                type="button"
+                className={`sensor-source-button ${!isHardware ? 'is-active' : ''}`}
+                onClick={canAdmin && isHardware ? toggle : undefined}
+                disabled={!canAdmin || !isHardware}
+                title={canAdmin ? 'Switch to simulated mode' : 'Simulated mode'}
               >
-                {row.mode === 'simulated' ? '→ hardware' : '→ simulated'}
+                Simulated
               </button>
-            )}
+              <button
+                type="button"
+                className={`sensor-source-button ${isHardware ? 'is-active' : ''}`}
+                onClick={canAdmin && !isHardware ? toggle : undefined}
+                disabled={!canAdmin || isHardware}
+                title={canAdmin ? 'Switch to hardware mode' : 'Hardware mode'}
+              >
+                Hardware
+              </button>
+            </div>
           </div>
         </header>
 
@@ -101,6 +109,7 @@ export function SensorPanels({
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       <SensorCard
         title="Current (3-phase)"
+        icon={<Activity size={15} />}
         entry={s.current}
         row={row('current')}
         {...common}
@@ -113,6 +122,7 @@ export function SensorPanels({
 
       <SensorCard
         title="Voltage (3-phase)"
+        icon={<Zap size={15} />}
         entry={s.voltage}
         row={row('voltage')}
         {...common}
@@ -124,6 +134,7 @@ export function SensorPanels({
 
       <SensorCard
         title="Vibration (tri-axial)"
+        icon={<Waves size={15} />}
         entry={s.vibration}
         row={row('vibration')}
         {...common}
@@ -142,6 +153,7 @@ export function SensorPanels({
 
       <SensorCard
         title="Acoustic"
+        icon={<Mic size={15} />}
         entry={s.acoustic}
         row={row('acoustic')}
         {...common}
@@ -157,6 +169,7 @@ export function SensorPanels({
 
       <SensorCard
         title="Winding temperature"
+        icon={<Thermometer size={15} />}
         entry={s.temp}
         row={row('temp')}
         {...common}
@@ -167,6 +180,7 @@ export function SensorPanels({
 
       <SensorCard
         title="Shaft speed (encoder)"
+        icon={<RotateCw size={15} />}
         entry={s.speed}
         row={row('speed')}
         {...common}

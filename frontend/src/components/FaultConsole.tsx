@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Zap } from 'lucide-react'
 import { api, newIdempotencyKey } from '../api/client'
 import { FAULT_TYPES, label, type ActiveFault, type FaultType } from '../api/types'
 
@@ -54,10 +55,17 @@ export function FaultConsole({ motorId, faults, canOperate }: { motorId: number;
     <section className="card flex flex-col justify-between" aria-labelledby="fault-h">
       <div>
         <header className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-          <h2 id="fault-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--ink-2)]" />
-            Fault Injection Bench
-          </h2>
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-md bg-[var(--surface-raised)] border border-[var(--border)] flex items-center justify-center text-rose-400">
+              <Zap size={14} />
+            </span>
+            <div>
+              <span className="eyebrow block" style={{ fontSize: 9 }}>SIMULATION BENCH</span>
+              <h2 id="fault-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--ink)]">
+                Fault Injection Bench
+              </h2>
+            </div>
+          </div>
           <span className="text-[11px] num px-2 py-0.5 rounded bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--muted)]">
             {faults.length} Active
           </span>

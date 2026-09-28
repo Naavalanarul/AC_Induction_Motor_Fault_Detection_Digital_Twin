@@ -1,3 +1,4 @@
+import { Activity } from 'lucide-react'
 import type { Diagnosis } from '../api/types'
 import { label } from '../api/types'
 
@@ -53,12 +54,19 @@ export function DiagnosisPanel({ diagnosis, mlBackend }: { diagnosis: Diagnosis;
     <section className="card flex flex-col justify-between" aria-labelledby="diag-h">
       <div>
         <header className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-          <h2 id="diag-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--ink-2)]" />
-            Overall Diagnosis
-          </h2>
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-md bg-[var(--surface-raised)] border border-[var(--border)] flex items-center justify-center text-[var(--accent)]">
+              <Activity size={14} />
+            </span>
+            <div>
+              <span className="eyebrow block" style={{ fontSize: 9 }}>AI PREDICTIVE CLASSIFIER</span>
+              <h2 id="diag-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--ink)]">
+                Fused Fault Diagnostics
+              </h2>
+            </div>
+          </div>
           <span className="text-[11px] num px-2 py-0.5 rounded bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--muted)]">
-            Schema v{diagnosis.schema_version}
+            v{diagnosis.schema_version}
           </span>
         </header>
 

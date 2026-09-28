@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, type CSSProperties } from 'react'
+import { Activity, AlertTriangle, Clock3 } from 'lucide-react'
 import { api } from '../api/client'
 import type { Frame, Motor, Role } from '../api/types'
+import { getZoneFromMHI } from '../api/types'
 import { MotorCard } from './MotorCard'
+import { MetricCard } from './ui/MetricCard'
 
 export interface FleetDashboardProps {
   motors: Motor[]
@@ -12,19 +15,13 @@ export interface FleetDashboardProps {
 }
 
 export const FleetDashboard: React.FC<FleetDashboardProps> = ({
-  motors,
-  frames,
-  role,
-  onSelectMotor,
-  onRefreshMotors,
+  motors, frames, role, onSelectMotor, onRefreshMotors,
 }) => {
   const [seeding, setSeeding] = useState(false)
   const [seedResult, setSeedResult] = useState<string | null>(null)
   const [seedError, setSeedError] = useState<string | null>(null)
 
-  // Compute fleet summary stats
   const totalMotors = motors.length
-
   let totalMhi = 0
   let trippedCount = 0
   let derateCount = 0
@@ -34,11 +31,9 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
     const f = frames[m.id]
     const mhi = f?.health_index ?? f?.diagnosis?.health_index ?? 100
     totalMhi += mhi
-
     const state = f?.supervisory?.state ?? 'NORMAL'
     if (state === 'TRIP') trippedCount += 1
     if (state === 'DERATE') derateCount += 1
-
     const faults = f?.faults ?? []
     if (faults.length > 0 || (f?.diagnosis?.fault_type && f.diagnosis.fault_type !== 'healthy')) {
       activeFaultsCount += 1
@@ -46,19 +41,16 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
   })
 
   const avgMhi = totalMotors > 0 ? (totalMhi / totalMotors).toFixed(1) : '100.0'
+  const avgMhiNum = totalMotors > 0 ? totalMhi / totalMotors : 100
+  const fleetZone = getZoneFromMHI(avgMhiNum)
+  const healthTone: 'green' | 'amber' = avgMhiNum >= 80 ? 'green' : 'amber'
 
   const handleSeedPresets = async () => {
     try {
-      setSeeding(true)
-      setSeedError(null)
-      setSeedResult(null)
-      const res = await api<{ created: string[]; skipped: string[] }>('/admin/seed-presets', {
-        method: 'POST',
-      })
+      setSeeding(true); setSeedError(null); setSeedResult(null)
+      const res = await api<{ created: string[]; skipped: string[] }>('/admin/seed-presets', { method: 'POST' })
       await onRefreshMotors()
-      setSeedResult(
-        `Fleet seeded: ${res.created.length} created, ${res.skipped.length} existing.`
-      )
+      setSeedResult(`Fleet seeded: ${res.created.length} created, ${res.skipped.length} existing.`)
     } catch (err: unknown) {
       setSeedError(err instanceof Error ? err.message : 'Failed to seed preset motors')
     } finally {
@@ -67,144 +59,199 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner Feedback */}
+    <div className="fleet-page">
       {seedResult && (
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/40 p-3 text-xs text-emerald-300 flex justify-between items-center">
-          <span>{seedResult}</span>
-          <button onClick={() => setSeedResult(null)} className="text-emerald-400 hover:text-emerald-200">
-            ✕
-          </button>
+        <div className="glass-card" style={{ padding: '12px 16px', borderColor: 'rgba(16,185,129,0.3)', marginBottom: 16 }}>
+          <p style={{ color: 'var(--good)', fontSize: 13 }}>{seedResult}</p>
         </div>
       )}
       {seedError && (
-        <div className="rounded-lg border border-rose-500/30 bg-rose-950/40 p-3 text-xs text-rose-300 flex justify-between items-center">
-          <span>{seedError}</span>
-          <button onClick={() => setSeedError(null)} className="text-rose-400 hover:text-rose-200">
-            ✕
-          </button>
+        <div className="glass-card" style={{ padding: '12px 16px', borderColor: 'rgba(239,68,68,0.3)', marginBottom: 16 }}>
+          <p style={{ color: 'var(--critical)', fontSize: 13 }}>{seedError}</p>
         </div>
       )}
 
-      {/* 4 Summary Tiles */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {/* Total Motors */}
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-          <span className="text-xs uppercase tracking-wider text-neutral-400 block">
-            Fleet Size
-          </span>
-          <span className="mt-1 font-mono text-3xl font-bold text-neutral-100">
-            {totalMotors}
-          </span>
-          <span className="text-[11px] text-neutral-500 block mt-1">
-            Active Digital Twins
-          </span>
-        </div>
-
-        {/* Avg MHI */}
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-          <span className="text-xs uppercase tracking-wider text-neutral-400 block">
-            Avg Health Index
-          </span>
-          <span
-            className={`mt-1 font-mono text-3xl font-bold ${
-              Number(avgMhi) >= 85
-                ? 'text-emerald-400'
-                : Number(avgMhi) >= 70
-                ? 'text-amber-400'
-                : 'text-rose-400'
-            }`}
-          >
-            {avgMhi}
-          </span>
-          <span className="text-[11px] text-neutral-500 block mt-1">
-            Fleet Composite Score
-          </span>
-        </div>
-
-        {/* Tripped / Derate */}
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-          <span className="text-xs uppercase tracking-wider text-neutral-400 block">
-            Tripped / Derated
-          </span>
-          <span
-            className={`mt-1 font-mono text-3xl font-bold ${
-              trippedCount > 0 ? 'text-rose-400' : derateCount > 0 ? 'text-orange-400' : 'text-neutral-100'
-            }`}
-          >
-            {trippedCount} / {derateCount}
-          </span>
-          <span className="text-[11px] text-neutral-500 block mt-1">
-            SADA Protective Actions
-          </span>
-        </div>
-
-        {/* Active Faults */}
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-          <span className="text-xs uppercase tracking-wider text-neutral-400 block">
-            Degraded Motors
-          </span>
-          <span
-            className={`mt-1 font-mono text-3xl font-bold ${
-              activeFaultsCount > 0 ? 'text-amber-400' : 'text-neutral-100'
-            }`}
-          >
-            {activeFaultsCount}
-          </span>
-          <span className="text-[11px] text-neutral-500 block mt-1">
-            Motors with Active Faults
-          </span>
-        </div>
-      </div>
-
-      {/* Action Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-3">
+      <section className="fleet-intro">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-100">Fleet Operations Grid</h2>
-          <p className="text-xs text-neutral-400">
-            Real-time condition monitoring, supervisory status, and health index across all assets.
-          </p>
+          <span className="eyebrow">PLANT MOTOR OPERATIONS</span>
+          <div className="fleet-title">Fleet Operations Grid</div>
+          <div className="page-subtitle">
+            Assets ranked by fault severity, remaining service window, and live condition.
+          </div>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="live-pill">
+            <span className="live-dot" />
+            <span>{totalMotors} ASSETS ONLINE</span>
+          </div>
           {role === 'admin' && (
-            <button
-              onClick={handleSeedPresets}
-              disabled={seeding}
-              className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-neutral-900 disabled:opacity-50"
-            >
-              {seeding ? 'Seeding Fleet...' : 'Seed 5-Motor Fleet Preset'}
+            <button className="btn" onClick={handleSeedPresets} disabled={seeding}>
+              {seeding ? 'Seeding...' : 'Seed Fleet Presets'}
             </button>
           )}
-          <button
-            onClick={() => onRefreshMotors()}
-            className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-medium text-neutral-200 transition hover:bg-neutral-700"
-          >
-            Refresh
-          </button>
         </div>
-      </div>
+      </section>
 
-      {/* Motors Grid */}
-      {motors.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-800 p-12 text-center">
-          <p className="text-sm font-medium text-neutral-300">No motors found in the fleet.</p>
-          <p className="mt-1 text-xs text-neutral-500">
-            Click "Seed 5-Motor Fleet Preset" above to load standard industrial presets.
-          </p>
+      <section className="fleet-metrics" aria-label="Fleet summary">
+        <MetricCard eyebrow="Fleet Size" value={String(totalMotors)} status="ONLINE">
+          <Activity size={22} className="fleet-metric-icon" />
+        </MetricCard>
+        <MetricCard eyebrow="ACTIVE FAULTS" value={String(activeFaultsCount)} status={activeFaultsCount > 0 ? 'ACTION' : 'CLEAR'} tone={activeFaultsCount > 0 ? 'amber' : 'cyan'}>
+          <AlertTriangle size={22} className="fleet-metric-icon" style={{ color: activeFaultsCount > 0 ? 'var(--warning)' : 'var(--data-cyan, var(--accent))' }} />
+        </MetricCard>
+        <MetricCard eyebrow="TRIPPED / DERATE" value={`${trippedCount} / ${derateCount}`} status={trippedCount > 0 ? 'CRITICAL' : 'NOMINAL'} tone={trippedCount > 0 ? 'amber' : 'cyan'}>
+          <Clock3 size={22} className="fleet-metric-icon" style={{ color: trippedCount > 0 ? 'var(--warning)' : 'var(--data-cyan, var(--accent))' }} />
+        </MetricCard>
+        <MetricCard eyebrow="Avg Health Index" value={avgMhi} unit="%" status={`ZONE ${fleetZone}`} tone={healthTone}>
+          <div
+            className="radial-dial fleet-health-dial"
+            style={{ '--health-index': `${avgMhi}%` } as CSSProperties}
+          >
+            <div className="radial-dial__core">{fleetZone}</div>
+          </div>
+        </MetricCard>
+      </section>
+
+      {/* Prioritized Service Queue Table (from Enterprise Design) */}
+      <section className="fleet-list-card glass-card" aria-labelledby="service-queue-title">
+        <div className="fleet-list-head">
+          <div>
+            <span className="eyebrow">PRIORITIZED SERVICE QUEUE</span>
+            <div id="service-queue-title" className="fleet-title" style={{ fontSize: '1.25rem' }}>
+              Motor Assets Service Ranking
+            </div>
+          </div>
+          <span className="fleet-updated">Live ranking updated</span>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="fleet-table-head" aria-hidden="true">
+          <span>Priority / motor</span>
+          <span>Location</span>
+          <span>Condition</span>
+          <span>Service window</span>
+          <span>Live readings</span>
+        </div>
+        <div className="motor-list">
+          {motors.map((motor) => {
+            const f = frames[motor.id]
+            const mhi = f?.health_index ?? f?.diagnosis?.health_index ?? 100
+            const state = f?.supervisory?.state ?? 'NORMAL'
+            const faults = f?.faults ?? []
+            const faultName = faults.length > 0
+              ? faults[0].fault_type.replace(/_/g, ' ')
+              : f?.diagnosis?.fault_type && f.diagnosis.fault_type !== 'healthy'
+              ? f.diagnosis.fault_type.replace(/_/g, ' ')
+              : null
+
+            let priority: 'Critical' | 'High' | 'Medium' | 'Routine' = 'Routine'
+            let serviceDays: number
+            let status = 'Running nominal'
+
+            if (state === 'TRIP' || mhi < 50) {
+              priority = 'Critical'
+              serviceDays = 1
+              status = state === 'TRIP' ? 'Service required · Tripped' : 'Critical degradation'
+            } else if (state === 'DERATE' || mhi < 70) {
+              priority = 'High'
+              serviceDays = Math.max(2, Math.round((mhi - 50) / 4))
+              status = faultName ? `${faultName} detected` : 'Monitor closely'
+            } else if (mhi < 85) {
+              priority = 'Medium'
+              serviceDays = Math.max(10, Math.round((mhi - 60) * 1.2))
+              status = 'Inspection recommended'
+            } else {
+              serviceDays = Math.max(30, Math.round(mhi * 0.5))
+            }
+
+            const tempVal = f?.sensors?.temp?.value ?? f?.sensors?.thermal?.value ?? 45.0
+            const vibRms = f?.sensors?.vibration?.rms
+              ? Math.sqrt(Object.values(f.sensors.vibration.rms).reduce((a, b) => a + b * b, 0))
+              : 2.2
+
+            const badgeStyle = priority === 'Critical'
+              ? { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.3)' }
+              : priority === 'High'
+              ? { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.3)' }
+              : priority === 'Medium'
+              ? { bg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', border: 'rgba(56, 189, 248, 0.3)' }
+              : { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.3)' }
+
+            return (
+              <div
+                role="button"
+                tabIndex={0}
+                className={`motor-row motor-row--${priority.toLowerCase()}`}
+                key={motor.id}
+                aria-label={`Open digital twin for ${motor.name}`}
+                onClick={() => onSelectMotor(motor.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onSelectMotor(motor.id)
+                  }
+                }}
+              >
+                <div className="motor-identity">
+                  <span
+                    style={{
+                      backgroundColor: badgeStyle.bg,
+                      color: badgeStyle.text,
+                      border: `1px solid ${badgeStyle.border}`,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-mono)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {priority}
+                  </span>
+                  <div>
+                    <span className="motor-name">{motor.name}</span>
+                    <span className="motor-id">ID: {motor.id} · {(motor.rated_power / 1000).toFixed(1)} kW</span>
+                  </div>
+                </div>
+                <span className="motor-location">Bay 0{motor.id} · Line {motor.id}</span>
+                <div className="motor-condition">
+                  <strong>{Math.round(mhi)}%</strong>
+                  <span>{status}</span>
+                </div>
+                <div className="motor-service">
+                  <strong>{serviceDays} days</strong>
+                  <span>until planned service</span>
+                </div>
+                <div className="motor-readings">
+                  <span>{tempVal.toFixed(1)} °C</span>
+                  <span>{vibRms.toFixed(1)} mm/s</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* Detailed Motor Twin Cards Grid */}
+      <section>
+        <div style={{ marginBottom: 12 }}>
+          <span className="eyebrow">DETAILED ASSET TELEMETRY</span>
+          <h2 className="fleet-title" style={{ fontSize: '1.25rem' }}>Motor Twin Cards</h2>
+        </div>
+        <div className="fleet-grid" aria-label="Motor fleet grid">
           {motors.map((m) => (
             <MotorCard
               key={m.id}
               motor={m}
-              frame={frames[m.id]}
+              frame={frames[m.id] ?? null}
               onClick={() => onSelectMotor(m.id)}
             />
           ))}
+          {motors.length === 0 && (
+            <div className="glass-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>
+              No motors configured. {role === 'admin' ? 'Click "Seed Fleet Presets" to add sample motors.' : 'Ask an admin to add motors.'}
+            </div>
+          )}
         </div>
-      )}
+      </section>
     </div>
   )
 }

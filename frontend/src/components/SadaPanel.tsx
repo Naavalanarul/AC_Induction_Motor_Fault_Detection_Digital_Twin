@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ShieldCheck } from 'lucide-react'
 import { api, newIdempotencyKey } from '../api/client'
 import type { Supervisory } from '../api/types'
 import { StatusBadge } from './StatusBadge'
@@ -31,10 +32,17 @@ export function SadaPanel({ motorId, sup, canOperate }: { motorId: number; sup: 
     <section className="card flex flex-col justify-between" aria-labelledby="sada-h">
       <div>
         <header className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-          <h2 id="sada-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--ink-2)]" />
-            SADA Supervisory Core
-          </h2>
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-md bg-[var(--surface-raised)] border border-[var(--border)] flex items-center justify-center text-amber-400">
+              <ShieldCheck size={14} />
+            </span>
+            <div>
+              <span className="eyebrow block" style={{ fontSize: 9 }}>SUPERVISORY INTERLOCK</span>
+              <h2 id="sada-h" className="text-xs font-semibold uppercase tracking-wider text-[var(--ink)]">
+                SADA Supervisory Core
+              </h2>
+            </div>
+          </div>
           <span className="text-[11px] num px-2 py-0.5 rounded bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--muted)]">
             {sup.trip ? 'TRIP LATCHED' : sup.state}
           </span>
