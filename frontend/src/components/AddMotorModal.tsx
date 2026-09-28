@@ -343,7 +343,7 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
           )}
 
           {/* Mode Selector */}
-          <div style={{ display: 'flex', gap: 10, background: 'var(--surface-raised)', padding: 4, borderRadius: 'var(--corner-full)', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: 10, background: 'var(--page)', padding: 4, borderRadius: 'var(--corner-full)', border: '1px solid var(--border)' }}>
             <button
               type="button"
               className={`btn ${mode === 'preset' ? 'btn-primary' : ''}`}
@@ -366,7 +366,7 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
 
           {/* Preset Selector Card */}
           {mode === 'preset' && (
-            <div className="card" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', padding: 14 }}>
+            <div className="card" style={{ background: 'var(--page)', border: '1px solid var(--border)', padding: 14 }}>
               <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Select Machine Preset
               </label>
@@ -374,7 +374,7 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
                 className="input"
                 value={selectedPresetKey}
                 onChange={(e) => handleSelectPreset(e.target.value)}
-                style={{ fontSize: 13, background: 'var(--surface)', borderColor: 'var(--border)' }}
+                style={{ fontSize: 13, background: 'var(--page)', borderColor: 'var(--border)' }}
                 aria-label="Preset machine template"
               >
                 {MOTOR_PRESETS.map((p) => (

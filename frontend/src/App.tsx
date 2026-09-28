@@ -19,6 +19,7 @@ import { SadaPanel } from './components/SadaPanel'
 import { SensorPanels } from './components/SensorPanels'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignOutConfirmModal } from './components/SignOutConfirmModal'
+import { ProfileDatabaseModal } from './components/ProfileDatabaseModal'
 import { useMotorStream } from './hooks/useMotorStream'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
@@ -31,6 +32,7 @@ function Shell() {
   const [selected, setSelected] = useState<number | null>(null)
   const [fleetFrames, setFleetFrames] = useState<Record<number, Frame>>({})
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const shellRef = useRef<HTMLElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (typeof window !== 'undefined' && (localStorage.getItem('app-theme') as 'dark' | 'light')) || 'dark'
@@ -158,12 +160,18 @@ function Shell() {
             )}
           </div>
 
-          <div className="nav-profile-chip" title={`Signed in as ${session.username} (${session.role})`}>
+          <button
+            type="button"
+            className="nav-profile-chip"
+            onClick={() => setIsProfileModalOpen(true)}
+            title={`Operator Profile & Database Status (${session.username}) — Click to configure MySQL`}
+            aria-label="Operator profile and database settings"
+          >
             <div className="nav-avatar">
               <User size={15} strokeWidth={2.2} />
             </div>
             <span className="nav-profile-name">{session.username}</span>
-          </div>
+          </button>
 
           <button className="nav-signout" onClick={() => setIsSignOutModalOpen(true)}>Sign out</button>
         </div>
@@ -393,6 +401,13 @@ function Shell() {
           setIsSignOutModalOpen(false)
           logout()
         }}
+      />
+
+      {/* Operator Profile & Database Settings Modal */}
+      <ProfileDatabaseModal
+        isOpen={isProfileModalOpen}
+        user={session}
+        onClose={() => setIsProfileModalOpen(false)}
       />
     </main>
   )

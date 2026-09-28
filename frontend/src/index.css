@@ -983,10 +983,17 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   transition: all 0.15s ease;
+  cursor: pointer;
+  outline: none;
 }
 .nav-profile-chip:hover {
   background: var(--surface-hover);
-  border-color: var(--border);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+}
+.nav-profile-chip:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 .nav-avatar {
   width: 28px;
@@ -1317,17 +1324,17 @@ body:has(.modal-backdrop) .floating-nav {
   height: min(92vh, 880px);
   display: flex;
   flex-direction: column;
-  background: #0c101d;
-  border: 1px solid rgba(0, 229, 255, 0.25);
+  background: var(--page);
+  border: 1px solid var(--border);
   border-radius: var(--corner-lg);
-  box-shadow: 0 32px 84px rgba(0, 0, 0, 0.95), 0 0 60px rgba(0, 229, 255, 0.06);
+  box-shadow: 0 32px 84px rgba(0, 0, 0, 0.95), 0 0 50px rgba(0, 0, 0, 0.8);
   overflow: hidden;
 }
 
 :root[data-theme='light'] .modal-dialog {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 32px 84px rgba(0, 0, 0, 0.25);
+  background: var(--page);
+  border-color: var(--border);
+  box-shadow: 0 32px 84px rgba(0, 0, 0, 0.15);
 }
 
 .signout-modal-dialog {
@@ -1336,19 +1343,24 @@ body:has(.modal-backdrop) .floating-nav {
   max-height: 90vh;
 }
 
+.profile-modal-dialog {
+  width: min(680px, 100%);
+  height: min(90vh, 820px);
+}
+
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
   border-bottom: 1px solid var(--border-subtle);
-  background: #0c101d;
+  background: var(--page);
   flex-shrink: 0;
   z-index: 2;
 }
 
 :root[data-theme='light'] .modal-header {
-  background: #ffffff;
+  background: var(--page);
 }
 
 .modal-body {
@@ -1370,13 +1382,13 @@ body:has(.modal-backdrop) .floating-nav {
 }
 
 .modal-body .card {
-  background: var(--surface-raised);
+  background: var(--page);
   border: 1px solid var(--border);
   overflow: visible;
 }
 
 :root[data-theme='light'] .modal-body .card {
-  background: #f8fafc;
+  background: var(--page);
 }
 
 /* Custom sleek scrollbar for modal-body */
@@ -1401,12 +1413,12 @@ body:has(.modal-backdrop) .floating-nav {
   gap: 12px;
   padding: 16px 24px;
   border-top: 1px solid var(--border-subtle);
-  background: #080c16;
+  background: var(--page);
   flex-shrink: 0;
   z-index: 2;
 }
 
 :root[data-theme='light'] .modal-footer {
-  background: #f1f5f9;
+  background: var(--page);
 }
 

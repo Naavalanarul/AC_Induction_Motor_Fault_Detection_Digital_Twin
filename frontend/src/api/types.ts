@@ -148,3 +148,27 @@ export const getZoneFromMHI = (val: number): ConditionZone => {
   return 'D'
 }
 
+export interface DatabaseStatus {
+  connected: boolean
+  engine: string
+  dialect: string
+  database: string
+  user: string
+  host: string
+  port: number | null
+  latency_ms: number | null
+  tables: string[]
+  pool?: {
+    size: number
+    checked_out: number
+  } | null
+  error: string | null
+}
+
+export interface DbTestResult {
+  success: boolean
+  message: string
+  latency_ms: number | null
+  applied: boolean
+}
+

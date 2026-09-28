@@ -19,6 +19,11 @@ tagged with the git SHA and with the release tag.
   - Streamlined Fleet Priority Queue (`FleetPriorityQueue.tsx`) by removing redundant heap operation buttons and displaying a clean Heap Telemetry header.
   - Official high-contrast TWIN-CORE browser tab favicon (`favicon.svg`) replacing the default Vite logo across light and dark browser themes.
   - Safe fallback defaults for `compose.yaml` and deployment verification tests (`test_deployment.py`) enabling `docker compose config` validation without a mandatory pre-existing `.env` file.
+- Phase 25: Operator Profile & Live Database Configuration Deck:
+  - Interactive navbar operator profile chip opening a dedicated system connectivity dialog (`ProfileDatabaseModal.tsx`).
+  - Real-time database connection status indicator ("DATABASE CONNECTED / DISCONNECTED") showing dialect, active database, host/port, latency, and all persistence schema tables.
+  - Dedicated MySQL credential management with password visibility toggle, non-destructive link testing (`POST /api/v1/system/db-test`), and runtime connection hot-reload.
+  - Harmonized modal dialog card styling to match the application page background color (`var(--page)` / `#050505`) across Add Motor, Sign Out, and Database Profile dialogs.
 
 ### Fixed
 - Fixed parameter cards scrolling bug in `AddMotorModal` by enforcing `flex-shrink: 0` on form cards and `min-height: 0` on the scrollable container, preventing flexbox from squeezing inputs down to 91px.
