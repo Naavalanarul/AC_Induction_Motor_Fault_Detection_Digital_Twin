@@ -10,8 +10,8 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-digital_twin}
       MYSQL_USER: ${MYSQL_USER:-dt}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-too}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -35,9 +35,11 @@ services:
     build: ./backend
     image: ${IMAGE_PREFIX:-motor-dt}/backend:${IMAGE_TAG:-local}
     command: ["alembic", "upgrade", "head"]
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
-      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-dt}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-digital_twin}
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-dt}:${MYSQL_PASSWORD:-change-me}@mysql:3306/${MYSQL_DATABASE:-digital_twin}
     depends_on:
       mysql:
         condition: service_healthy
@@ -45,9 +47,11 @@ services:
 
   backend:
     image: ${IMAGE_PREFIX:-motor-dt}/backend:${IMAGE_TAG:-local}
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
-      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-dt}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-digital_twin}
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-dt}:${MYSQL_PASSWORD:-change-me}@mysql:3306/${MYSQL_DATABASE:-digital_twin}
       REDIS_URL: redis://redis:6379/0
       AUTO_CREATE_SCHEMA: "false"
     depends_on:

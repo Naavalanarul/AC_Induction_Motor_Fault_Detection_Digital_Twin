@@ -386,12 +386,13 @@ Everything from the earlier 12-phase plan stays, with these production-hardening
 - [x] **Phase 21 — Degradation Prognosis & Maintenance Recommendations**: Least-squares polynomial extrapolation of rolling 120-sample severity history for time-to-derate/trip (`/api/v1/motors/{id}/prognosis`), and catalog-driven prescriptive maintenance recommendations (`/api/v1/motors/{id}/recommendation`).
 - [x] **Phase 22 — Fleet Dashboard & Health/Maintenance UI**: Fleet operations landing view with 4 summary KPI tiles, seed preset action, responsive motor card grid, SVG health index gauges, global persistent trip banner with acknowledge action, and detailed Health & Maintenance tab with RUL projections and prescriptive checklist. Fully covered by Vitest unit tests and Playwright E2E specs.
 - [x] **Phase 23 — Observability Hookup**: Prometheus gauge `dt_motor_health_index` with `motor_id` and `motor_name` labels, Prometheus Alertmanager alert rule (`MotorHealthIndexCritical`), and Grafana dashboard panel.
+- [x] **Phase 24 — Enterprise UI Ergonomics, Motor Provisioning & Resilient Local Deployment**: Provisioning modal (`AddMotorModal.tsx`) with 7 industrial templates and custom dq parameters with live physical feasibility check ($\sigma > 0, T_r$); sign-out confirmation dialog (`SignOutConfirmModal.tsx`); clean Fleet Priority Queue without redundant heap buttons; official TWIN-CORE browser favicon (`favicon.svg`); automatic stale cache & service worker eviction (`index.html`, `sw.js`); and safe Compose fallbacks (`compose.yaml`, `test_deployment.py`).
 
 ---
 
-## Implementation status (2026-09-27)
+## Implementation status (2026-09-28)
 
-All phases (0–23) are fully implemented, tested, and verified:
+All phases (0–24) are fully implemented, tested, and verified:
 - Phases 0–11: Core plant simulator, sensors, fault injection, electrical/ML/thermal/supply diagnostics, weighted fusion, MySQL persistence, WebSocket streaming, SADA supervisory layer, and React dashboard.
 - Phase 12 & Phase 18: Concrete hardware sensor drivers for all sensor channels are implemented and verified with automated unit tests and circuit breaker fallbacks.
 - Phases 13–15: Observability, Prometheus metrics, structured JSON logging, supervised workers, automated retention cleanup, test coverage thresholds ($\ge 85\%$), and integration test suites.
@@ -401,3 +402,4 @@ All phases (0–23) are fully implemented, tested, and verified:
 - Phase 21: Trend-based degradation prognosis (`backend/app/diagnostics/prognosis.py`), prescriptive maintenance recommendations (`backend/app/diagnostics/recommendations.py`), and REST endpoints `/api/v1/motors/{id}/prognosis` and `/api/v1/motors/{id}/recommendation`.
 - Phase 22: Complete React fleet operations dashboard (`FleetDashboard.tsx`), SVG health gauge (`HealthGauge.tsx`), motor card (`MotorCard.tsx`), global trip banner (`TripBanner.tsx`), and motor detail health/maintenance view (`HealthMaintenanceTab.tsx`), verified via Vitest and Playwright.
 - Phase 23: Prometheus metric `dt_motor_health_index`, Alertmanager alerting rule (`deploy/prometheus/alerts.yml`), and Grafana digital twin dashboard panel (`deploy/grafana/dashboards/digital-twin.json`).
+- Phase 24: Enterprise UI ergonomics, motor provisioning modal with physical constraints verification, modal scroll & flex layout fixes, deep navbar background blurring, sign-out confirmation dialog, official TWIN-CORE browser tab favicon, and resilient Docker Compose environment fallbacks.

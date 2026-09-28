@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Cpu, Sliders, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import { api } from '../api/client'
 import type { Motor } from '../api/types'
@@ -191,6 +192,19 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
   const [params, setParams] = useState<MotorCreationParams>(MOTOR_PRESETS[0].params)
   const [busy, setBusy] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
@@ -274,14 +288,16 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
     }
   }
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onClick={onClose} role="presentation">
-      <div
+      <form
+        onSubmit={handleSubmit}
         className="modal-dialog glass-card"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-motor-title"
+        noValidate
       >
         {/* Modal Header */}
         <header className="modal-header">
@@ -295,6 +311,7 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
             </p>
           </div>
           <button
+            type="button"
             className="nav-icon-btn"
             onClick={onClose}
             aria-label="Close dialog"
@@ -304,8 +321,8 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
           </button>
         </header>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="modal-body" noValidate>
+        {/* Modal Body - Scrollable content area */}
+        <div className="modal-body">
           {error && (
             <div
               className="glass-card"
@@ -587,32 +604,34 @@ export function AddMotorModal({ isOpen, onClose, onMotorAdded }: AddMotorModalPr
             </div>
           </div>
 
-          {/* Modal Footer */}
-          <footer className="modal-footer" style={{ margin: '10px -24px -20px', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
-            <button type="button" className="btn" onClick={onClose} disabled={busy}>
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={!isValid || busy}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
-              {busy ? (
-                <>
-                  <Loader2 size={15} style={{ animation: 'login-spin 900ms linear infinite' }} />
-                  <span>Provisioning Twin…</span>
-                </>
-              ) : (
-                <>
-                  <Cpu size={15} />
-                  <span>Create &amp; Provision Motor</span>
-                </>
-              )}
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {/* Modal Footer - Fixed at bottom */}
+        <footer className="modal-footer">
+          <button type="button" className="btn" onClick={onClose} disabled={busy}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!isValid || busy}
+            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            {busy ? (
+              <>
+                <Loader2 size={15} style={{ animation: 'login-spin 900ms linear infinite' }} />
+                <span>Provisioning Twin…</span>
+              </>
+            ) : (
+              <>
+                <Cpu size={15} />
+                <span>Create &amp; Provision Motor</span>
+              </>
+            )}
+          </button>
+        </footer>
+      </form>
+    </div>,
+    document.body
   )
 }

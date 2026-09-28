@@ -13,8 +13,18 @@ tagged with the git SHA and with the release tag.
 - Phase 21: Degradation prognosis with least-squares polynomial extrapolation (`backend/app/diagnostics/prognosis.py`) predicting time-to-derate and time-to-trip over a rolling 120-sample severity history, accessible via `GET /api/v1/motors/{id}/prognosis`. Prescriptive maintenance recommendations catalog (`backend/app/diagnostics/recommendations.py`) with fault-specific actionable checklists, accessible via `GET /api/v1/motors/{id}/recommendation`.
 - Phase 22: Fleet dashboard landing view (`FleetDashboard.tsx`) featuring 4 summary KPI tiles (fleet size, avg MHI, motors tripped/derated, active alerts), fleet preset seed trigger, and responsive motor card grid (`MotorCard.tsx`) with SVG health gauges (`HealthGauge.tsx`). Global persistent `TripBanner.tsx` with operator trip acknowledgment and override actions. Detailed motor Health & Maintenance view (`HealthMaintenanceTab.tsx`) with RUL estimates, prescriptive checklists, and diagnostic event history. Comprehensive Vitest unit tests and Playwright E2E integration specs (`dashboard.spec.ts`).
 - Phase 23: Production observability hookup including Prometheus gauge metric `dt_motor_health_index` labeled by `motor_id` and `motor_name`, Prometheus Alertmanager rule `MotorHealthIndexCritical` in `deploy/prometheus/alerts.yml`, and Grafana dashboard panel in `deploy/grafana/dashboards/digital-twin.json`.
+- Phase 24: Enterprise UI Ergonomics, Motor Provisioning, and Resilient Local Deployment:
+  - Motor provisioning dialog (`AddMotorModal.tsx`) with 7 industrial machine presets and custom dq parameter studio with live physical feasibility verification ($\sigma > 0$, $T_r$).
+  - Sign-out confirmation modal (`SignOutConfirmModal.tsx`) requiring explicit operator confirmation before terminating session and disconnecting live streams.
+  - Streamlined Fleet Priority Queue (`FleetPriorityQueue.tsx`) by removing redundant heap operation buttons and displaying a clean Heap Telemetry header.
+  - Official high-contrast TWIN-CORE browser tab favicon (`favicon.svg`) replacing the default Vite logo across light and dark browser themes.
+  - Safe fallback defaults for `compose.yaml` and deployment verification tests (`test_deployment.py`) enabling `docker compose config` validation without a mandatory pre-existing `.env` file.
 
 ### Fixed
+- Fixed parameter cards scrolling bug in `AddMotorModal` by enforcing `flex-shrink: 0` on form cards and `min-height: 0` on the scrollable container, preventing flexbox from squeezing inputs down to 91px.
+- Pinned modal header and footer outside the scrollable body so Cancel and Provision actions are always visible and accessible.
+- Fixed modal stacking context by mounting modals via React Portals (`createPortal(..., document.body)`) at `z-index: 9999` and applying deep background blurring and dimming to the floating navigation bar.
+- Added automatic Service Worker and Cache Storage eviction scripts (`index.html`, `sw.js`, `service-worker.js`) to evict stale caches from prior localhost projects (e.g. Expensify).
 - Prevent persisted diagnoses from contradicting SADA supervisory state by overriding false "healthy" diagnoses during latched motor trips when sensors are starved (Phase 19).
 - Added `INDETERMINATE` verdict to `DiagFault` schema (`backend/app/diagnostics/schema.py`) as a non-breaking additive enum member.
 - Threaded SADA-latched fault type and severity into `Diagnosis` telemetry when motor is tripped and diagnostic channels are unavailable.

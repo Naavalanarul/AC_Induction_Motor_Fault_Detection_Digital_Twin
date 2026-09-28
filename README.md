@@ -60,7 +60,7 @@ cd frontend && npm ci && npm run dev         # http://localhost:5173 (proxies /a
 | API | `backend/app/api/` | `/api/v1/...` REST, and a WebSocket at `/api/v1/ws/motors/{id}/stream`. JWT auth with viewer/operator/admin roles on every route. Idempotency keys, rate limits, Pydantic validation. |
 | Runtime | `backend/app/runtime/` | One supervised worker per motor with restart backoff. Batched DB writer. In-memory or Redis broker, with a per-motor ownership lock for multiple replicas. Retention job. |
 | Observability | `core/logging.py`, `core/metrics.py`, `deploy/` | JSON logs carry the request id and motor id. `/metrics`, `/healthz` and `/readyz` are exposed. Prometheus alert rules and a Grafana dashboard are provisioned. |
-| Frontend | `frontend/` | Live dashboard, fault-injection console, SADA controls, per-sensor panels (waveform, spectrum, scalogram, trend) and a history view. |
+| Frontend | `frontend/` | Fleet operations grid, motor provisioning modal (7 presets + custom dq physics), DSA priority queue, live telemetry deck, health & maintenance view (prognosis, RUL, recommendations), parameters studio, and operator session controls. |
 | Ops | `compose.yaml`, `compose.prod.yaml`, `deploy/`, `.github/workflows/ci.yml` | Local and production stacks, TLS edge, backups with a tested restore check, CI/CD. See [docs/operations.md](docs/operations.md). |
 
 ## API summary

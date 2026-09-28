@@ -18,6 +18,7 @@ import { MotorParamsStudio } from './components/MotorParamsStudio'
 import { SadaPanel } from './components/SadaPanel'
 import { SensorPanels } from './components/SensorPanels'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { SignOutConfirmModal } from './components/SignOutConfirmModal'
 import { useMotorStream } from './hooks/useMotorStream'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
@@ -29,6 +30,7 @@ function Shell() {
   const [tab, setTab] = useState<TabKey>('fleet')
   const [selected, setSelected] = useState<number | null>(null)
   const [fleetFrames, setFleetFrames] = useState<Record<number, Frame>>({})
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
   const shellRef = useRef<HTMLElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (typeof window !== 'undefined' && (localStorage.getItem('app-theme') as 'dark' | 'light')) || 'dark'
@@ -163,7 +165,7 @@ function Shell() {
             <span className="nav-profile-name">{session.username}</span>
           </div>
 
-          <button className="nav-signout" onClick={logout}>Sign out</button>
+          <button className="nav-signout" onClick={() => setIsSignOutModalOpen(true)}>Sign out</button>
         </div>
       </header>
 
@@ -381,6 +383,17 @@ function Shell() {
           </div>
         )}
       </div>
+
+      {/* Sign Out Confirmation Modal */}
+      <SignOutConfirmModal
+        isOpen={isSignOutModalOpen}
+        username={session.username}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={() => {
+          setIsSignOutModalOpen(false)
+          logout()
+        }}
+      />
     </main>
   )
 }
