@@ -26,9 +26,9 @@ test('inject fault -> see it in the dashboard -> see SADA derate', async ({ page
   await page.getByLabel('Password').fill(PASS)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  // Navigate to motor digital twin and open Maintenance section
+  // Navigate to motor digital twin and open Parameters Studio section (where SADA and Fault Bench are located)
   await page.getByRole('button', { name: /Open digital twin for/i }).first().click()
-  await page.getByRole('button', { name: 'Maintenance', exact: true }).click()
+  await page.getByRole('button', { name: 'Parameters Studio', exact: true }).click()
 
   await expect(page.getByTestId('fused-fault')).toBeVisible({ timeout: 20_000 })
   await expect(page.getByTestId('sada-state').first()).toHaveText(/Normal/, { timeout: 30_000 })

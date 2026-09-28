@@ -213,6 +213,17 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
+.nav-island--brand,
+:root[data-theme='light'] .nav-island--brand {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+
 .nav-capsule {
   display: flex;
   align-items: center;
@@ -223,10 +234,10 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   color: var(--ink-2);
   text-decoration: none;
   font-weight: 500;
-  padding: var(--space-sm) var(--space-lg);
+  padding: 5px 12px;
   border-radius: var(--corner-full);
-  transition: color 0.2s, background 0.2s;
-  font-size: 0.875rem;
+  transition: color 0.15s, background 0.15s;
+  font-size: 13px;
 }
 .nav-link:hover {
   color: var(--ink);
@@ -482,9 +493,14 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 }
 .fleet-metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-lg);
   margin-bottom: var(--space-2xl);
+}
+@media (max-width: 860px) {
+  .fleet-metrics {
+    grid-template-columns: 1fr;
+  }
 }
 .fleet-list-card {
   display: flex;
@@ -577,6 +593,7 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 }
 
 .motor-name {
+  display: block;
   overflow: hidden;
   color: var(--ink);
   font-size: 13px;
@@ -585,7 +602,13 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   white-space: nowrap;
 }
 
-.motor-id,
+.motor-id {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
 .motor-location,
 .motor-condition span,
 .motor-service span,
@@ -879,7 +902,7 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   background: transparent;
   border: none;
   font-weight: 500;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: var(--corner-full);
   transition: color 0.15s, background 0.15s;
   font-size: 13px;
@@ -991,7 +1014,7 @@ h1, h2, h3, h4, h5, h6, .brand-name {
   border: 1px solid var(--border);
   border-radius: var(--corner-full);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   padding: 5px 12px;
   cursor: pointer;
@@ -1263,3 +1286,67 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 .fleet-metric-icon {
   color: var(--data-cyan, var(--accent));
 }
+
+/* Modal Dialog Styles */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: hud-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-dialog {
+  position: relative;
+  width: min(840px, 100%);
+  max-height: min(92vh, 880px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--corner-lg);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+}
+
+:root[data-theme='light'] .modal-dialog {
+  background: #ffffff;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  flex-shrink: 0;
+}
+

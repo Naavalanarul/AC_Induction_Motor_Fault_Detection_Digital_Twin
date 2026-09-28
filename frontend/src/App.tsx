@@ -61,7 +61,7 @@ function Shell() {
   }, [])
 
   const { frame, trend, status, reconnect } = useMotorStream(
-    tab !== 'history' && tab !== 'params' ? motorId : null,
+    tab !== 'history' ? motorId : null,
     120,
     handleFrame,
   )
@@ -84,8 +84,16 @@ function Shell() {
     <main ref={shellRef} className="app-shell" onPointerMove={handleGridPointer}>
       {/* Floating Navigation Bar with Separated Islands (No Continuous Bar, Gap across Center) */}
       <header className="floating-nav-bar">
-        {/* Left Island: Brand Capsule */}
-        <div className="nav-island nav-island--brand">
+        {/* Left: Brand Lockup (Standing cleanly without navbar covering, fixed at top-left) */}
+        <div
+          className="nav-island nav-island--brand"
+          role="button"
+          tabIndex={0}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setTab('fleet')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setTab('fleet') }}
+          title="Return to Fleet Dashboard"
+        >
           <div className="brand-lockup">
             <div className="brand-node">
               <Box size={20} strokeWidth={1.5} />
@@ -223,11 +231,7 @@ function Shell() {
               </div>
             </section>
 
-            {tab === 'params' ? (
-              <ErrorBoundary fallbackTitle="Error loading Parameters Studio">
-                <MotorParamsStudio currentMotor={selectedMotor} />
-              </ErrorBoundary>
-            ) : tab === 'history' ? (
+            {tab === 'history' ? (
               <ErrorBoundary fallbackTitle="Error loading History View">
                 <HistoryView motorId={motorId} />
               </ErrorBoundary>
@@ -247,18 +251,13 @@ function Shell() {
                   </div>
                 )}
               </div>
-            ) : tab === 'maintenance' ? (
-              /* Maintenance Section with Transferred Diagnostic, Supervisory, and Fault Console Cards */
+            ) : tab === 'params' ? (
               <div className="space-y-6">
-                <ErrorBoundary fallbackTitle="Error loading Health & Maintenance">
-                  {selectedMotor ? (
-                    <HealthMaintenanceTab motor={selectedMotor} frame={frame} />
-                  ) : (
-                    <div className="glass-card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>Select a motor to view health analysis.</div>
-                  )}
+                <ErrorBoundary fallbackTitle="Error loading Parameters Studio">
+                  <MotorParamsStudio currentMotor={selectedMotor} />
                 </ErrorBoundary>
 
-                {/* Transferred Tri-Panel Diagnostic & Supervisory Control Deck */}
+                {/* Simulation Bench & Supervisory Interlock Transferred from Maintenance */}
                 <div className="tri-panel" style={{ marginTop: 24 }}>
                   <ErrorBoundary fallbackTitle="Error loading Diagnosis Panel">
                     <DiagnosisPanel diagnosis={frame.diagnosis} mlBackend={frame.ml_backend} />
@@ -283,6 +282,21 @@ function Shell() {
                     <FaultConsole motorId={motorId} faults={frame.faults} canOperate={can('operator')} />
                   </ErrorBoundary>
                 </div>
+              </div>
+            ) : tab === 'maintenance' ? (
+              /* Maintenance Section: Health Analysis and AI Classifier (SADA and Fault Console cleared to Parameters Studio) */
+              <div className="space-y-6">
+                <ErrorBoundary fallbackTitle="Error loading Health & Maintenance">
+                  {selectedMotor ? (
+                    <HealthMaintenanceTab motor={selectedMotor} frame={frame} />
+                  ) : (
+                    <div className="glass-card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>Select a motor to view health analysis.</div>
+                  )}
+                </ErrorBoundary>
+
+                <ErrorBoundary fallbackTitle="Error loading Diagnosis Panel">
+                  <DiagnosisPanel diagnosis={frame.diagnosis} mlBackend={frame.ml_backend} />
+                </ErrorBoundary>
               </div>
             ) : (
               /* Telemetry Deck: 3-Card Symmetrical KPI Overview & 6-Sensor Network */

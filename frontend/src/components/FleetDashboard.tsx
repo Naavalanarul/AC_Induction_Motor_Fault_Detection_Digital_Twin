@@ -1,10 +1,10 @@
 import React, { useState, type CSSProperties } from 'react'
-import { Activity, AlertTriangle, Clock3 } from 'lucide-react'
+import { Activity, AlertTriangle, Plus } from 'lucide-react'
 import { api } from '../api/client'
 import type { Frame, Motor, Role } from '../api/types'
 import { getZoneFromMHI } from '../api/types'
-import { MotorCard } from './MotorCard'
 import { MetricCard } from './ui/MetricCard'
+import { AddMotorModal } from './AddMotorModal'
 
 export interface FleetDashboardProps {
   motors: Motor[]
@@ -21,20 +21,16 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
   const [seeding, setSeeding] = useState(false)
   const [seedResult, setSeedResult] = useState<string | null>(null)
   const [seedError, setSeedError] = useState<string | null>(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const totalMotors = motors.length
   let totalMhi = 0
-  let trippedCount = 0
-  let derateCount = 0
   let activeFaultsCount = 0
 
   motors.forEach((m) => {
     const f = frames[m.id]
     const mhi = f?.health_index ?? f?.diagnosis?.health_index ?? 100
     totalMhi += mhi
-    const state = f?.supervisory?.state ?? 'NORMAL'
-    if (state === 'TRIP') trippedCount += 1
-    if (state === 'DERATE') derateCount += 1
     const faults = f?.faults ?? []
     if (faults.length > 0 || (f?.diagnosis?.fault_type && f.diagnosis.fault_type !== 'healthy')) {
       activeFaultsCount += 1
@@ -91,9 +87,20 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
             </button>
           )}
           {role === 'admin' && (
-            <button className="btn" onClick={handleSeedPresets} disabled={seeding}>
-              {seeding ? 'Seeding...' : 'Seed Fleet Presets'}
-            </button>
+            <>
+              <button
+                className="btn btn-primary"
+                onClick={() => setIsAddModalOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                title="Add new motor asset with presets or custom parameters"
+              >
+                <Plus size={15} />
+                <span>Add Motor</span>
+              </button>
+              <button className="btn" onClick={handleSeedPresets} disabled={seeding}>
+                {seeding ? 'Seeding...' : 'Seed Fleet Presets'}
+              </button>
+            </>
           )}
         </div>
       </section>
@@ -104,9 +111,6 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
         </MetricCard>
         <MetricCard eyebrow="ACTIVE FAULTS" value={String(activeFaultsCount)} status={activeFaultsCount > 0 ? 'ACTION' : 'CLEAR'} tone={activeFaultsCount > 0 ? 'amber' : 'cyan'}>
           <AlertTriangle size={22} className="fleet-metric-icon" style={{ color: activeFaultsCount > 0 ? 'var(--warning)' : 'var(--data-cyan, var(--accent))' }} />
-        </MetricCard>
-        <MetricCard eyebrow="TRIPPED / DERATE" value={`${trippedCount} / ${derateCount}`} status={trippedCount > 0 ? 'CRITICAL' : 'NOMINAL'} tone={trippedCount > 0 ? 'amber' : 'cyan'}>
-          <Clock3 size={22} className="fleet-metric-icon" style={{ color: trippedCount > 0 ? 'var(--warning)' : 'var(--data-cyan, var(--accent))' }} />
         </MetricCard>
         <MetricCard eyebrow="Avg Health Index" value={avgMhi} unit="%" status={`ZONE ${fleetZone}`} tone={healthTone}>
           <div
@@ -212,9 +216,9 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
                   >
                     {priority}
                   </span>
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     <span className="motor-name">{motor.name}</span>
-                    <span className="motor-id">ID: {motor.id} · {(motor.rated_power / 1000).toFixed(1)} kW</span>
+                    <span className="motor-id" style={{ marginTop: '2px' }}>ID: {motor.id} · {(motor.rated_power / 1000).toFixed(1)} kW</span>
                   </div>
                 </div>
                 <span className="motor-location">Bay 0{motor.id} · Line {motor.id}</span>
@@ -236,28 +240,14 @@ export const FleetDashboard: React.FC<FleetDashboardProps> = ({
         </div>
       </section>
 
-      {/* Detailed Motor Twin Cards Grid */}
-      <section>
-        <div style={{ marginBottom: 12 }}>
-          <span className="eyebrow">DETAILED ASSET TELEMETRY</span>
-          <h2 className="fleet-title" style={{ fontSize: '1.25rem' }}>Motor Twin Cards</h2>
-        </div>
-        <div className="fleet-grid" aria-label="Motor fleet grid">
-          {motors.map((m) => (
-            <MotorCard
-              key={m.id}
-              motor={m}
-              frame={frames[m.id] ?? null}
-              onClick={() => onSelectMotor(m.id)}
-            />
-          ))}
-          {motors.length === 0 && (
-            <div className="glass-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>
-              No motors configured. {role === 'admin' ? 'Click "Seed Fleet Presets" to add sample motors.' : 'Ask an admin to add motors.'}
-            </div>
-          )}
-        </div>
-      </section>
+      <AddMotorModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onMotorAdded={async (newId) => {
+          await onRefreshMotors()
+          onSelectMotor(newId)
+        }}
+      />
     </div>
   )
 }

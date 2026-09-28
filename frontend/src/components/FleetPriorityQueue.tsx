@@ -37,33 +37,6 @@ export function FleetPriorityQueue() {
     setActionLog((prev) => [msg, ...prev.slice(0, 15)])
   }
 
-  // Handle Dequeue / Dispatch Top
-  const handlePopTop = () => {
-    const top = pq.peek()
-    if (!top) return
-
-    const motor = top.data
-    addLog(
-      `[heappop] Extracted Top Priority Motor #${motor.id}: ${motor.name} (Priority: ${top.priority.toFixed(1)}). Root replaced & heapified in O(log n).`
-    )
-
-    // Reset its fault
-    setFleet((prev) =>
-      prev.map((m) =>
-        m.id === motor.id
-          ? {
-              ...m,
-              sadaState: 'NORMAL',
-              severity: 0.05,
-              activeFault: null,
-              tempC: Math.min(m.tempC, 50),
-              rpm: 1475,
-              currentA: 4.5,
-            }
-          : m
-      )
-    )
-  }
 
   // Inject / Toggle Fault on a specific motor
   const handleInjectFault = (motorId: number, fault: string, severity: number) => {
@@ -88,34 +61,6 @@ export function FleetPriorityQueue() {
     )
   }
 
-  // Reset fleet
-  const handleReset = () => {
-    setFleet(INITIAL_FLEET)
-    addLog('Reset fleet to baseline operational states.')
-  }
-
-  // Add a new identical motor to the fleet
-  const handleAddMotor = () => {
-    const newId = fleet.length > 0 ? Math.max(...fleet.map((m) => m.id)) + 1 : 1
-    const newMotor: FleetMotor = {
-      id: newId,
-      name: `Unit ${newId}: Secondary Booster Pump`,
-      bay: `Bay E-0${newId}`,
-      application: 'Water Circulation Loop',
-      ratedPowerKw: 5.5,
-      rpm: 1474,
-      tempC: 45.0,
-      currentA: 4.6,
-      severity: 0.05,
-      confidence: 0.9,
-      sadaState: 'NORMAL',
-      activeFault: null,
-      loadPct: 60,
-      operatingHours: 120,
-    }
-    setFleet((prev) => [...prev, newMotor])
-    addLog(`[heappush] Added new motor #${newId} to fleet. Inserted at leaf and sifted up in O(log n).`)
-  }
 
   return (
     <div className="grid gap-6">
@@ -159,32 +104,9 @@ export function FleetPriorityQueue() {
           </div>
         </div>
 
-        {/* Action Controls Ribbon */}
+        {/* Heap Status Ribbon */}
         <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3.5 border-t border-[var(--border)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handlePopTop}
-              disabled={pq.isEmpty()}
-              className="btn btn-primary text-xs py-1.5 px-3 font-medium flex items-center gap-1.5"
-            >
-              <span>{heapType === 'max' ? 'Dispatch Immediate Triage' : 'Allocate Next Load Block'}</span>
-              <span className="text-[10px] num opacity-70">(heappop O(log n))</span>
-            </button>
-
-            <button
-              onClick={handleAddMotor}
-              className="btn text-xs py-1.5 px-3 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] border-[var(--border)] text-[var(--ink)]"
-            >
-              + Enqueue Unit (heappush)
-            </button>
-
-            <button
-              onClick={handleReset}
-              className="btn text-xs py-1.5 px-3 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--ink)]"
-            >
-              Reset Fleet
-            </button>
-          </div>
+          <span className="text-xs text-[var(--muted)] uppercase tracking-wider font-medium">Heap Telemetry</span>
 
           <div className="flex items-center gap-4 text-xs num text-[var(--muted)]">
             <span>Fleet Size: <strong className="text-[var(--ink)]">{fleet.length}</strong></span>
