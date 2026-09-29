@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import { Box, Sun, Moon, Bell, Clock3, User, BookOpen } from 'lucide-react'
+import { Box, Sun, Moon, Bell, Clock3, User } from 'lucide-react'
 import { api } from './api/client'
 import type { Frame, Motor, Role, SensorRow } from './api/types'
 import { AuthProvider, useAuth } from './auth/AuthContext'
@@ -165,40 +165,14 @@ function Shell() {
 
           <button
             type="button"
-            className="btn"
-            onClick={() => setIsDocsModalOpen(true)}
-            style={{
-              height: 32,
-              padding: '0 12px',
-              fontSize: 12,
-              borderRadius: 20,
-              borderColor: 'rgba(0, 229, 255, 0.35)',
-              background: 'rgba(0, 229, 255, 0.08)',
-              color: 'var(--accent)',
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-            title="Physics Engine & System Architecture Documentation"
-            aria-label="Engineering documentation"
-            data-testid="navbar-docs-btn"
-          >
-            <BookOpen size={14} />
-            <span>Docs</span>
-          </button>
-
-          <button
-            type="button"
             className="nav-profile-chip"
             onClick={() => setIsProfileModalOpen(true)}
-            title={`Operator Profile & Database Status (${session.username}) — Click to configure MySQL`}
+            title={`Operator Profile & Database Status (${session.username}) — Click to configure MySQL and view Docs`}
             aria-label="Operator profile and database settings"
           >
             <div className="nav-avatar">
               <User size={15} strokeWidth={2.2} />
             </div>
-            <span className="nav-profile-name">{session.username}</span>
           </button>
 
           <button className="nav-signout" onClick={() => setIsSignOutModalOpen(true)}>Sign out</button>

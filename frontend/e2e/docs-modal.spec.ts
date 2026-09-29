@@ -13,10 +13,24 @@ test('engineering physics docs modal and profile docs button verification', asyn
   // Wait for dashboard to load
   await expect(page.getByText('Fleet Operations Grid')).toBeVisible({ timeout: 15000 })
 
-  // 2. Click Docs button directly from navbar
-  const navbarDocsBtn = page.getByTestId('navbar-docs-btn')
-  await expect(navbarDocsBtn).toBeVisible()
-  await navbarDocsBtn.click()
+  // Screenshot updated navbar with icon-only profile chip and without docs button
+  await page.screenshot({
+    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/navbar_without_docs_preview.png',
+  })
+
+  // 2. Open Docs via the navbar profile icon
+  const profileChip = page.locator('.nav-profile-chip')
+  await expect(profileChip).toBeVisible()
+  await profileChip.click()
+
+  // Verify Profile modal opens
+  await expect(page.getByText('Operator Profile & Database Settings')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText('Physics Engine & Architecture Documentation')).toBeVisible()
+
+  // Open Docs from the profile card button
+  const profileOpenDocsBtn = page.getByTestId('profile-open-docs-btn')
+  await expect(profileOpenDocsBtn).toBeVisible()
+  await profileOpenDocsBtn.click()
 
   // Verify Engineering Docs Modal is opened
   await expect(page.getByText('AC Induction Motor Digital Twin Documentation')).toBeVisible({ timeout: 5000 })
@@ -74,28 +88,7 @@ test('engineering physics docs modal and profile docs button verification', asyn
   await page.getByLabel('Close documentation dialog').click()
   await expect(page.getByText('AC Induction Motor Digital Twin Documentation')).not.toBeVisible()
 
-  // 7. Verify opening Docs from inside the Profile section
-  const profileChip = page.locator('.nav-profile-chip')
-  await expect(profileChip).toBeVisible()
-  await profileChip.click()
-
-  // Verify Profile modal opens
-  await expect(page.getByText('Operator Profile & Database Settings')).toBeVisible({ timeout: 5000 })
-  await expect(page.getByText('Physics Engine & Architecture Documentation')).toBeVisible()
-
-  // Click the Open Docs button inside the profile card
-  const profileOpenDocsBtn = page.getByTestId('profile-open-docs-btn')
-  await expect(profileOpenDocsBtn).toBeVisible()
-  await profileOpenDocsBtn.click()
-
-  // Profile modal should close and docs modal should open
-  await expect(page.getByText('AC Induction Motor Digital Twin Documentation')).toBeVisible({ timeout: 5000 })
-
-  // Close docs modal via bottom button
-  await page.getByRole('button', { name: 'Close Documentation', exact: true }).click()
-  await expect(page.getByText('AC Induction Motor Digital Twin Documentation')).not.toBeVisible()
-
-  // 8. Test footer button in Profile modal
+  // 7. Test footer button in Profile modal
   await profileChip.click()
   await expect(page.getByText('Operator Profile & Database Settings')).toBeVisible({ timeout: 5000 })
 
