@@ -15,7 +15,7 @@ import itertools
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable
+from typing import Any
 
 import numpy as np
 
@@ -29,6 +29,7 @@ class FaultType(str, Enum):
     BEARING_BALL = "bearing_ball"
     UNBALANCE = "unbalance"
     MISALIGNMENT = "misalignment"
+    VOLTAGE_ANOMALY = "voltage_anomaly"
 
 
 class BearingDefect(str, Enum):
@@ -244,9 +245,6 @@ class FaultState:
         if sev <= 0.0:
             return np.zeros_like(theta_m, dtype=bool)
 
-        freq_mult = {
-            BearingDefect.IR: self.bearing_geometry.ball_diameter,  # placeholder
-        }
         # Use precomputed multiples
         defects = self.bearing_geometry.defect_frequencies(1.0)  # per unit shaft freq
         mult = {
@@ -378,7 +376,7 @@ def inject_eccentricity(
         static_depth: Explicit static eccentricity depth (overrides severity)
     """
     EccentricityType(type)
-    params = {"type": type}
+    params: dict[str, Any] = {"type": type}
     if dynamic_depth is not None:
         params["dynamic_depth"] = dynamic_depth
     if static_depth is not None:
@@ -445,7 +443,7 @@ def inject_fault(
             FaultType.BEARING_OUTER: "OR",
             FaultType.BEARING_BALL: "BALL",
         }
-        return inject_bearing_fault(state, type=defect_map[ft], severity=severity)
+        return inject_bearing_fault(state, defect=defect_map[ft], severity=severity)
     if ft == FaultType.UNBALANCE:
         return inject_unbalance(state, magnitude=severity)
     return inject_misalignment(state, magnitude=severity)

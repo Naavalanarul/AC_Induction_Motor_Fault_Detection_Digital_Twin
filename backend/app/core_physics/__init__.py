@@ -7,18 +7,18 @@ This package contains the fundamental physics models:
 - Thermal Lumped Parameter Network (LPTN)
 """
 
-from .motor_parameters import MotorParams, DEFAULT_MOTOR
 from .dynamic_solver import StateSpaceMotorSolver, TransientResult
 from .fault_models import (
-    FaultType,
     BearingDefect,
     EccentricityType,
     FaultState,
-    inject_broken_rotor_bar,
-    inject_interturn_short,
-    inject_eccentricity,
+    FaultType,
     inject_bearing_fault,
+    inject_broken_rotor_bar,
+    inject_eccentricity,
+    inject_interturn_short,
 )
+from .motor_parameters import DEFAULT_MOTOR, MotorParams
 from .thermal_lptn import FourNodeThermalLPTN, LPTNState
 
 __all__ = [

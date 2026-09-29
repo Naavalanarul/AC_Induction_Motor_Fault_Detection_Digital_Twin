@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     # Simulation / streaming
     run_simulation: bool = True
     seed_demo_motor: bool = True
+    seed_default_faults: bool = True
     realtime_factor: float = 1.0
     stream_hz: float = 10.0
     persist_interval_s: float = 1.0

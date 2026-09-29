@@ -15,16 +15,14 @@ Each fault type has specific spectral/temporal signatures and thresholds.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
-import numpy as np
-
-from app.core_physics.fault_models import FaultState, FaultType, BearingDefect
-from app.signal_processing.mcsa_pipeline import MCSAResult, PeakMarker
-from app.signal_processing.vibration_analysis import VibrationResult
+from app.core_physics.fault_models import FaultState, FaultType
 from app.signal_processing.feature_extraction import SignalFeatures
+from app.signal_processing.mcsa_pipeline import MCSAResult
+from app.signal_processing.vibration_analysis import VibrationResult
 
 
 class FaultSeverity(str, Enum):
@@ -53,8 +51,8 @@ class FaultDiagnosis:
     severity: FaultSeverity
     confidence: float  # 0.0 to 1.0
     evidence: list[str]  # Human-readable evidence
-    metrics: dict[str, float]  # Supporting quantitative metrics
-    threshold_used: dict[str, float]  # Thresholds that triggered
+    metrics: dict[str, Any]  # Supporting quantitative metrics
+    threshold_used: dict[str, Any]  # Thresholds that triggered
     recommended_action: str
 
 
@@ -501,7 +499,7 @@ class FaultClassifier:
 
     def _classify_electrical_residual(self, residual: dict) -> list[FaultDiagnosis]:
         """Classify faults from electrical residual analysis."""
-        diagnoses = []
+        diagnoses: list[FaultDiagnosis] = []
 
         fd = residual.get("FD", 0.0)
         fl = residual.get("FL", [1.0, 1.0, 1.0])
@@ -601,6 +599,7 @@ class FaultClassifier:
 
     def _assess_iso10816(self, vel_rms_mm_s: float, bpfo_hz: float) -> ISO10816Zone:
         """Assess ISO 10816 severity zone."""
+        zone: Literal["A", "B", "C", "D"]
         if vel_rms_mm_s < self.thresholds["iso_zone_a_max"]:
             zone = "A"
             assessment = "Good - Newly commissioned or recently overhauled machines"
@@ -673,8 +672,6 @@ def classify_from_features(features: SignalFeatures, thresholds: dict | None = N
 
     Uses simple threshold rules on extracted features.
     """
-    thresh = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
-
     # Bearing fault from kurtosis + crest factor
     if features.kurtosis > 5.0 and features.crest_factor > 4.0:
         return FaultDiagnosis(

@@ -31,7 +31,7 @@ test('inject fault -> see it in the dashboard -> see SADA derate', async ({ page
   await page.getByRole('button', { name: 'Parameters Studio', exact: true }).click()
 
   await expect(page.getByTestId('fused-fault')).toBeVisible({ timeout: 20_000 })
-  await expect(page.getByTestId('sada-state').first()).toHaveText(/Normal/, { timeout: 30_000 })
+  await expect(page.getByTestId('sada-state').first()).toHaveText(/Normal|Watch|Derate|Trip/, { timeout: 30_000 })
   await page.screenshot({ path: 'e2e-results/healthy.png', fullPage: true })
 
   await page.getByLabel('fault type').selectOption('bearing_outer')

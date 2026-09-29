@@ -413,6 +413,26 @@ function Shell() {
         )}
       </div>
 
+      {/* Main Dashboard Global Footer */}
+      <footer className="app-footer" aria-label="System footer">
+        <div className="app-footer__content">
+          <a
+            href="https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="app-footer__link"
+          >
+            https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin
+          </a>
+          <span className="app-footer__sep">·</span>
+          <span>2026</span>
+          <span className="app-footer__sep">·</span>
+          <span>Naavalanarul</span>
+          <span className="app-footer__sep">·</span>
+          <span>MIT License</span>
+        </div>
+      </footer>
+
       {/* Sign Out Confirmation Modal */}
       <SignOutConfirmModal
         isOpen={isSignOutModalOpen}

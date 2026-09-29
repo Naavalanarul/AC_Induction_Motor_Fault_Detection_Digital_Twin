@@ -23,13 +23,14 @@ Rotor electrical speed: ω_r = p * ω_m
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Literal
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from .motor_parameters import DerivedConstants, MotorParams
+from .motor_parameters import MotorParams
 
 TWO_PI = 2.0 * math.pi
 SQRT3_2 = math.sqrt(3.0) / 2.0
@@ -189,7 +190,7 @@ class StateSpaceMotorSolver:
             # Shorted turn circulating current i_f = μ * u_a / (r_f + μ * R_s)
             u_phase_a = ua
             r_loop = self.itsc_rf + self.itsc_mu * rs_temp
-            i_f = self.itsc_mu * u_phase_a / max(r_loop, 1e-4)
+            _i_f = self.itsc_mu * u_phase_a / max(r_loop, 1e-4)
             # Reaction on stator α-β: Phase A is aligned with α axis
             # This adds to the α-axis current derivative
             dia += -(self.itsc_mu / sls) * (u_phase_a - rs_temp * ia) * 0.5
@@ -242,7 +243,9 @@ class StateSpaceMotorSolver:
             tl_fn = load_torque
         else:
             tl_val = float(load_torque)
-            tl_fn = lambda t: tl_val
+
+            def tl_fn(_t: float) -> float:
+                return tl_val
 
         # Initial conditions: [i_α, i_β, ψ_α, ψ_β, ω_m, θ_m]
         init_state = np.zeros(6, dtype=np.float64) if y0 is None else np.asarray(y0, dtype=np.float64)
@@ -363,7 +366,9 @@ class StateSpaceMotorSolver:
             tl_fn = load_torque
         else:
             tl_val = float(load_torque)
-            tl_fn = lambda t: tl_val
+
+            def tl_fn(_t: float) -> float:
+                return tl_val
 
         t_start, t_end = t_span
         n_steps = int((t_end - t_start) / dt) + 1
@@ -381,8 +386,6 @@ class StateSpaceMotorSolver:
         th_m_arr = np.zeros(n_steps)
         te_arr = np.zeros(n_steps)
         tl_arr = np.zeros(n_steps)
-        fault_heat_arr = np.zeros(n_steps)
-        copper_loss_arr = np.zeros(n_steps)
 
         for i in range(n_steps):
             ti = t[i]

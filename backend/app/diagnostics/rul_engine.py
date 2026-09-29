@@ -19,8 +19,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
-from app.core_physics.fault_models import BearingGeometry, BearingDefect, FaultState
-from app.core_physics.thermal_lptn import FourNodeThermalLPTN, LPTNState, ThermalNetworkParams
+import numpy as np
+
+from app.core_physics.fault_models import BearingDefect, FaultState
+from app.core_physics.thermal_lptn import FourNodeThermalLPTN, LPTNState
 
 
 class InsulationClass(str, Enum):
@@ -175,7 +177,6 @@ class RULEngine:
         exponent = (Ea / KB) * (1.0 / T_rated_k - 1.0 / T_actual_k)
         exponent = max(-15.0, min(15.0, exponent))  # Clamp for numerical stability
         aging_factor = math.exp(exponent)
-        rul_arrhenius = self.nominal_life_hours / max(aging_factor, 1e-6)
 
         # Use Arrhenius for aging factor (more physical), Montsinger for RUL
         rul_hours = max(0.0, min(rul_montsinger, 100000.0))
@@ -318,7 +319,7 @@ class RULEngine:
         bearing_nde = self.calculate_bearing_rul(lptn_state, vibration_rms_mms * 0.8, fault_state, is_drive_end=False)
 
         # Overall RUL is minimum of all components
-        rul_values = [
+        rul_values: list[tuple[Literal["insulation", "bearing_de", "bearing_nde"], float]] = [
             ("insulation", insulation.rul_hours),
             ("bearing_de", bearing_de.rul_hours),
             ("bearing_nde", bearing_nde.rul_hours),
@@ -382,7 +383,3 @@ class RULEngine:
         r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
         return max(0.0, rul), float(max(0.0, r2))
-
-
-# For numpy compatibility at module level
-import numpy as np

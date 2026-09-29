@@ -18,13 +18,14 @@ Mathematical fault injection models:
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from app.simulation.params import DerivedConstants, MotorParams
+from app.simulation.params import MotorParams
 
 TWO_PI = 2.0 * math.pi
 SQRT3_2 = math.sqrt(3.0) / 2.0
@@ -87,7 +88,7 @@ class StateSpaceMotorSolver:
         self,
         t: float,
         state: np.ndarray,
-        load_torque_fn: callable,
+        load_torque_fn: Callable[[float], float],
     ) -> np.ndarray:
         """Evaluates state derivatives dx/dt = f(t, x).
 
@@ -155,8 +156,6 @@ class StateSpaceMotorSolver:
             # Phase A voltage: u_a = ua
             # Shorted turn circulating current i_f = mu * u_a / (r_f + mu * R_s)
             u_phase_a = ua
-            r_loop = self.itsc_rf + self.itsc_mu * p.Rs
-            i_f = self.itsc_mu * u_phase_a / max(r_loop, 1e-4)
             # Reaction on stator alpha-beta: Phase A is aligned with alpha axis
             dia += -(self.itsc_mu / sls) * (u_phase_a - p.Rs * ia) * 0.5
 
@@ -180,7 +179,7 @@ class StateSpaceMotorSolver:
         self,
         t_span: tuple[float, float],
         t_eval: np.ndarray | None = None,
-        load_torque: float | callable = 0.0,
+        load_torque: float | Callable[[float], float] = 0.0,
         y0: np.ndarray | None = None,
         method: Literal["RK45", "DOP853", "Radau"] = "RK45",
         rtol: float = 1e-5,
@@ -189,10 +188,12 @@ class StateSpaceMotorSolver:
     ) -> TransientResult:
         """Executes nonlinear transient numerical integration using scipy.integrate.solve_ivp."""
         if callable(load_torque):
-            tl_fn = load_torque
+            tl_fn: Callable[[float], float] = load_torque
         else:
             tl_val = float(load_torque)
-            tl_fn = lambda t: tl_val
+
+            def tl_fn(t: float) -> float:
+                return tl_val
 
         # Initial conditions: [i_alpha, i_beta, psi_alpha, psi_beta, omega_m, theta_m]
         init_state = np.zeros(6, dtype=np.float64) if y0 is None else np.asarray(y0, dtype=np.float64)

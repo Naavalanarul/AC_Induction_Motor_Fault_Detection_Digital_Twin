@@ -43,6 +43,7 @@ export const MotorCard: React.FC<MotorCardProps> = ({ motor, frame, onClick, isS
     <div
       role="button"
       tabIndex={0}
+      aria-label={`Open digital twin for ${motor.name}`}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

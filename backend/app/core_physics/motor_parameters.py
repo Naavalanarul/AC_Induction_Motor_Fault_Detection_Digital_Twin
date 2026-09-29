@@ -131,16 +131,11 @@ class MotorParams:
         Uses standard approximations for initial simulation setup.
         Should be refined with no-load/locked-rotor test data.
         """
-        sync_speed = 60.0 * rated_freq / pole_pairs
-        slip = (sync_speed - rated_speed) / sync_speed
         rated_torque = rated_power / (rated_speed * 2.0 * 3.14159265359 / 60.0)
 
         # Approximate parameters for standard IEC frame motors
         # These are rough estimates - real values need test data
         phase_voltage = rated_voltage / 3.0**0.5
-        # Assume power factor ~0.8, efficiency ~0.85 at rated load
-        pf = 0.8
-        eff = 0.85
 
         # Rough estimates based on typical motor designs
         Rs_est = phase_voltage / rated_current * 0.05

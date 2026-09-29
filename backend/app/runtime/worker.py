@@ -36,10 +36,10 @@ from app.db.models import Alert, Diagnosis, SensorReading, SupervisoryAction
 from app.diagnostics.engine import DiagnosticEngine
 from app.diagnostics.features import CHANNELS, FEATURE_NAMES, N_FEATURES, scalogram
 from app.diagnostics.health_index import compute_mhi, error_code
+from app.diagnostics.mcsa import MCSAAnalyzer
 from app.diagnostics.ml.classifier import MechanicalClassifier
 from app.diagnostics.prognosis import estimate_time_to_threshold
 from app.diagnostics.recommendations import get_recommendation
-from app.diagnostics.mcsa import MCSAAnalyzer
 from app.diagnostics.rul_engine import RULEngine, RULResult
 from app.diagnostics.schema import DiagFault, FusedDiagnosis
 from app.runtime.broker import Broker
@@ -362,15 +362,15 @@ class MotorWorker:
                 try:
                     omega_m = float(np.mean(st.electrical.omega_m)) if st.electrical is not None else 154.3
                     analyzer = MCSAAnalyzer(fs=self.sim.fs, window="hann")
-                    res = analyzer.analyze(x, nominal_supply_freq=50.0, omega_m=omega_m, pole_pairs=self.cfg.params.pole_pairs)
+                    mcsa_res = analyzer.analyze(x, nominal_supply_freq=50.0, omega_m=omega_m, pole_pairs=self.cfg.params.pole_pairs)
                     spectra["mcsa"] = {
-                        "fundamental_freq": res.fundamental_freq,
-                        "fundamental_mag_db": res.fundamental_mag_db,
-                        "slip": res.slip,
-                        "rotor_freq_hz": res.rotor_freq_hz,
-                        "brb_fault_detected": res.brb_fault_detected,
-                        "eccentricity_detected": res.eccentricity_detected,
-                        "worst_brb_sideband_db": res.worst_brb_sideband_db,
+                        "fundamental_freq": mcsa_res.fundamental_freq,
+                        "fundamental_mag_db": mcsa_res.fundamental_mag_db,
+                        "slip": mcsa_res.slip,
+                        "rotor_freq_hz": mcsa_res.rotor_freq_hz,
+                        "brb_fault_detected": mcsa_res.brb_fault_detected,
+                        "eccentricity_detected": mcsa_res.eccentricity_detected,
+                        "worst_brb_sideband_db": mcsa_res.worst_brb_sideband_db,
                         "peaks": [
                             {
                                 "freq_hz": p.freq_hz,
@@ -378,7 +378,7 @@ class MotorWorker:
                                 "label": p.label,
                                 "harmonic_k": p.harmonic_k,
                             }
-                            for p in res.peaks
+                            for p in mcsa_res.peaks
                         ],
                     }
                 except Exception as exc:

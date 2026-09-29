@@ -13,27 +13,24 @@ Comprehensive verification test suite for the Core Physics Engine:
 
 from __future__ import annotations
 
-import math
 import numpy as np
 import pytest
 
-from app.core_physics.motor_parameters import MotorParams, DEFAULT_MOTOR
-from app.core_physics.dynamic_solver import StateSpaceMotorSolver, TransientResult
-from app.core_physics.thermal_lptn import FourNodeThermalLPTN, ThermalNetworkParams, LPTNState
+from app.core_physics.dynamic_solver import StateSpaceMotorSolver
 from app.core_physics.fault_models import (
-    FaultState,
-    FaultType,
     BearingDefect,
-    EccentricityType,
-    inject_broken_rotor_bar,
-    inject_interturn_short,
-    inject_eccentricity,
-    inject_bearing_fault,
     BearingGeometry,
+    FaultState,
+    inject_bearing_fault,
+    inject_broken_rotor_bar,
+    inject_eccentricity,
+    inject_interturn_short,
 )
+from app.core_physics.motor_parameters import DEFAULT_MOTOR
+from app.core_physics.thermal_lptn import FourNodeThermalLPTN, LPTNState
+from app.diagnostics.rul_engine import InsulationClass, RULEngine
 from app.signal_processing.mcsa_pipeline import MCSAAnalyzer
 from app.signal_processing.vibration_analysis import VibrationAnalyzer
-from app.diagnostics.rul_engine import RULEngine, InsulationClass
 
 
 class TestStateSpacePhysicsEngine:
@@ -115,7 +112,8 @@ class TestFaultInjection:
 
     def test_brb_harmonic_power_increase_ge_15db(self):
         """BRB activation increases (1-2s)fs power by ≥ 15 dB."""
-        tl_fn = lambda t: 10.0 if t >= 0.3 else 0.0
+        def tl_fn(t: float) -> float:
+            return 10.0 if t >= 0.3 else 0.0
 
         # Healthy baseline
         solver_healthy = StateSpaceMotorSolver(params=DEFAULT_MOTOR, brb_delta=0.0)
@@ -205,7 +203,9 @@ class TestFaultInjection:
 
     def test_dynamic_eccentricity_permeance(self):
         """Dynamic eccentricity modulates L_m producing f_s ± f_r sidebands."""
-        tl_fn = lambda t: 10.0 if t >= 0.3 else 0.0
+        def tl_fn(t: float) -> float:
+            return 10.0 if t >= 0.3 else 0.0
+
         solver = StateSpaceMotorSolver(params=DEFAULT_MOTOR, ecc_dynamic=0.35)
         res = solver.solve(t_span=(0.0, 3.0), load_torque=tl_fn, method="RK45")
 
@@ -471,7 +471,6 @@ class TestRULEngine:
         engine = RULEngine(insulation_class=InsulationClass.F, nominal_life_hours=20000.0)
 
         # Create mock LPTN state at rated temp
-        from app.core_physics.thermal_lptn import LPTNState
         state_rated = LPTNState(
             t_winding=150.0, t_teeth=140.0, t_rotor=130.0, t_bearing=80.0,
             t_ambient=25.0, p_copper_s=100.0, p_iron=40.0, p_copper_r=80.0, p_friction=15.0,
@@ -500,7 +499,6 @@ class TestRULEngine:
             shaft_speed_rpm=1500.0,
         )
 
-        from app.core_physics.thermal_lptn import LPTNState
         state = LPTNState(
             t_winding=80.0, t_teeth=75.0, t_rotor=70.0, t_bearing=60.0,
             t_ambient=25.0, p_copper_s=100.0, p_iron=40.0, p_copper_r=80.0, p_friction=15.0,
@@ -527,7 +525,6 @@ class TestRULEngine:
             nde_bearing_p=1500.0,
         )
 
-        from app.core_physics.thermal_lptn import LPTNState
         # Insulation limited case (very hot winding)
         state = LPTNState(
             t_winding=180.0, t_teeth=165.0, t_rotor=145.0, t_bearing=70.0,
@@ -562,9 +559,10 @@ class TestFaultClassifier:
 
     def test_classifier_brb_detection(self):
         """Classifier detects BRB from MCSA."""
+        import numpy as np
+
         from app.diagnostics.fault_classifier import FaultClassifier
         from app.signal_processing.mcsa_pipeline import MCSAResult, PeakMarker
-        import numpy as np
 
         classifier = FaultClassifier()
 

@@ -15,7 +15,11 @@ PRESET_MOTORS: list[dict] = [
         "name": "New Install — Line 3 Pump",
         "base_load_nm": 8.0,
         "params": dataclasses.asdict(DEFAULT_MOTOR),
-        "fault": None,
+        "fault": {
+            "fault_type": "bearing_outer",
+            "severity": 0.35,
+            "params": {},
+        },
     },
     {
         "name": "Aging Belt Drive — Bay 2",

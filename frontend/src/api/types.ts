@@ -103,7 +103,13 @@ export type Frame = {
   error_code?: string
   zone?: string
   sensors: Record<string, SensorEntry>
-  spectra: Partial<Record<'current_a' | 'vibration_y' | 'acoustic' | 'mcsa', Spectrum | any>>
+  spectra: {
+    current_a?: Spectrum
+    vibration_y?: Spectrum
+    acoustic?: Spectrum
+    mcsa?: Spectrum | Record<string, unknown>
+    [key: string]: Spectrum | Record<string, unknown> | undefined
+  }
   scalogram: { freqs: number[]; values: number[][]; dt: number } | null
   residual: { a: number[] } | null
   mechanics: { torque_nm: number; load_nm: number; rpm: number }

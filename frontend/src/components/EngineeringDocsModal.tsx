@@ -14,8 +14,9 @@ import {
   Waves,
   ChevronLeft,
   ChevronRight,
-  Github,
   Radio,
+  Binary,
+  GitBranch,
 } from 'lucide-react'
 
 export interface EngineeringDocsModalProps {
@@ -30,6 +31,7 @@ export type ChapterKey =
   | 'detection'
   | 'mcsa-thermal'
   | 'architecture'
+  | 'dsa'
   | 'papers'
 
 interface Chapter {
@@ -84,9 +86,16 @@ const CHAPTERS: Chapter[] = [
     icon: Layers,
   },
   {
+    key: 'dsa',
+    title: '7. Data Structures & Algorithmic Foundations (DSA)',
+    shortTitle: '7. DSA Foundations',
+    subtitle: 'Binary Priority Queues, O(1) circular ring buffers, SADA hysteresis FSM, and hash registries',
+    icon: Binary,
+  },
+  {
     key: 'papers',
-    title: '7. Canonical Research Papers & Standards',
-    shortTitle: '7. Research Papers & Standards',
+    title: '8. Canonical Research Papers & Standards',
+    shortTitle: '8. Research Papers & Standards',
     subtitle: 'Peer-reviewed academic citations, IEEE/ISO standards, and project credits',
     icon: ExternalLink,
   },
@@ -902,7 +911,268 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
           )}
 
           {/* ========================================================================= */}
-          {/* CHAPTER 7: CANONICAL PAPERS, STANDARDS & PROJECT CREDITS */}
+          {/* CHAPTER 7: DATA STRUCTURES & ALGORITHMIC FOUNDATIONS (DSA) */}
+          {/* ========================================================================= */}
+          {currentChapter.key === 'dsa' && (
+            <div className="space-y-6">
+              {/* Introduction to DSA in Industrial Cyber-Physical Systems */}
+              <section className="card" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <Binary size={20} style={{ color: 'var(--accent)' }} />
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--ink)' }}>
+                    Data Structures &amp; Algorithmic Principles in Industrial Twins
+                  </h3>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+                  A production cyber-physical digital twin processes thousands of multi-channel sensor samples per second
+                  while simultaneously executing numerical differential equation solvers, spectral transforms, and safety interlocks.
+                  To achieve deterministic, sub-100 millisecond response times without garbage collection thrashing or latency spikes,
+                  the system relies on formal data structures and algorithmic designs:
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 14 }}>
+                  <div style={{ padding: 12, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>Fleet Triage</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '4px 0' }}>Binary Max/Min Heap</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>O(log N) dynamic priority triage &amp; O(1) peek for critical tripped assets</div>
+                  </div>
+                  <div style={{ padding: 12, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase' }}>Signal Buffering</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '4px 0' }}>Circular Ring Buffers</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>O(1) push/pop, zero heap reallocations for 5 kHz Welch &amp; CWT transforms</div>
+                  </div>
+                  <div style={{ padding: 12, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase' }}>Supervisory Control</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '4px 0' }}>Hysteresis Debounced FSM</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Mealy/Moore automaton with α=0.25 EMA filter to eliminate contactor chattering</div>
+                  </div>
+                  <div style={{ padding: 12, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase' }}>Multiplexing</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '4px 0' }}>Hash-Indexed Registry</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>O(1) associative frame routing across multi-motor concurrent WebSocket streams</div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 1. Binary Max/Min Priority Queue */}
+              <section className="card" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <GitBranch size={19} style={{ color: 'var(--accent)' }} />
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      1. Binary Heap Priority Queue (Fleet Operations Triage)
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(0,229,255,0.1)', color: 'var(--accent)', fontFamily: 'monospace' }}>
+                    frontend/src/dsa/PriorityQueue.ts
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+                  In an enterprise manufacturing plant with tens or hundreds of induction motors, sorting the entire fleet
+                  on every 100ms telemetry tick using comparison sorts (e.g. QuickSort O(N log N)) wastes CPU cycles and triggers UI re-render thrashing.
+                  Instead, the digital twin implements an array-backed <strong>Binary Heap Priority Queue</strong>:
+                </p>
+
+                <div
+                  style={{
+                    margin: '14px 0',
+                    padding: '16px',
+                    borderRadius: 8,
+                    background: 'var(--surface-raised)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    lineHeight: 1.8,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  <div style={{ color: 'var(--accent)', fontWeight: 700 }}>Binary Heap Index Arithmetic &amp; Invariants:</div>
+                  <div>• Complete Binary Tree mapped to contiguous Array A[0 ... N-1]</div>
+                  <div>• Parent(i)  = ⌊(i - 1) / 2⌋</div>
+                  <div>• Left(i)    = 2i + 1</div>
+                  <div>• Right(i)   = 2i + 2</div>
+                  <div style={{ marginTop: 8, color: '#10b981', fontWeight: 700 }}>Triage Urgency Ranking Function:</div>
+                  <div>Priority(m) = 1000·1_TRIP + 500·1_DERATE + (100 - MHI)·1.5 + SmoothedSeverity·100</div>
+                  <div style={{ marginTop: 8, color: '#f59e0b', fontWeight: 700 }}>Asymptotic Complexities:</div>
+                  <div>• Peek Root (Highest Urgency Motor):  O(1) constant time</div>
+                  <div>• Push / Enqueue (New Telemetry Tick): O(log N) via Sift-Up (heapifyUp)</div>
+                  <div>• Pop / Dequeue (Acknowledge Alert):   O(log N) via Sift-Down (heapifyDown)</div>
+                  <div>• Batch Construction (Fleet Init):    O(N) via Floyd Linear Heapify Algorithm</div>
+                </div>
+
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    background: 'rgba(0,229,255,0.05)',
+                    border: '1px solid rgba(0,229,255,0.15)',
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    color: 'var(--ink-2)',
+                  }}
+                >
+                  <strong style={{ color: 'var(--accent)' }}>Why Floyd O(N) Heapify Works:</strong> Most nodes in a binary tree reside near the leaves.
+                  At height h, there are at most ⌈N / 2^(h+1)⌉ nodes, each requiring at most h downward swaps.
+                  The infinite geometric series ∑ (h / 2^h) converges to 2, proving that building the priority queue takes strictly linear O(N) operations.
+                </div>
+              </section>
+
+              {/* 2. Circular Ring Buffers */}
+              <section className="card" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Layers size={19} style={{ color: '#10b981' }} />
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      2. Circular Sliding Ring Buffers (Zero-Allocation Telemetry Streams)
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(16,185,129,0.1)', color: '#10b981', fontFamily: 'monospace' }}>
+                    backend/app/runtime/worker.py
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+                  Continuous signal processing pipelines require sliding temporal windows (e.g. 2.0 seconds of phase current for Welch PSD;
+                  0.5 seconds of tri-axial vibration for bearing envelope demodulation). Standard arrays with linear slice/copy operations
+                  suffer from O(N) allocation overhead and frequent memory defragmentation pauses.
+                </p>
+
+                <div
+                  style={{
+                    margin: '14px 0',
+                    padding: '16px',
+                    borderRadius: 8,
+                    background: 'var(--surface-raised)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    lineHeight: 1.8,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  <div style={{ color: '#10b981', fontWeight: 700 }}>Ring Buffer Indexing via Modular Arithmetic:</div>
+                  <div>• Head Index: write_ptr = (write_ptr + 1) mod Capacity</div>
+                  <div>• Tail Index: read_ptr  = (read_ptr + 1) mod Capacity</div>
+                  <div>• Push Sample: O(1) amortized, zero dynamic allocations</div>
+                  <div>• Evict Oldest: O(1) automatic drop when buffer capacity is reached</div>
+                  <div>• Memory Space: Bounded strictly to O(K) bytes, completely static footprint</div>
+                  <div style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 700 }}>Dedicated Sized Buffers in Worker Engine:</div>
+                  <div>• Current Buffer (_cur_buf):  K = 20 chunks (2.0 s @ 5,000 Hz = 10,000 pts) for MCSA Welch PSD</div>
+                  <div>• Vibration Buffer (_vib_buf): K = 5 chunks (0.5 s @ 12,800 Hz = 6,400 pts) for Hilbert Envelopes</div>
+                  <div>• Acoustic Buffer (_ac_buf):   K = 5 chunks (0.5 s @ 20,000 Hz = 10,000 pts) for Acoustic Bursts</div>
+                  <div>• Residual Buffer (_res_buf):  K = 20 chunks for Kalman/State-Space current residual tracking</div>
+                </div>
+              </section>
+
+              {/* 3. SADA Finite State Machine & Hysteresis Debouncing */}
+              <section className="card" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <ShieldAlert size={19} style={{ color: '#f59e0b' }} />
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      3. Finite State Machine (FSM) with Asymmetric Hysteresis Debouncing
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontFamily: 'monospace' }}>
+                    backend/app/supervisory/sada.py
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+                  Industrial motor contactors must never toggle rapidly under transient load spikes or electrical noise (chatter / hunting).
+                  The <strong>SADA Supervisory Controller</strong> is modeled as a formal Mealy/Moore Automaton with state space
+                  Q = &#123;NORMAL, ADVISORY, DERATE, TRIP&#125;, governed by first-order IIR Exponential Moving Average (EMA) low-pass filtering
+                  and dual-threshold Schmitt trigger hysteresis:
+                </p>
+
+                <div
+                  style={{
+                    margin: '14px 0',
+                    padding: '16px',
+                    borderRadius: 8,
+                    background: 'var(--surface-raised)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    lineHeight: 1.8,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  <div style={{ color: '#f59e0b', fontWeight: 700 }}>1. Discrete Low-Pass EMA Filter (α = 0.25):</div>
+                  <div>SmoothedSeverity_t = α · RawSeverity_t + (1 - α) · SmoothedSeverity_(t-1)</div>
+                  <div style={{ color: 'var(--muted)', fontSize: 11 }}>Attenuates single-frame outlier noise while preserving true fault rise times.</div>
+                  <div style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 700 }}>2. Asymmetric Dual-Threshold Hysteresis Rules:</div>
+                  <div>• TRIP Interlock:     Triggered if SmoothedSeverity ≥ 0.85 sustained for ≥ 3 ticks</div>
+                  <div>• DERATE Activation:   Triggered if 0.50 ≤ SmoothedSeverity &lt; 0.85</div>
+                  <div>• ADVISORY Alert:      Triggered if 0.25 ≤ SmoothedSeverity &lt; 0.50</div>
+                  <div>• TRIP Reset Rule:     CANNOT auto-reset! Requires SmoothedSeverity ≤ 0.20 AND Operator ACK</div>
+                  <div style={{ marginTop: 8, color: '#10b981', fontWeight: 700 }}>3. Continuous Load Derating Equation:</div>
+                  <div>LoadCommand = max(0.30, 1.0 - 0.70 · (SmoothedSeverity - 0.40) / (0.85 - 0.40))</div>
+                </div>
+              </section>
+
+              {/* 4. Algorithmic Complexity Reference Table */}
+              <section className="card" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <Cpu size={20} style={{ color: 'var(--accent)' }} />
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)' }}>
+                    Algorithmic Complexity &amp; Architecture Reference
+                  </h4>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+                        <th style={{ padding: '8px 10px' }}>Algorithm / Structure</th>
+                        <th style={{ padding: '8px 10px' }}>Implementation</th>
+                        <th style={{ padding: '8px 10px' }}>Time Complexity</th>
+                        <th style={{ padding: '8px 10px' }}>Space Complexity</th>
+                        <th style={{ padding: '8px 10px' }}>Industrial Purpose</th>
+                      </tr>
+                    </thead>
+                    <tbody style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>
+                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '8px 10px', color: 'var(--accent)', fontWeight: 600 }}>Binary Max-Heap</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>PriorityQueue.ts</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(log N) push/pop, O(1) peek</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(N)</td>
+                        <td style={{ padding: '8px 10px' }}>Dynamic fleet urgency ranking &amp; tripped asset triage</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '8px 10px', color: '#10b981', fontWeight: 600 }}>Circular Ring Buffers</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>worker.py (deque)</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) amortized append/pop</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(K) static</td>
+                        <td style={{ padding: '8px 10px' }}>Zero-allocation sliding windows for 5 kHz Welch &amp; CWT</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '8px 10px', color: '#f59e0b', fontWeight: 600 }}>Hysteresis FSM + EMA</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>sada.py</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) per frame</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) static</td>
+                        <td style={{ padding: '8px 10px' }}>Debounced contactor protection &amp; anti-chatter control</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '8px 10px', color: '#a78bfa', fontWeight: 600 }}>Hash Map Telemetry Registry</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>manager.py / App.tsx</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) average lookup/insert</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(N)</td>
+                        <td style={{ padding: '8px 10px' }}>Instant WebSocket telemetry multiplexing &amp; state sync</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '8px 10px', color: 'var(--ink)', fontWeight: 600 }}>Runge-Kutta 4th / RK45</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>dynamic_solver.py</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(M) steps, error O(Δt⁴)</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) per tick</td>
+                        <td style={{ padding: '8px 10px' }}>Solving nonlinear 6D electromechanical state-space equations</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* CHAPTER 8: CANONICAL PAPERS, STANDARDS & PROJECT CREDITS */}
           {/* ========================================================================= */}
           {currentChapter.key === 'papers' && (
             <div className="space-y-6">
@@ -1020,38 +1290,10 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
             </button>
           </div>
 
-          {/* GitHub Repository & Year of Creation */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <a
-              href="https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 6,
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid var(--border)',
-                color: 'var(--ink)',
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: 12,
-                transition: 'all 0.15s ease',
-              }}
-              className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
-            >
-              <Github size={14} />
-              <span>GitHub Repository</span>
-              <ExternalLink size={12} />
-            </a>
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: 11, color: 'var(--muted)' }}>
-              <span>Created: <strong>2026</strong> · Author: Naavalanarul</span>
-              <span>MIT License · AC Induction Motor Digital Twin</span>
-            </div>
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+              Tip: Press ← / → arrow keys to flip pages
+            </span>
             <button
               type="button"
               className="btn"

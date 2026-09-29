@@ -14,9 +14,7 @@ Comprehensive verification test suite for the reconstructed Core Physics Engine:
 
 from __future__ import annotations
 
-import math
 import numpy as np
-import pytest
 
 from app.diagnostics.mcsa import MCSAAnalyzer
 from app.simulation.params import DEFAULT_MOTOR
@@ -52,7 +50,8 @@ class TestStateSpacePhysicsEngine:
 
     def test_brb_harmonic_power_increase_ge_15db(self):
         """BRB activation modulates rotor resistance and increases (1 - 2s)fs power by >= 15 dB."""
-        tl_fn = lambda t: 10.0 if t >= 0.3 else 0.0
+        def tl_fn(t: float) -> float:
+            return 10.0 if t >= 0.3 else 0.0
 
         # 1. Healthy baseline run
         solver_healthy = StateSpaceMotorSolver(params=DEFAULT_MOTOR, brb_delta=0.0)
@@ -125,7 +124,9 @@ class TestStateSpacePhysicsEngine:
 
     def test_dynamic_eccentricity_permeance(self):
         """Dynamic eccentricity modulates mutual inductance L_m(theta_m) producing f_s +/- f_r sidebands."""
-        tl_fn = lambda t: 10.0 if t >= 0.3 else 0.0
+        def tl_fn(t: float) -> float:
+            return 10.0 if t >= 0.3 else 0.0
+
         solver = StateSpaceMotorSolver(params=DEFAULT_MOTOR, ecc_dynamic=0.35)
         res = solver.solve(t_span=(0.0, 3.0), load_torque=tl_fn, method="RK45")
 

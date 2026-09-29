@@ -13,10 +13,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Literal
 
 import numpy as np
-from scipy.signal import butter, filtfilt, hilbert, sosfiltfilt, welch
+from scipy.signal import butter, hilbert, sosfiltfilt, welch
 from scipy.stats import kurtosis
 
 from app.core_physics.fault_models import BearingGeometry
@@ -71,6 +70,8 @@ class VibrationResult:
     # ISO 10816 severity
     iso_severity_zone: str  # 'A', 'B', 'C', 'D'
     overall_velocity_rms: float  # mm/s RMS (ISO 10816 uses velocity)
+    order_1x: float = 0.0
+    order_2x: float = 0.0
 
 
 class VibrationAnalyzer:
@@ -265,13 +266,15 @@ class VibrationAnalyzer:
         self,
         signal: np.ndarray,
         tacho_signal: np.ndarray,
-        orders: list[float] = [1.0, 2.0, 3.0],
+        orders: list[float] | None = None,
     ) -> dict:
         """Order tracking analysis (resample to angle domain).
 
         Requires tachometer signal for angle reference.
         Returns amplitude of specified orders.
         """
+        if orders is None:
+            orders = [1.0, 2.0, 3.0]
         # Placeholder for advanced order tracking
         # Would require angle interpolation from tacho pulses
         return {}

@@ -98,8 +98,21 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
     path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab6_architecture.png',
   })
 
-  // 8. Switch to Chapter 7: Research Papers & Standards
-  await page.getByRole('button', { name: '7. Research Papers & Standards' }).click()
+  // 8. Switch to Chapter 7: DSA Foundations
+  await page.getByRole('button', { name: '7. DSA Foundations' }).click()
+  await expect(page.getByText('Data Structures & Algorithmic Principles in Industrial Twins')).toBeVisible()
+  await expect(page.getByText('1. Binary Heap Priority Queue (Fleet Operations Triage)')).toBeVisible()
+  await expect(page.getByText('2. Circular Sliding Ring Buffers (Zero-Allocation Telemetry Streams)')).toBeVisible()
+  await expect(page.getByText('3. Finite State Machine (FSM) with Asymmetric Hysteresis Debouncing')).toBeVisible()
+  await expect(page.getByText('Algorithmic Complexity & Architecture Reference')).toBeVisible()
+
+  // Capture screenshot of Chapter 7: DSA Foundations
+  await page.screenshot({
+    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab7_dsa.png',
+  })
+
+  // 9. Switch to Chapter 8: Research Papers & Standards
+  await page.getByRole('button', { name: '8. Research Papers & Standards' }).click()
   await expect(page.getByText('Canonical Research Papers & IEEE Standards')).toBeVisible()
   await expect(page.getByText('Current signature analysis to detect induction motor faults')).toBeVisible()
 
@@ -112,40 +125,44 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
   await ieeeStd.scrollIntoViewIfNeeded()
   await expect(ieeeStd).toBeVisible()
 
-  // Capture screenshot of Chapter 7: Research Papers & Standards
+  // Capture screenshot of Chapter 8: Research Papers & Standards
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab7_papers.png',
+    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab8_papers.png',
   })
 
-  // 9. Verify Book Pagination and Page-turning Controls
-  await expect(page.getByText('Page 7 of 7')).toBeVisible()
+  // 10. Verify Book Pagination and Page-turning Controls
+  await expect(page.getByText('Page 8 of 8')).toBeVisible()
 
   // Click Previous Chapter button
   await page.getByRole('button', { name: 'Previous Chapter' }).click()
-  await expect(page.getByText('Page 6 of 7')).toBeVisible()
-  await expect(page.getByText('High-Level Software Pipeline Architecture')).toBeVisible()
+  await expect(page.getByText('Page 7 of 8')).toBeVisible()
+  await expect(page.getByText('Data Structures & Algorithmic Principles in Industrial Twins')).toBeVisible()
 
   // Click Next Chapter button
   await page.getByRole('button', { name: 'Next Chapter' }).click()
-  await expect(page.getByText('Page 7 of 7')).toBeVisible()
+  await expect(page.getByText('Page 8 of 8')).toBeVisible()
 
   // Test Keyboard Arrow Page Turning (Left Arrow)
   await page.keyboard.press('ArrowLeft')
-  await expect(page.getByText('Page 6 of 7')).toBeVisible()
+  await expect(page.getByText('Page 7 of 8')).toBeVisible()
 
   // Test Keyboard Arrow Page Turning (Right Arrow)
   await page.keyboard.press('ArrowRight')
-  await expect(page.getByText('Page 7 of 7')).toBeVisible()
-
-  // 10. Verify Book Footer Links & Creation Year
-  const githubLink = page.getByRole('link', { name: 'GitHub Repository' })
-  await expect(githubLink).toBeVisible()
-  await expect(githubLink).toHaveAttribute('href', 'https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin')
-  await expect(page.getByText('Created: 2026')).toBeVisible()
+  await expect(page.getByText('Page 8 of 8')).toBeVisible()
 
   // Close documentation modal via header close button
   await page.getByLabel('Close documentation dialog').click()
   await expect(page.getByText('AC Induction Motor Digital Twin Documentation')).not.toBeVisible()
+
+  // 11. Verify Main Dashboard Global Footer Link & Details
+  const appFooter = page.locator('.app-footer')
+  await expect(appFooter).toBeVisible()
+  const githubLink = appFooter.getByRole('link')
+  await expect(githubLink).toBeVisible()
+  await expect(githubLink).toHaveAttribute('href', 'https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin')
+  await expect(appFooter.getByText('2026', { exact: true })).toBeVisible()
+  await expect(appFooter.getByText('Naavalanarul', { exact: true })).toBeVisible()
+  await expect(appFooter.getByText('MIT License', { exact: true })).toBeVisible()
 
   // 11. Test footer button in Profile modal opens Docs
   await profileChip.click()

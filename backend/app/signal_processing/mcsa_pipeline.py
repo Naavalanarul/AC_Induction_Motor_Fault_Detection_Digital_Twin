@@ -176,8 +176,6 @@ class MCSAAnalyzer:
         neg_seq_db = self._calculate_negative_sequence(fft_freqs, fft_mag, f_s)
 
         # 8. Automated Peak Detection using scipy.signal.find_peaks
-        # Focus on ROI: [5 Hz, 200 Hz] for fault signatures
-        roi_mask = (fft_freqs >= 5.0) & (fft_freqs <= 200.0)
         rel_mag = fft_mag_db - fund_db  # Normalized dB relative to carrier (dBc)
 
         peak_indices, properties = find_peaks(
@@ -267,7 +265,6 @@ class MCSAAnalyzer:
                 continue
 
             # Check Harmonic match
-            matched_harm = False
             for k, f_tgt in target_harmonic_freqs.items():
                 if abs(p_freq - f_tgt) <= tolerance_hz:
                     label = f"Harmonic {k}×f_s"
@@ -282,7 +279,6 @@ class MCSAAnalyzer:
                     )
                     harmonic_peaks.append(marker)
                     all_peaks.append(marker)
-                    matched_harm = True
                     break
 
         # 9. Targeted search at BRB/eccentricity sidebands if not found in general peaks

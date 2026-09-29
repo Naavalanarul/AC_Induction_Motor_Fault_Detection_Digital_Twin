@@ -8,9 +8,9 @@ Contains:
 - Feature Extraction: RMS, Kurtosis, Crest Factor, THD, Zero-crossing
 """
 
-from .mcsa_pipeline import MCSAAnalyzer, MCSAResult, PeakMarker
-from .vibration_analysis import VibrationAnalyzer, BearingFrequencies
 from .feature_extraction import FeatureExtractor, SignalFeatures
+from .mcsa_pipeline import MCSAAnalyzer, MCSAResult, PeakMarker
+from .vibration_analysis import BearingFrequencies, VibrationAnalyzer
 
 __all__ = [
     "MCSAAnalyzer",

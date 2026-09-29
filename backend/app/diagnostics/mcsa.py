@@ -127,8 +127,6 @@ class MCSAAnalyzer:
             slip = max(0.001, (f_s - pole_pairs * f_r) / f_s)
 
         # 6. Automated Peak Detection using scipy.signal.find_peaks
-        # Focus on ROI: [10 Hz, 120 Hz]
-        roi_mask = (fft_freqs >= 10.0) & (fft_freqs <= 150.0)
         rel_mag = fft_mag_db - fund_db  # Normalized dB relative to carrier (dBc)
 
         peak_indices, properties = find_peaks(
@@ -189,7 +187,6 @@ class MCSAAnalyzer:
                 continue
 
             # Check Eccentricity match
-            matched_ecc = False
             for side, f_tgt in target_ecc_freqs.items():
                 if abs(p_freq - f_tgt) <= tolerance_hz:
                     label = f"Eccentricity ({side})"
@@ -202,7 +199,6 @@ class MCSAAnalyzer:
                     )
                     ecc_peaks.append(marker)
                     all_peaks.append(marker)
-                    matched_ecc = True
                     break
 
         # Also perform targeted search at eccentricity sidebands if not found in general peaks

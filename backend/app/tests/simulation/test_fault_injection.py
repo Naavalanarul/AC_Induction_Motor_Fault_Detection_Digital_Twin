@@ -14,24 +14,22 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from app.core_physics.dynamic_solver import StateSpaceMotorSolver
 from app.core_physics.fault_models import (
+    BearingDefect,
+    BearingGeometry,
     FaultState,
     FaultType,
-    BearingDefect,
-    EccentricityType,
-    BearingGeometry,
-    inject_broken_rotor_bar,
-    inject_interturn_short,
-    inject_eccentricity,
     inject_bearing_fault,
-    inject_unbalance,
+    inject_broken_rotor_bar,
+    inject_eccentricity,
+    inject_interturn_short,
     inject_misalignment,
+    inject_unbalance,
 )
-from app.core_physics.dynamic_solver import StateSpaceMotorSolver
 from app.core_physics.motor_parameters import DEFAULT_MOTOR
 from app.core_physics.thermal_lptn import FourNodeThermalLPTN
 from app.signal_processing.mcsa_pipeline import MCSAAnalyzer
-from app.signal_processing.vibration_analysis import VibrationAnalyzer
 
 
 class TestBRBFaultInjection:
@@ -223,7 +221,6 @@ class TestBearingFaultInjection:
         fs = 12800.0
         t = np.arange(0, 1.0, 1/fs)
         theta_m = 2 * np.pi * 25.0 * t  # 25 Hz shaft
-        omega_m = np.full_like(t, 2 * np.pi * 25.0)
 
         # Get impulse times for outer race
         hits = state.bearing_impulse_times(BearingDefect.OR, theta_m)
@@ -251,7 +248,7 @@ class TestBearingFaultInjection:
 
         # Inner race: modulated by cos(theta_m) - max at load zone (theta=0)
         # Find peaks in amplitude
-        peak_indices = np.where(hits := state.bearing_impulse_times(BearingDefect.IR, theta_m))[0]
+        peak_indices = np.where(state.bearing_impulse_times(BearingDefect.IR, theta_m))[0]
         if len(peak_indices) > 2:
             # Amplitude should vary with load zone
             assert np.std(amp[peak_indices]) > 0.1 * np.mean(amp[peak_indices])

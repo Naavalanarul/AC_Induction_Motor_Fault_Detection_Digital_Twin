@@ -23,7 +23,7 @@ from app.config import Settings, get_settings
 from app.core.logging import configure_logging, request_id_var
 from app.core.metrics import HTTP_REQUESTS
 from app.core.security import hash_password
-from app.db.models import Base, Motor, RoleEnum, User
+from app.db.models import Base, FaultInjected, Motor, RoleEnum, User
 from app.db.session import init_engine, session_factory
 from app.runtime.broker import make_broker
 from app.runtime.manager import WorkerManager
@@ -59,6 +59,36 @@ def bootstrap(settings: Settings) -> None:
         if settings.seed_demo_motor and not db.scalar(select(Motor.id).limit(1)):
             motors.create_motor_row(db, "Demo Motor 1", dataclasses.asdict(DEFAULT_MOTOR), 8.0)
             log.info("seeded demo motor")
+
+        # Automatically inject faults into motors on startup if none are active
+        if settings.seed_default_faults and settings.app_env != "test":
+            all_motors = db.scalars(select(Motor)).all()
+            default_fault_specs = [
+                ("bearing_outer", 0.55, {}),
+                ("broken_rotor_bar", 0.48, {"count": 2}),
+                ("interturn_short", 0.42, {"phase": "a"}),
+                ("misalignment", 0.50, {}),
+                ("unbalance", 0.46, {}),
+                ("bearing_inner", 0.52, {}),
+            ]
+            for m in all_motors:
+                has_fault = db.scalar(
+                    select(FaultInjected.id).where(
+                        FaultInjected.motor_id == m.id,
+                        FaultInjected.end_ts.is_(None),
+                    ).limit(1)
+                )
+                if not has_fault:
+                    spec_ft, spec_sev, spec_p = default_fault_specs[(m.id - 1) % len(default_fault_specs)]
+                    db.add(FaultInjected(
+                        motor_id=m.id,
+                        fault_type=spec_ft,
+                        severity=spec_sev,
+                        params_json=spec_p,
+                        created_by="system_default",
+                    ))
+                    log.info("Injected default fault '%s' (sev=%.2f) into motor %d (%s)", spec_ft, spec_sev, m.id, m.name)
+            db.commit()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

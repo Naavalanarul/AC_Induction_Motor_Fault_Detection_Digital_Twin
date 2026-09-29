@@ -27,7 +27,7 @@ def _configure_env(tmp_path_factory):
     os.environ.update({
         "APP_ENV": "test", "JWT_SECRET": "test-secret-" + "x" * 32, "ADMIN_USERNAME": ADMIN[0],
         "ADMIN_PASSWORD": ADMIN[1], "REALTIME_FACTOR": "4.0", "PERSIST_INTERVAL_S": "0.5", "LOG_JSON": "false",
-        "LOG_LEVEL": "WARNING", "SEED_DEMO_MOTOR": "true", "LOGIN_RATE_PER_MIN": "1000", "FAULT_RATE_PER_MIN": "1000", "USE_ML": os.environ.get("TEST_USE_ML", "false"),
+        "LOG_LEVEL": "WARNING", "SEED_DEMO_MOTOR": "true", "SEED_DEFAULT_FAULTS": "false", "LOGIN_RATE_PER_MIN": "1000", "FAULT_RATE_PER_MIN": "1000", "USE_ML": os.environ.get("TEST_USE_ML", "false"),
     })
     return url
 

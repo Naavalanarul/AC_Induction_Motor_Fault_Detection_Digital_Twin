@@ -4,6 +4,7 @@ import asyncio
 import dataclasses
 from datetime import datetime
 
+import numpy as np
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -51,7 +52,6 @@ from app.diagnostics.schema import DiagFault
 from app.simulation.params import DEFAULT_MOTOR, MotorParams
 from app.simulation.state_space_solver import StateSpaceMotorSolver
 from app.supervisory.sada import SadaConfig
-import numpy as np
 
 router = APIRouter(prefix="/motors", tags=["motors"])
 _fault_limit = rate_limit("faults", lambda: get_settings().fault_rate_per_min)
