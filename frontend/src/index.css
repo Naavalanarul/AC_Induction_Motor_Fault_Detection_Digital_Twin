@@ -1349,8 +1349,105 @@ body:has(.modal-backdrop) .floating-nav {
 }
 
 .docs-modal-dialog {
-  width: min(940px, 96vw);
-  height: min(94vh, 900px);
+  width: min(1060px, 96vw);
+  height: min(94vh, 920px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.book-spine-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--accent) 0%, rgba(16, 185, 129, 0.8) 50%, var(--accent) 100%);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  z-index: 10;
+  box-shadow: 2px 0 10px rgba(0, 229, 255, 0.3);
+}
+
+.book-nav-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 20px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+}
+
+.book-tab-pill {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.book-tab-pill:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.book-tab-pill.is-active {
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--accent);
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
+}
+
+.book-turn-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.book-turn-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+}
+
+.book-turn-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.book-footer-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
 }
 
 .modal-header {
