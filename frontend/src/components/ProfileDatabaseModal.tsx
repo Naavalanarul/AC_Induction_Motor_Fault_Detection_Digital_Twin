@@ -17,6 +17,7 @@ import {
   Loader2,
   HardDrive,
   KeyRound,
+  BookOpen,
 } from 'lucide-react'
 import { api } from '../api/client'
 import type { DatabaseStatus, DbTestResult, Role } from '../api/types'
@@ -24,13 +25,14 @@ import type { DatabaseStatus, DbTestResult, Role } from '../api/types'
 export interface ProfileDatabaseModalProps {
   isOpen: boolean
   onClose: () => void
+  onOpenDocs?: () => void
   user: {
     username: string
     role: Role | string
   }
 }
 
-export function ProfileDatabaseModal({ isOpen, onClose, user }: ProfileDatabaseModalProps) {
+export function ProfileDatabaseModal({ isOpen, onClose, onOpenDocs, user }: ProfileDatabaseModalProps) {
   // DB status query via TanStack Query
   const {
     data: dbStatus,
@@ -213,7 +215,73 @@ export function ProfileDatabaseModal({ isOpen, onClose, user }: ProfileDatabaseM
             </div>
           </section>
 
-          {/* Card 2: Live Database Connection Status */}
+          {/* Card 2: Physics Engine & Scientific Documentation */}
+          <section
+            className="card"
+            style={{
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.07), rgba(16, 185, 129, 0.04))',
+              borderColor: 'rgba(0, 229, 255, 0.28)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: 'rgba(0, 229, 255, 0.12)',
+                  border: '1.5px solid var(--accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent)',
+                  flexShrink: 0,
+                  boxShadow: '0 0 14px rgba(0, 229, 255, 0.25)',
+                }}
+              >
+                <BookOpen size={20} strokeWidth={2} />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', letterSpacing: '0.01em' }}>
+                  Physics Engine &amp; Architecture Documentation
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, lineHeight: 1.4 }}>
+                  Coupled nonlinear RK45 state-space ODEs, mathematical fault models (ITSC, BRB, eccentricity), analytical MCSA Welch PSD, 4-node LPTN, and peer-reviewed research papers.
+                </div>
+              </div>
+            </div>
+            {onOpenDocs && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  onClose()
+                  onOpenDocs()
+                }}
+                style={{
+                  fontSize: 12,
+                  padding: '8px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+                data-testid="profile-open-docs-btn"
+                title="Open comprehensive scientific and architecture documentation"
+              >
+                <BookOpen size={14} />
+                <span>Open Docs</span>
+              </button>
+            )}
+          </section>
+
+          {/* Card 3: Live Database Connection Status */}
           <section className="card" style={{ padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -513,7 +581,30 @@ export function ProfileDatabaseModal({ isOpen, onClose, user }: ProfileDatabaseM
         </div>
 
         {/* Fixed Modal Footer */}
-        <footer className="modal-footer">
+        <footer className="modal-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {onOpenDocs ? (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                onClose()
+                onOpenDocs()
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                color: 'var(--accent)',
+                borderColor: 'rgba(0, 229, 255, 0.35)',
+                background: 'rgba(0, 229, 255, 0.08)',
+              }}
+              data-testid="profile-footer-docs-btn"
+            >
+              <BookOpen size={14} />
+              <span>Physics &amp; Architecture Docs</span>
+            </button>
+          ) : <div />}
           <button type="button" className="btn" onClick={onClose}>
             Close
           </button>

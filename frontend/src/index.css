@@ -1348,6 +1348,11 @@ body:has(.modal-backdrop) .floating-nav {
   height: min(90vh, 820px);
 }
 
+.docs-modal-dialog {
+  width: min(940px, 96vw);
+  height: min(94vh, 900px);
+}
+
 .modal-header {
   display: flex;
   align-items: center;

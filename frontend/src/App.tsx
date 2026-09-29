@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import { Box, Sun, Moon, Bell, Clock3, User } from 'lucide-react'
+import { Box, Sun, Moon, Bell, Clock3, User, BookOpen } from 'lucide-react'
 import { api } from './api/client'
 import type { Frame, Motor, Role, SensorRow } from './api/types'
 import { AuthProvider, useAuth } from './auth/AuthContext'
@@ -20,6 +20,7 @@ import { SensorPanels } from './components/SensorPanels'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignOutConfirmModal } from './components/SignOutConfirmModal'
 import { ProfileDatabaseModal } from './components/ProfileDatabaseModal'
+import { EngineeringDocsModal } from './components/EngineeringDocsModal'
 import { useMotorStream } from './hooks/useMotorStream'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
@@ -33,6 +34,7 @@ function Shell() {
   const [fleetFrames, setFleetFrames] = useState<Record<number, Frame>>({})
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isDocsModalOpen, setIsDocsModalOpen] = useState(false)
   const shellRef = useRef<HTMLElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (typeof window !== 'undefined' && (localStorage.getItem('app-theme') as 'dark' | 'light')) || 'dark'
@@ -160,6 +162,31 @@ function Shell() {
               <span className="notification-count">{trippedMotors.length}</span>
             )}
           </div>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setIsDocsModalOpen(true)}
+            style={{
+              height: 32,
+              padding: '0 12px',
+              fontSize: 12,
+              borderRadius: 20,
+              borderColor: 'rgba(0, 229, 255, 0.35)',
+              background: 'rgba(0, 229, 255, 0.08)',
+              color: 'var(--accent)',
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            title="Physics Engine & System Architecture Documentation"
+            aria-label="Engineering documentation"
+            data-testid="navbar-docs-btn"
+          >
+            <BookOpen size={14} />
+            <span>Docs</span>
+          </button>
 
           <button
             type="button"
@@ -428,6 +455,13 @@ function Shell() {
         isOpen={isProfileModalOpen}
         user={session}
         onClose={() => setIsProfileModalOpen(false)}
+        onOpenDocs={() => setIsDocsModalOpen(true)}
+      />
+
+      {/* Engineering, Physics & Architecture Documentation Modal */}
+      <EngineeringDocsModal
+        isOpen={isDocsModalOpen}
+        onClose={() => setIsDocsModalOpen(false)}
       />
     </main>
   )

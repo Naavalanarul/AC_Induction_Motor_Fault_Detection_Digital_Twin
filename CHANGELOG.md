@@ -39,6 +39,16 @@ tagged with the git SHA and with the release tag.
 - Phase 29: Physics Engine Verification & Automated Testing:
   - Comprehensive physics test suite (`test_physics_engine.py`) verifying steady-state speed convergence under no-load ($1499.2\text{ RPM}$) and rated load ($1474.0\text{ RPM}$), BRB sideband harmonic power increase $\ge 15\text{ dB}$ ($+76.5\text{ dB}$ delta), ITSC localized heat, dynamic eccentricity permeance, 4-node LPTN thermodynamic stability, and Arrhenius degradation kinetics.
   - Playwright E2E smoke tests verifying zero syntax or runtime console tracebacks when toggling UI views, inspecting the mode badge, and monitoring thermal dynamics.
+- Phase 30: Engineering & Physics Documentation Modal:
+  - Rich 5-tab interactive documentation modal (`EngineeringDocsModal.tsx`) accessible from both the navbar Docs button and the Operator Profile dialog, covering:
+    - Tab 1: Continuous electromechanical state-space model (RK45 Dormand-Prince, Clarke/Park coordinate systems, governing stator/rotor ODEs, Newton torque balance).
+    - Tab 2: Mathematical fault injection (ITSC shorted-turn ratio μ with circulating current matrix, BRB rotor resistance asymmetry R_r(θ_r) producing (1 ± 2ks)f_s sidebands, dynamic eccentricity air-gap permeance L_m(θ_m), bearing defect kinematics BPFO/BPFI/BSF/FTF).
+    - Tab 3: MCSA Welch PSD pipeline (windowed spectral analysis, automated peak detection) and 4-Node LPTN thermal network (T_w, T_t, T_r, T_b) with classical Arrhenius insulation degradation and RUL estimation.
+    - Tab 4: High-level software pipeline architecture (RK45 plant → sensor abstraction → multimodal diagnostics → decision fusion → SADA FSM → WebSocket → React), dual telemetry ingestion modes.
+    - Tab 5: Canonical research papers and IEEE/ISO standards with direct DOI links (Thomson & Fenger 2001, Nandi et al. 2005, Chen et al. 2014, Tallam et al. 2007, McFadden & Smith 1984, IEEE Std 841, ISO 10816-3).
+  - Navbar "Docs" button with accent-colored pill styling next to operator profile chip.
+  - Physics Engine & Architecture Documentation card integrated into `ProfileDatabaseModal.tsx` body and footer with one-click modal transition.
+  - Playwright E2E test (`docs-modal.spec.ts`) verifying all 5 documentation tabs, navbar access, and profile-to-docs navigation flow.
 
 ### Fixed
 - Fixed parameter cards scrolling bug in `AddMotorModal` by enforcing `flex-shrink: 0` on form cards and `min-height: 0` on the scrollable container, preventing flexbox from squeezing inputs down to 91px.
