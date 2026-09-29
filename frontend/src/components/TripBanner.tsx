@@ -44,7 +44,7 @@ export const TripBanner: React.FC<TripBannerProps> = ({ trippedMotors, onAcknowl
     <div
       role="alert"
       aria-live="assertive"
-      className="sticky top-0 z-50 w-full border-b border-[var(--critical)]/30 bg-[#1c1216]/95 backdrop-blur-md px-4 py-3 text-[var(--ink)] shadow-lg shadow-black/40"
+      className="sticky top-0 z-50 w-full border-b border-[var(--critical)]/25 bg-[#0d0708]/95 backdrop-blur-md px-4 py-3 text-[var(--ink)] shadow-lg shadow-black/60"
     >
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export const TripBanner: React.FC<TripBannerProps> = ({ trippedMotors, onAcknowl
               key={m.id}
               onClick={() => handleAcknowledge(m.id)}
               disabled={loadingIds[m.id]}
-              className="inline-flex items-center gap-1.5 rounded bg-[var(--critical)] hover:opacity-90 px-3 py-1.5 text-xs font-semibold text-[#0e121a] shadow-sm transition focus:outline-none disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded bg-[var(--critical)] hover:opacity-90 px-3 py-1.5 text-xs font-semibold text-[#000000] shadow-sm transition focus:outline-none disabled:opacity-50"
             >
               {loadingIds[m.id] ? 'Acknowledging...' : `Acknowledge ${m.name}`}
             </button>
