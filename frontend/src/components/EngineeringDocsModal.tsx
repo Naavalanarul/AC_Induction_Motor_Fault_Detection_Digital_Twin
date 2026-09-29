@@ -280,7 +280,7 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                   </div>
 
                   <div style={{ padding: 14, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10b981', fontWeight: 600, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--good)', fontWeight: 600, fontSize: 13 }}>
                       <Waves size={16} />
                       <span>scipy.signal &amp; PyWavelets</span>
                     </div>
@@ -291,7 +291,7 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                   </div>
 
                   <div style={{ padding: 14, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#f59e0b', fontWeight: 600, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--warning)', fontWeight: 600, fontSize: 13 }}>
                       <Layers size={16} />
                       <span>PyTorch (Optional Conv-BiLSTM)</span>
                     </div>
@@ -897,7 +897,7 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                     </p>
                   </div>
                   <div style={{ padding: 14, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
-                    <div style={{ color: '#10b981', fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+                    <div style={{ color: 'var(--good)', fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
                       Mode: Real Hardware Stream
                     </div>
                     <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--ink-2)' }}>
@@ -937,12 +937,12 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>O(log N) dynamic priority triage &amp; O(1) peek for critical tripped assets</div>
                   </div>
                   <div style={{ padding: 12, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase' }}>Signal Buffering</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--good)', textTransform: 'uppercase' }}>Signal Buffering</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '4px 0' }}>Circular Ring Buffers</div>
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>O(1) push/pop, zero heap reallocations for 5 kHz Welch &amp; CWT transforms</div>
                   </div>
                   <div style={{ padding: 12, borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase' }}>Supervisory Control</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warning)', textTransform: 'uppercase' }}>Supervisory Control</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '4px 0' }}>Hysteresis Debounced FSM</div>
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>Mealy/Moore automaton with α=0.25 EMA filter to eliminate contactor chattering</div>
                   </div>
@@ -991,9 +991,9 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                   <div>• Parent(i)  = ⌊(i - 1) / 2⌋</div>
                   <div>• Left(i)    = 2i + 1</div>
                   <div>• Right(i)   = 2i + 2</div>
-                  <div style={{ marginTop: 8, color: '#10b981', fontWeight: 700 }}>Triage Urgency Ranking Function:</div>
+                  <div style={{ marginTop: 8, color: 'var(--good)', fontWeight: 700 }}>Triage Urgency Ranking Function:</div>
                   <div>Priority(m) = 1000·1_TRIP + 500·1_DERATE + (100 - MHI)·1.5 + SmoothedSeverity·100</div>
-                  <div style={{ marginTop: 8, color: '#f59e0b', fontWeight: 700 }}>Asymptotic Complexities:</div>
+                  <div style={{ marginTop: 8, color: 'var(--warning)', fontWeight: 700 }}>Asymptotic Complexities:</div>
                   <div>• Peek Root (Highest Urgency Motor):  O(1) constant time</div>
                   <div>• Push / Enqueue (New Telemetry Tick): O(log N) via Sift-Up (heapifyUp)</div>
                   <div>• Pop / Dequeue (Acknowledge Alert):   O(log N) via Sift-Down (heapifyDown)</div>
@@ -1021,12 +1021,12 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
               <section className="card" style={{ padding: '20px 24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Layers size={19} style={{ color: '#10b981' }} />
+                    <Layers size={19} style={{ color: 'var(--good)' }} />
                     <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)' }}>
                       2. Circular Sliding Ring Buffers (Zero-Allocation Telemetry Streams)
                     </h4>
                   </div>
-                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(16,185,129,0.1)', color: '#10b981', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'var(--good-bg)', color: 'var(--good)', fontFamily: 'monospace' }}>
                     backend/app/runtime/worker.py
                   </span>
                 </div>
@@ -1049,7 +1049,7 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                     color: 'var(--ink)',
                   }}
                 >
-                  <div style={{ color: '#10b981', fontWeight: 700 }}>Ring Buffer Indexing via Modular Arithmetic:</div>
+                  <div style={{ color: 'var(--good)', fontWeight: 700 }}>Ring Buffer Indexing via Modular Arithmetic:</div>
                   <div>• Head Index: write_ptr = (write_ptr + 1) mod Capacity</div>
                   <div>• Tail Index: read_ptr  = (read_ptr + 1) mod Capacity</div>
                   <div>• Push Sample: O(1) amortized, zero dynamic allocations</div>
@@ -1067,12 +1067,12 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
               <section className="card" style={{ padding: '20px 24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <ShieldAlert size={19} style={{ color: '#f59e0b' }} />
+                    <ShieldAlert size={19} style={{ color: 'var(--warning)' }} />
                     <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)' }}>
                       3. Finite State Machine (FSM) with Asymmetric Hysteresis Debouncing
                     </h4>
                   </div>
-                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'var(--warning-bg)', color: 'var(--warning)', fontFamily: 'monospace' }}>
                     backend/app/supervisory/sada.py
                   </span>
                 </div>
@@ -1096,7 +1096,7 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                     color: 'var(--ink)',
                   }}
                 >
-                  <div style={{ color: '#f59e0b', fontWeight: 700 }}>1. Discrete Low-Pass EMA Filter (α = 0.25):</div>
+                  <div style={{ color: 'var(--warning)', fontWeight: 700 }}>1. Discrete Low-Pass EMA Filter (α = 0.25):</div>
                   <div>SmoothedSeverity_t = α · RawSeverity_t + (1 - α) · SmoothedSeverity_(t-1)</div>
                   <div style={{ color: 'var(--muted)', fontSize: 11 }}>Attenuates single-frame outlier noise while preserving true fault rise times.</div>
                   <div style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 700 }}>2. Asymmetric Dual-Threshold Hysteresis Rules:</div>
@@ -1104,7 +1104,7 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                   <div>• DERATE Activation:   Triggered if 0.50 ≤ SmoothedSeverity &lt; 0.85</div>
                   <div>• ADVISORY Alert:      Triggered if 0.25 ≤ SmoothedSeverity &lt; 0.50</div>
                   <div>• TRIP Reset Rule:     CANNOT auto-reset! Requires SmoothedSeverity ≤ 0.20 AND Operator ACK</div>
-                  <div style={{ marginTop: 8, color: '#10b981', fontWeight: 700 }}>3. Continuous Load Derating Equation:</div>
+                  <div style={{ marginTop: 8, color: 'var(--good)', fontWeight: 700 }}>3. Continuous Load Derating Equation:</div>
                   <div>LoadCommand = max(0.30, 1.0 - 0.70 · (SmoothedSeverity - 0.40) / (0.85 - 0.40))</div>
                 </div>
               </section>
@@ -1137,14 +1137,14 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                         <td style={{ padding: '8px 10px' }}>Dynamic fleet urgency ranking &amp; tripped asset triage</td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '8px 10px', color: '#10b981', fontWeight: 600 }}>Circular Ring Buffers</td>
+                        <td style={{ padding: '8px 10px', color: 'var(--good)', fontWeight: 600 }}>Circular Ring Buffers</td>
                         <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>worker.py (deque)</td>
                         <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) amortized append/pop</td>
                         <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(K) static</td>
                         <td style={{ padding: '8px 10px' }}>Zero-allocation sliding windows for 5 kHz Welch &amp; CWT</td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '8px 10px', color: '#f59e0b', fontWeight: 600 }}>Hysteresis FSM + EMA</td>
+                        <td style={{ padding: '8px 10px', color: 'var(--warning)', fontWeight: 600 }}>Hysteresis FSM + EMA</td>
                         <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: 11 }}>sada.py</td>
                         <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) per frame</td>
                         <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>O(1) static</td>
@@ -1209,8 +1209,8 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                   {/* Paper 2 */}
                   <div style={{ padding: '14px 18px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981' }}>CONDITION MONITORING SURVEY</span>
-                      <a href="https://doi.org/10.1109/TEC.2005.847954" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#10b981' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--good)' }}>CONDITION MONITORING SURVEY</span>
+                      <a href="https://doi.org/10.1109/TEC.2005.847954" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--good)' }}>
                         <span>IEEE DOI: 10.1109/TEC.2005.847954</span>
                         <ExternalLink size={12} />
                       </a>
@@ -1243,8 +1243,8 @@ export function EngineeringDocsModal({ isOpen, onClose }: EngineeringDocsModalPr
                   {/* Standards */}
                   <div style={{ padding: '14px 18px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b' }}>VIBRATION &amp; RELIABILITY STANDARDS</span>
-                      <a href="https://standards.ieee.org/ieee/841/7361/" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#f59e0b' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--warning)' }}>VIBRATION &amp; RELIABILITY STANDARDS</span>
+                      <a href="https://standards.ieee.org/ieee/841/7361/" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--warning)' }}>
                         <span>IEEE Std 841</span>
                         <ExternalLink size={12} />
                       </a>

@@ -220,10 +220,10 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
                     width: `${Math.min(100, Math.max(5, ((frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) / 155) * 100))}%`,
                     backgroundColor:
                       (frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) > 130
-                        ? '#ef4444'
+                        ? 'var(--critical)'
                         : (frame?.thermal_lptn?.t_winding ?? frame?.sensors?.temp?.value ?? 45) > 105
-                        ? '#f59e0b'
-                        : '#10b981',
+                        ? 'var(--warning)'
+                        : 'var(--good)',
                   }}
                 />
               </div>

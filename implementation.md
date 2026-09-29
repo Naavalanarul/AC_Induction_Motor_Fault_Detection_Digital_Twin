@@ -402,11 +402,20 @@ Everything from the earlier 12-phase plan stays, with these production-hardening
   - Main Dashboard Global Footer: Formatted exact footer string `https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin · 2026 · Naavalanarul · MIT License` across application layout.
   - Captured updated live faulted operational dashboard screenshot in `docs/dashboard.png` and updated README references.
 
+- [x] **Phase 34 — Telemetry Palette Softening & Contrast / Saturation Ergonomics**:
+  - Softened overall UI contrast and decreased color saturation across dark and light theme tokens in `frontend/src/index.css`.
+  - Replaced harsh OLED pitch-black background (`#050505`) with a refined, ergonomic telemetry dark slate tone (`#0e121a`), eliminating 21:1 stark contrast fatigue.
+  - Softened stark pure-white text (`#f8fafc`) to comfortable slate-300 (`#cbd5e1`), with slate-400 (`#94a3b8`) secondary ink and slate-500 (`#64748b`) muted tokens.
+  - Replaced piercing neon accents (100% saturation `#00e5ff` cyan, `#10b981` green, `#f59e0b` amber, `#ef4444` red) with a balanced industrial palette: muted steel cyan (`#48a9c5`), sage mint (`#42a882`), warm ochre amber (`#c9933b`), terracotta (`#c8733b`), and muted brick crimson (`#c95555`).
+  - Softened CWT Morlet vibration scalogram colormap (`Scalogram.tsx`) with a multi-level desaturated slate-steel ramp.
+  - Re-styled metric tiles, motor cards (`MotorCard.tsx`), status badges (`StatusBadge.tsx`), emergency trip banner (`TripBanner.tsx`), and thermal node indicators with softened translucent borders and non-glaring hover glows.
+  - Re-captured updated operational telemetry screenshot in `docs/dashboard.png`.
+
 ---
 
 ## Implementation status (2026-09-29)
 
-All phases (0–33) are fully implemented, tested, and verified:
+All phases (0–34) are fully implemented, tested, and verified:
 - Phases 0–11: Core plant simulator, sensors, fault injection, electrical/ML/thermal/supply diagnostics, weighted fusion, MySQL persistence, WebSocket streaming, SADA supervisory layer, and React dashboard.
 - Phase 12 & Phase 18: Concrete hardware sensor drivers for all sensor channels are implemented and verified with automated unit tests and circuit breaker fallbacks.
 - Phases 13–15: Observability, Prometheus metrics, structured JSON logging, supervised workers, automated retention cleanup, test coverage thresholds ($\ge 85\%$), and integration test suites.
@@ -425,4 +434,6 @@ All phases (0–33) are fully implemented, tested, and verified:
 - Phase 30: Engineering & Physics Documentation Modal (`EngineeringDocsModal.tsx`) with 5 interactive tabs covering state-space physics, mathematical faults, MCSA/thermal models, system architecture, and research papers with DOI links. Navbar Docs button and ProfileDatabaseModal integration. Playwright E2E test (`docs-modal.spec.ts`) verified.
 - Phase 31: Consolidated core physics, signal processing, diagnostics, and test directories from root into `backend/`. Integrated `RULEngine` into streaming frames and added `GET /api/v1/motors/{id}/rul` REST endpoint. Connected comprehensive multi-subsystem RUL and bearing fatigue life into frontend `HealthMaintenanceTab.tsx`. Verified all 184 backend pytest tests, 22 vitest tests, and 5 Playwright E2E tests.
 - Phase 32: Interactive 7-Chapter Engineering & Physics Documentation Book (`EngineeringDocsModal.tsx`) with book spine styling, page turn buttons, keyboard arrow navigation, dedicated Book Footer with GitHub repository link and creation year 2026, and in-depth explanations of software stack, continuous ODE state-space physics, mathematical fault injection, first-principles sensor synthesis, multi-modal fault detection, 4-node LPTN thermal modeling, system architecture, and canonical research papers. Playwright E2E test (`docs-modal.spec.ts`) verified.
+- Phase 33: CI pipeline hardening (100% pass on Ruff, Mypy, Pytest, ESLint, TypeScript, Vitest, Playwright), Chapter 7 DSA foundations in documentation, default startup fault seeding, and official repository footer string.
+- Phase 34: Telemetry palette softening & contrast/saturation ergonomics across all dashboard components, charts, and modal dialogues.
 

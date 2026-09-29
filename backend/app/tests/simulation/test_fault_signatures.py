@@ -17,6 +17,7 @@ def collect(sim: MotorSimulator, seconds: float):
     cur, vib, w, u = [], [], [], []
     for _ in range(int(seconds / sim.chunk_s)):
         st = sim.step()
+        assert st is not None and st.electrical is not None
         cur.append(st.electrical.i_abc)
         u.append(st.electrical.u_abc)
         vib.append(st.vibration)

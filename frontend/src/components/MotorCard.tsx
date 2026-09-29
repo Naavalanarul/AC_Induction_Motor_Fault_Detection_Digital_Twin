@@ -53,17 +53,17 @@ export const MotorCard: React.FC<MotorCardProps> = ({ motor, frame, onClick, isS
       }}
       className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border p-5 transition-all duration-200 cursor-pointer ${
         isSelected
-          ? 'border-cyan-500 bg-neutral-900/90 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500/50'
-          : 'border-neutral-800 bg-neutral-900/50 hover:border-neutral-700 hover:bg-neutral-900/80 hover:shadow-md'
+          ? 'border-[var(--accent)] bg-[var(--surface-raised)] shadow-lg shadow-black/20 ring-1 ring-[var(--accent)]/40'
+          : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-hover)] hover:bg-[var(--surface-raised)] hover:shadow-md'
       }`}
     >
       {/* Top Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-neutral-100 group-hover:text-cyan-400 transition-colors">
+          <h3 className="font-semibold text-[var(--ink)] group-hover:text-[var(--accent)] transition-colors">
             {motor.name}
           </h3>
-          <p className="mt-0.5 text-xs text-neutral-400">
+          <p className="mt-0.5 text-xs text-[var(--muted)]">
             {powerKw} kW • {rpm} RPM • ID: {motor.id}
           </p>
         </div>
@@ -75,36 +75,36 @@ export const MotorCard: React.FC<MotorCardProps> = ({ motor, frame, onClick, isS
         <HealthGauge value={mhi} zone={zone} size="md" showLabel={false} />
         <div className="flex flex-col gap-2 text-right">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-neutral-500 block">
+            <span className="text-[11px] uppercase tracking-wider text-[var(--muted)] block">
               Error Code
             </span>
-            <span className="font-mono text-xs font-semibold text-neutral-200">
+            <span className="font-mono text-xs font-semibold text-[var(--ink)]">
               {errorCode}
             </span>
           </div>
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-neutral-500 block">
+            <span className="text-[11px] uppercase tracking-wider text-[var(--muted)] block">
               Fault State
             </span>
             <span
               className={`text-xs font-medium capitalize ${
-                primaryFault === 'Healthy' ? 'text-emerald-400' : 'text-amber-400'
+                primaryFault === 'Healthy' ? 'text-[var(--good)]' : 'text-[var(--warning)]'
               }`}
             >
               {primaryFault}
             </span>
           </div>
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-neutral-500 block">
+            <span className="text-[11px] uppercase tracking-wider text-[var(--muted)] block">
               Prognosis
             </span>
             <span
               className={`text-xs font-medium ${
                 state === 'TRIP'
-                  ? 'text-rose-400'
+                  ? 'text-[var(--critical)]'
                   : state === 'DERATE'
-                  ? 'text-orange-400'
-                  : 'text-neutral-300'
+                  ? 'text-[var(--serious)]'
+                  : 'text-[var(--ink-2)]'
               }`}
             >
               {prognosisStatus}
@@ -114,9 +114,9 @@ export const MotorCard: React.FC<MotorCardProps> = ({ motor, frame, onClick, isS
       </div>
 
       {/* Bottom Footer Details */}
-      <div className="mt-1 flex items-center justify-between border-t border-neutral-800/80 pt-3 text-xs text-neutral-400">
+      <div className="mt-1 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--muted)]">
         <span>Load: {frame?.mechanics?.load_nm?.toFixed(1) ?? motor.base_load_nm.toFixed(1)} Nm</span>
-        <span className="group-hover:translate-x-0.5 transition-transform text-cyan-400 font-medium flex items-center gap-1">
+        <span className="group-hover:translate-x-0.5 transition-transform text-[var(--accent)] font-medium flex items-center gap-1">
           Inspect Twin →
         </span>
       </div>

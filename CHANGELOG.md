@@ -6,6 +6,14 @@ tagged with the git SHA and with the release tag.
 ## [Unreleased]
 
 ### Added
+- Phase 33: Telemetry Palette Softening & Contrast / Saturation Ergonomics:
+  - Softened overall UI contrast and decreased color saturation across dark and light theme tokens in `frontend/src/index.css`.
+  - Replaced harsh OLED pitch-black background (`#050505`) with a refined, ergonomic telemetry dark slate tone (`#0e121a`), eliminating 21:1 stark contrast fatigue.
+  - Softened stark pure-white text (`#f8fafc`) to comfortable slate-300 (`#cbd5e1`), with slate-400 (`#94a3b8`) secondary ink and slate-500 (`#64748b`) muted tokens.
+  - Replaced piercing neon accents (100% saturation `#00e5ff` cyan, `#10b981` green, `#f59e0b` amber, `#ef4444` red) with a balanced industrial palette: muted steel cyan (`#48a9c5`), sage mint (`#42a882`), warm ochre amber (`#c9933b`), terracotta (`#c8733b`), and muted brick crimson (`#c95555`).
+  - Softened CWT Morlet vibration scalogram colormap (`Scalogram.tsx`) with a multi-level desaturated slate-steel ramp.
+  - Re-styled metric tiles, motor cards (`MotorCard.tsx`), status badges (`StatusBadge.tsx`), emergency trip banner (`TripBanner.tsx`), and thermal node indicators with softened translucent borders and non-glaring hover glows.
+  - Re-captured updated operational telemetry screenshot in `docs/dashboard.png`.
 - Concrete `HardwareSensor` drivers implemented for all 6 sensor channels: `ADS1115CurrentSensor` (16-bit I2C ADC), `MQTTVibrationSensor` (tri-axial accelerometer over MQTT), `VoltageADCSensor`, `EncoderSpeedSensor`, `ThermocoupleTempSensor`, and `I2SAcousticSensor` with circuit-breaker fail-safe handling (Phase 12 / 18).
 - Staging and production deployment verification test suite (`test_deployment.py`) covering staging security constraints, Docker Compose stacks (`compose.yaml`, `compose.prod.yaml`), Nginx edge reverse-proxy configuration, `deploy.sh` script execution, database backup/restore procedures (`mysql_backup.sh`, `mysql_restore_test.sh`), and Prometheus/Alertmanager alerting rules (Phase 16 & 17).
 - Phase 19: Standard 5-motor industrial fleet preset catalog (`backend/app/simulation/presets.py`: 1.5 kW line 3 pump, 5.5 kW aging belt drive, 11 kW line 7 conveyor, 37 kW compressor train, 75 kW kiln draft fan) with idempotent seeding (`backend/app/scripts/seed_presets.py`) and admin route `POST /api/v1/admin/seed-presets`.

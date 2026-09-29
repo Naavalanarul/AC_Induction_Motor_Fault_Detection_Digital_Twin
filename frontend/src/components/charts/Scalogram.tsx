@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Sequential single-hue (blue) ramp, light -> dark = low -> high magnitude.
-const RAMP = ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b']
+// Sequential single-hue (slate-steel) ramp, light -> dark = low -> high magnitude.
+const RAMP = ['#c1cdd8', '#99aab9', '#73899d', '#536d84', '#39536b', '#253c52', '#142738']
 
 function rampColor(x: number) {
   const i = Math.min(RAMP.length - 1, Math.max(0, Math.floor(x * RAMP.length)))

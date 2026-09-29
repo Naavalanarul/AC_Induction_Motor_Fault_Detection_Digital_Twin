@@ -334,8 +334,8 @@ export function ProfileDatabaseModal({ isOpen, onClose, onOpenDocs, user }: Prof
                 </div>
               </div>
               {isConnected && (
-                <div className="live-pill" style={{ borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-                  <span className="live-dot" style={{ background: 'var(--good)', boxShadow: '0 0 8px #10b981' }} />
+                <div className="live-pill" style={{ borderColor: 'rgba(66, 168, 130, 0.35)' }}>
+                  <span className="live-dot" style={{ background: 'var(--good)', boxShadow: '0 0 6px var(--good)' }} />
                   <span style={{ color: 'var(--good)' }}>HEALTHY</span>
                 </div>
               )}

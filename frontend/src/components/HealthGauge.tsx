@@ -11,14 +11,14 @@ export interface HealthGaugeProps {
 const getZoneColor = (zone: string) => {
   switch (zone) {
     case 'A':
-      return { stroke: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' }
+      return { stroke: 'var(--good)', text: 'text-emerald-500/90', bg: 'var(--good-bg)', border: 'rgba(66, 168, 130, 0.25)' }
     case 'B':
-      return { stroke: '#eab308', text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30' }
+      return { stroke: 'var(--warning)', text: 'text-amber-500/90', bg: 'var(--warning-bg)', border: 'rgba(201, 147, 59, 0.25)' }
     case 'C':
-      return { stroke: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30' }
+      return { stroke: 'var(--serious)', text: 'text-orange-500/90', bg: 'var(--serious-bg)', border: 'rgba(200, 115, 59, 0.25)' }
     case 'D':
     default:
-      return { stroke: '#f43f5e', text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/30' }
+      return { stroke: 'var(--critical)', text: 'text-rose-500/90', bg: 'var(--critical-bg)', border: 'rgba(201, 85, 85, 0.25)' }
   }
 }
 

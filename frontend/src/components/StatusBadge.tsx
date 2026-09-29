@@ -2,10 +2,10 @@ import type { SadaStateName } from '../api/types'
 
 // Minimalist status tokens, paired with icon + text label (never color alone).
 const STYLE: Record<SadaStateName, { color: string; bg: string; icon: string; text: string; border: string }> = {
-  NORMAL: { color: 'var(--good)', bg: 'var(--good-bg)', icon: '✓', text: 'Normal', border: 'rgba(16, 185, 129, 0.25)' },
-  WATCH: { color: 'var(--warning)', bg: 'var(--warning-bg)', icon: '!', text: 'Watch', border: 'rgba(245, 158, 11, 0.25)' },
-  DERATE: { color: 'var(--serious)', bg: 'var(--serious-bg)', icon: '▼', text: 'Derate', border: 'rgba(249, 115, 22, 0.25)' },
-  TRIP: { color: 'var(--critical)', bg: 'var(--critical-bg)', icon: '■', text: 'Trip', border: 'rgba(239, 68, 68, 0.3)' },
+  NORMAL: { color: 'var(--good)', bg: 'var(--good-bg)', icon: '✓', text: 'Normal', border: 'rgba(66, 168, 130, 0.25)' },
+  WATCH: { color: 'var(--warning)', bg: 'var(--warning-bg)', icon: '!', text: 'Watch', border: 'rgba(201, 147, 59, 0.25)' },
+  DERATE: { color: 'var(--serious)', bg: 'var(--serious-bg)', icon: '▼', text: 'Derate', border: 'rgba(200, 115, 59, 0.25)' },
+  TRIP: { color: 'var(--critical)', bg: 'var(--critical-bg)', icon: '■', text: 'Trip', border: 'rgba(201, 85, 85, 0.25)' },
 }
 
 export function StatusBadge({ state }: { state: SadaStateName }) {
