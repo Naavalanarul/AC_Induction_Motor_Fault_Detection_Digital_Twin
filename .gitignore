@@ -2,3 +2,11 @@
 node_modules/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+test-results/
+.DS_Store
+
