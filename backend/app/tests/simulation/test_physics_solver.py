@@ -17,10 +17,10 @@ import math
 import numpy as np
 import pytest
 
-from core_physics.motor_parameters import MotorParams, DEFAULT_MOTOR
-from core_physics.dynamic_solver import StateSpaceMotorSolver, TransientResult
-from core_physics.thermal_lptn import FourNodeThermalLPTN, ThermalNetworkParams, LPTNState
-from core_physics.fault_models import (
+from app.core_physics.motor_parameters import MotorParams, DEFAULT_MOTOR
+from app.core_physics.dynamic_solver import StateSpaceMotorSolver, TransientResult
+from app.core_physics.thermal_lptn import FourNodeThermalLPTN, ThermalNetworkParams, LPTNState
+from app.core_physics.fault_models import (
     FaultState,
     FaultType,
     BearingDefect,
@@ -31,9 +31,9 @@ from core_physics.fault_models import (
     inject_bearing_fault,
     BearingGeometry,
 )
-from signal_processing.mcsa_pipeline import MCSAAnalyzer
-from signal_processing.vibration_analysis import VibrationAnalyzer
-from diagnostics.rul_engine import RULEngine, InsulationClass
+from app.signal_processing.mcsa_pipeline import MCSAAnalyzer
+from app.signal_processing.vibration_analysis import VibrationAnalyzer
+from app.diagnostics.rul_engine import RULEngine, InsulationClass
 
 
 class TestStateSpacePhysicsEngine:
@@ -304,7 +304,7 @@ class TestThermalLPTN:
 
     def test_thermal_resistance_feedback(self):
         """Stator resistance scales with winding temperature."""
-        from core_physics.dynamic_solver import StateSpaceMotorSolver
+        from app.core_physics.dynamic_solver import StateSpaceMotorSolver
 
         solver_cold = StateSpaceMotorSolver(params=DEFAULT_MOTOR, winding_temp=20.0)
         rs_cold = solver_cold._update_resistance_with_temp(20.0)
@@ -471,7 +471,7 @@ class TestRULEngine:
         engine = RULEngine(insulation_class=InsulationClass.F, nominal_life_hours=20000.0)
 
         # Create mock LPTN state at rated temp
-        from core_physics.thermal_lptn import LPTNState
+        from app.core_physics.thermal_lptn import LPTNState
         state_rated = LPTNState(
             t_winding=150.0, t_teeth=140.0, t_rotor=130.0, t_bearing=80.0,
             t_ambient=25.0, p_copper_s=100.0, p_iron=40.0, p_copper_r=80.0, p_friction=15.0,
@@ -500,7 +500,7 @@ class TestRULEngine:
             shaft_speed_rpm=1500.0,
         )
 
-        from core_physics.thermal_lptn import LPTNState
+        from app.core_physics.thermal_lptn import LPTNState
         state = LPTNState(
             t_winding=80.0, t_teeth=75.0, t_rotor=70.0, t_bearing=60.0,
             t_ambient=25.0, p_copper_s=100.0, p_iron=40.0, p_copper_r=80.0, p_friction=15.0,
@@ -527,7 +527,7 @@ class TestRULEngine:
             nde_bearing_p=1500.0,
         )
 
-        from core_physics.thermal_lptn import LPTNState
+        from app.core_physics.thermal_lptn import LPTNState
         # Insulation limited case (very hot winding)
         state = LPTNState(
             t_winding=180.0, t_teeth=165.0, t_rotor=145.0, t_bearing=70.0,
@@ -546,7 +546,7 @@ class TestFaultClassifier:
 
     def test_classifier_healthy(self):
         """No faults diagnosed for healthy signals."""
-        from diagnostics.fault_classifier import FaultClassifier
+        from app.diagnostics.fault_classifier import FaultClassifier
         classifier = FaultClassifier()
 
         diagnoses = classifier.classify(
@@ -562,8 +562,8 @@ class TestFaultClassifier:
 
     def test_classifier_brb_detection(self):
         """Classifier detects BRB from MCSA."""
-        from diagnostics.fault_classifier import FaultClassifier
-        from signal_processing.mcsa_pipeline import MCSAResult, PeakMarker
+        from app.diagnostics.fault_classifier import FaultClassifier
+        from app.signal_processing.mcsa_pipeline import MCSAResult, PeakMarker
         import numpy as np
 
         classifier = FaultClassifier()

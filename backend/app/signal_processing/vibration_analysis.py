@@ -19,7 +19,7 @@ import numpy as np
 from scipy.signal import butter, filtfilt, hilbert, sosfiltfilt, welch
 from scipy.stats import kurtosis
 
-from core_physics.fault_models import BearingGeometry
+from app.core_physics.fault_models import BearingGeometry
 
 
 @dataclass

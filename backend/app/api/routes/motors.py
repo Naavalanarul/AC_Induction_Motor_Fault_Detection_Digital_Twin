@@ -25,6 +25,7 @@ from app.api.schemas import (
     Page,
     PrognosisOut,
     RecommendationOut,
+    RULResultOut,
     SensorOut,
     SensorPatch,
     SupervisoryOut,
@@ -375,5 +376,17 @@ def get_motor_mcsa(
 ):
     _motor(db, motor_id)
     return rt.manager.get_mcsa(motor_id)
+
+
+@router.get("/{motor_id}/rul", response_model=RULResultOut)
+def get_motor_rul(
+    motor_id: int,
+    _: Principal = Depends(require("viewer")),
+    db: Session = Depends(get_db),
+    rt=Depends(runtime),
+):
+    _motor(db, motor_id)
+    return rt.manager.get_rul(motor_id)
+
 
 

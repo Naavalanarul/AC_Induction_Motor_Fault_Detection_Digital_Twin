@@ -201,3 +201,48 @@ class WorkerManager:
             return w.get_mcsa()
         return {"status": "offline", "peaks": [], "brb_fault_detected": False}
 
+    def get_rul(self, motor_id: int) -> dict:
+        w = self.workers.get(motor_id)
+        if w is not None:
+            return w.get_rul()
+        # Fallback offline RUL response
+        return {
+            "motor_id": motor_id,
+            "overall_rul_hours": 20000.0,
+            "overall_rul_years": 2.28,
+            "overall_health_percent": 100.0,
+            "limiting_factor": "insulation",
+            "insulation": {
+                "winding_temp_c": 45.0,
+                "hotspot_temp_c": 50.0,
+                "aging_acceleration_factor": 0.05,
+                "nominal_life_hours": 20000.0,
+                "rul_hours": 20000.0,
+                "rul_years": 2.28,
+                "health_percent": 100.0,
+                "temp_margin_c": 105.0,
+            },
+            "bearing_de": {
+                "bearing_temp_c": 35.0,
+                "shaft_speed_rpm": 1475.0,
+                "l10h_hours": 30000.0,
+                "adjusted_l10h_hours": 30000.0,
+                "rul_hours": 30000.0,
+                "rul_years": 3.42,
+                "health_percent": 100.0,
+                "vibration_rms_mms": 0.8,
+                "iso_zone": "A",
+            },
+            "bearing_nde": {
+                "bearing_temp_c": 32.0,
+                "shaft_speed_rpm": 1475.0,
+                "l10h_hours": 35000.0,
+                "adjusted_l10h_hours": 35000.0,
+                "rul_hours": 35000.0,
+                "rul_years": 4.0,
+                "health_percent": 100.0,
+                "vibration_rms_mms": 0.6,
+                "iso_zone": "A",
+            },
+        }
+

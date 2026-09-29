@@ -276,4 +276,38 @@ class MCSAResultOut(BaseModel):
     psd_db: list[float] = []
 
 
+class InsulationRULOut(BaseModel):
+    winding_temp_c: float
+    hotspot_temp_c: float
+    aging_acceleration_factor: float
+    nominal_life_hours: float
+    rul_hours: float
+    rul_years: float
+    health_percent: float
+    temp_margin_c: float
+
+
+class BearingRULOut(BaseModel):
+    bearing_temp_c: float
+    shaft_speed_rpm: float
+    l10h_hours: float
+    adjusted_l10h_hours: float
+    rul_hours: float
+    rul_years: float
+    health_percent: float
+    vibration_rms_mms: float
+    iso_zone: str
+
+
+class RULResultOut(BaseModel):
+    motor_id: int
+    overall_rul_hours: float
+    overall_rul_years: float
+    overall_health_percent: float
+    limiting_factor: str
+    insulation: InsulationRULOut
+    bearing_de: BearingRULOut
+    bearing_nde: BearingRULOut
+
+
 

@@ -167,7 +167,7 @@ class FeatureExtractor:
 
         # Use provided bearing geometry or default
         if bearing_geometry is None:
-            from core_physics.fault_models import BearingGeometry
+            from app.core_physics.fault_models import BearingGeometry
             bearing_geometry = BearingGeometry()
 
         # Bearing defect frequencies

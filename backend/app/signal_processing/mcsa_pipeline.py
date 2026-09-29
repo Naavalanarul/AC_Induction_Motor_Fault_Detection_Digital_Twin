@@ -23,7 +23,7 @@ import numpy as np
 from scipy.signal import find_peaks, welch
 from scipy.signal.windows import flattop
 
-from core_physics.fault_models import BearingGeometry
+from app.core_physics.fault_models import BearingGeometry
 
 
 @dataclass

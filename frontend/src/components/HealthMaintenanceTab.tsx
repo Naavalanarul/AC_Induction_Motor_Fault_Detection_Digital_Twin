@@ -311,10 +311,10 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
               Degradation kinetics based on activation energy Ea/kB = 12,000 K with 20,000 h baseline design life at rated 155°C.
             </p>
 
-            <div className="mt-5 grid grid-cols-2 gap-4">
-              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+            <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
                 <span className="text-xs text-neutral-400 block">Aging Acceleration</span>
-                <span className={`mt-1 font-mono text-2xl font-bold block ${
+                <span className={`mt-1 font-mono text-xl font-bold block ${
                   (frame?.thermal_lptn?.aging_acceleration ?? 0.05) > 2.0
                     ? 'text-rose-400'
                     : (frame?.thermal_lptn?.aging_acceleration ?? 0.05) > 1.0
@@ -323,18 +323,45 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
                 }`}>
                   {(frame?.thermal_lptn?.aging_acceleration ?? 0.05).toFixed(3)}×
                 </span>
-                <span className="text-[11px] text-neutral-500 block mt-1">
+                <span className="text-[10px] text-neutral-500 block mt-1">
                   {(frame?.thermal_lptn?.aging_acceleration ?? 0.05) <= 1.0 ? 'Slower than rated' : 'Accelerated aging!'}
                 </span>
               </div>
 
-              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
                 <span className="text-xs text-neutral-400 block">Arrhenius RUL</span>
-                <span className="mt-1 font-mono text-2xl font-bold text-cyan-400 block">
+                <span className="mt-1 font-mono text-xl font-bold text-cyan-400 block">
                   {Math.round(frame?.thermal_lptn?.rul_hours ?? 20000).toLocaleString()} h
                 </span>
-                <span className="text-[11px] text-neutral-500 block mt-1">
+                <span className="text-[10px] text-neutral-500 block mt-1">
                   ≈ {Math.round((frame?.thermal_lptn?.rul_hours ?? 20000) / 24).toLocaleString()} days
+                </span>
+              </div>
+
+              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-neutral-400 block">Bearing RUL (ISO 281)</span>
+                  {frame?.thermal_lptn?.iso_zone && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
+                      Zone {frame.thermal_lptn.iso_zone}
+                    </span>
+                  )}
+                </div>
+                <span className="mt-1 font-mono text-xl font-bold text-emerald-400 block">
+                  {Math.round(frame?.thermal_lptn?.bearing_rul_hours ?? 30000).toLocaleString()} h
+                </span>
+                <span className="text-[10px] text-neutral-500 block mt-1">
+                  ≈ {Math.round((frame?.thermal_lptn?.bearing_rul_hours ?? 30000) / 24).toLocaleString()} days
+                </span>
+              </div>
+
+              <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                <span className="text-xs text-neutral-400 block">Overall Service Life</span>
+                <span className="mt-1 font-mono text-xl font-bold text-amber-300 block">
+                  {Math.round(frame?.thermal_lptn?.overall_rul_hours ?? frame?.thermal_lptn?.rul_hours ?? 20000).toLocaleString()} h
+                </span>
+                <span className="text-[10px] text-neutral-400 block mt-1 uppercase font-semibold">
+                  Limit: <span className="text-amber-400">{frame?.thermal_lptn?.limiting_factor?.replace('_', ' ') ?? 'insulation'}</span>
                 </span>
               </div>
             </div>

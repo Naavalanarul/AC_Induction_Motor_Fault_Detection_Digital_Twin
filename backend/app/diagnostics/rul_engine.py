@@ -19,8 +19,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
-from core_physics.fault_models import BearingGeometry, BearingDefect, FaultState
-from core_physics.thermal_lptn import FourNodeThermalLPTN, LPTNState, ThermalNetworkParams
+from app.core_physics.fault_models import BearingGeometry, BearingDefect, FaultState
+from app.core_physics.thermal_lptn import FourNodeThermalLPTN, LPTNState, ThermalNetworkParams
 
 
 class InsulationClass(str, Enum):

@@ -92,7 +92,7 @@ TEST_DATABASE_URL=mysql+pymysql://dt:pw@127.0.0.1:3306/dt_test pytest app/tests/
 TEST_REDIS_URL=redis://127.0.0.1:6379/0 pytest app/tests/runtime
 cd frontend && npm test                        # Vitest + Testing Library
 npx playwright test                            # E2E: inject fault -> diagnosis -> SADA derate (backend on :8000)
-python loadtest/ws_load.py --password ... --motors 2 --viewers 100   # load test, see loadtest/RESULTS.md
+python backend/loadtest/ws_load.py --password ... --motors 2 --viewers 100   # load test, see backend/loadtest/RESULTS.md
 ```
 
 Retrain the classifier with `python -m app.diagnostics.ml.train --runs-per-class 40 --seeds 0 1 2`.
@@ -115,6 +115,6 @@ Run it from `backend/`. It writes `artifacts/conv_bilstm.pt` and `metrics.json`.
 - The thermal time constant is shortened to 180 s so demos show thermal behaviour. Real TEFC
   motors take tens of minutes.
 - One backend process sustains about 2–3 motors, or about 50–100 viewers at the full 10 Hz. Scale
-  out with replicas. See `loadtest/RESULTS.md`.
+  out with replicas. See `backend/loadtest/RESULTS.md`.
 - The hardware sensor classes are placeholders. MySQL table partitioning is not implemented; the
   retention job deletes old rows instead. The rate limiter is per process.

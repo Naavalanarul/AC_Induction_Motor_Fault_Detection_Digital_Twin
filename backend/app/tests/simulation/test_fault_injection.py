@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from core_physics.fault_models import (
+from app.core_physics.fault_models import (
     FaultState,
     FaultType,
     BearingDefect,
@@ -27,11 +27,11 @@ from core_physics.fault_models import (
     inject_unbalance,
     inject_misalignment,
 )
-from core_physics.dynamic_solver import StateSpaceMotorSolver
-from core_physics.motor_parameters import DEFAULT_MOTOR
-from core_physics.thermal_lptn import FourNodeThermalLPTN
-from signal_processing.mcsa_pipeline import MCSAAnalyzer
-from signal_processing.vibration_analysis import VibrationAnalyzer
+from app.core_physics.dynamic_solver import StateSpaceMotorSolver
+from app.core_physics.motor_parameters import DEFAULT_MOTOR
+from app.core_physics.thermal_lptn import FourNodeThermalLPTN
+from app.signal_processing.mcsa_pipeline import MCSAAnalyzer
+from app.signal_processing.vibration_analysis import VibrationAnalyzer
 
 
 class TestBRBFaultInjection:

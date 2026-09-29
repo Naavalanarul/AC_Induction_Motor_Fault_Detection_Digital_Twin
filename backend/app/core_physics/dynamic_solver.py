@@ -29,7 +29,7 @@ from typing import Callable, Literal
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from core_physics.motor_parameters import DerivedConstants, MotorParams
+from .motor_parameters import DerivedConstants, MotorParams
 
 TWO_PI = 2.0 * math.pi
 SQRT3_2 = math.sqrt(3.0) / 2.0

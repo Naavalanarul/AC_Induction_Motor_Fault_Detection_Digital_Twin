@@ -49,6 +49,16 @@ tagged with the git SHA and with the release tag.
   - Navbar "Docs" button with accent-colored pill styling next to operator profile chip.
   - Physics Engine & Architecture Documentation card integrated into `ProfileDatabaseModal.tsx` body and footer with one-click modal transition.
   - Playwright E2E test (`docs-modal.spec.ts`) verifying all 5 documentation tabs, navbar access, and profile-to-docs navigation flow.
+- Phase 31: Core Physics & Diagnostics Backend Consolidation & Comprehensive Subsystem RUL:
+  - Re-organized file directories by migrating root-level packages into `backend/`:
+    - `backend/app/core_physics/`: `dynamic_solver.py`, `fault_models.py`, `motor_parameters.py`, `thermal_lptn.py`.
+    - `backend/app/signal_processing/`: `mcsa_pipeline.py`, `vibration_analysis.py`, `feature_extraction.py`.
+    - `backend/app/diagnostics/`: `fault_classifier.py` and `rul_engine.py`.
+    - `backend/app/tests/simulation/`: `test_physics_solver.py` and `test_fault_injection.py`.
+    - `backend/loadtest/`: `ws_load.py` and `RESULTS.md`.
+  - Connected `RULEngine` into `worker.py` streaming frames and added REST endpoint `GET /api/v1/motors/{id}/rul` (`RULResultOut`).
+  - Connected multi-subsystem RUL to React frontend in `HealthMaintenanceTab.tsx` displaying Arrhenius insulation life, ISO 281 bearing fatigue life, overall motor service life, and limiting factor.
+  - Verified 184 backend pytest tests, 22 vitest unit tests, and 5 Playwright E2E tests.
 
 ### Fixed
 - Fixed parameter cards scrolling bug in `AddMotorModal` by enforcing `flex-shrink: 0` on form cards and `min-height: 0` on the scrollable container, preventing flexbox from squeezing inputs down to 91px.

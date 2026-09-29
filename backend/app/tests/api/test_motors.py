@@ -142,3 +142,19 @@ def test_mcsa_endpoint(client, auth):
     assert "status" in d
     assert "peaks" in d
 
+
+def test_rul_endpoint(client, auth):
+    r = client.get("/api/v1/motors/1/rul", headers=auth("viewer"))
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["motor_id"] == 1
+    assert "overall_rul_hours" in d
+    assert "overall_health_percent" in d
+    assert "limiting_factor" in d
+    assert "insulation" in d
+    assert "bearing_de" in d
+    assert "bearing_nde" in d
+    assert d["insulation"]["rul_hours"] > 0
+    assert d["bearing_de"]["rul_hours"] > 0
+
+

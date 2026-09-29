@@ -60,6 +60,38 @@ export type ThermalLPTNState = {
   ambient: number
   aging_acceleration: number
   rul_hours: number
+  bearing_rul_hours?: number
+  overall_rul_hours?: number
+  limiting_factor?: 'insulation' | 'bearing_de' | 'bearing_nde' | string
+  bearing_health_percent?: number
+  iso_zone?: string
+}
+
+export interface SubsystemRUL {
+  winding_temp_c?: number
+  hotspot_temp_c?: number
+  bearing_temp_c?: number
+  aging_acceleration_factor?: number
+  l10h_hours?: number
+  adjusted_l10h_hours?: number
+  nominal_life_hours?: number
+  rul_hours: number
+  rul_years: number
+  health_percent: number
+  temp_margin_c?: number
+  vibration_rms_mms?: number
+  iso_zone?: string
+}
+
+export interface RULResultOut {
+  motor_id: number
+  overall_rul_hours: number
+  overall_rul_years: number
+  overall_health_percent: number
+  limiting_factor: 'insulation' | 'bearing_de' | 'bearing_nde' | string
+  insulation: SubsystemRUL
+  bearing_de: SubsystemRUL
+  bearing_nde: SubsystemRUL
 }
 
 export type Frame = {

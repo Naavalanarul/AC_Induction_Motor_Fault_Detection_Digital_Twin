@@ -21,10 +21,10 @@ from typing import Literal
 
 import numpy as np
 
-from core_physics.fault_models import FaultState, FaultType, BearingDefect
-from signal_processing.mcsa_pipeline import MCSAResult, PeakMarker
-from signal_processing.vibration_analysis import VibrationResult
-from signal_processing.feature_extraction import SignalFeatures
+from app.core_physics.fault_models import FaultState, FaultType, BearingDefect
+from app.signal_processing.mcsa_pipeline import MCSAResult, PeakMarker
+from app.signal_processing.vibration_analysis import VibrationResult
+from app.signal_processing.feature_extraction import SignalFeatures
 
 
 class FaultSeverity(str, Enum):
