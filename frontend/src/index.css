@@ -112,33 +112,44 @@ h1, h2, h3, h4, h5, h6, .brand-name {
 
 .app-shell::before {
   position: fixed; 
-  z-index: -1; 
+  z-index: 0; 
   inset: 0; 
   content: '';
   pointer-events: none;
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at center, black, rgba(0,0,0,0.82) 78%, transparent);
-  -webkit-mask-image: radial-gradient(circle at center, black, rgba(0,0,0,0.82) 78%, transparent);
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.065) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(255, 255, 255, 0.065) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+:root[data-theme='light'] .app-shell::before {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
 }
 
 .app-shell::after {
   position: fixed; 
-  z-index: -1; 
+  z-index: 0; 
   inset: 0; 
   content: ''; 
   pointer-events: none;
   opacity: 0;
-  background-image: radial-gradient(circle 280px at var(--grid-cursor-x) var(--grid-cursor-y), rgba(255,255,255,0.025), transparent 72%), linear-gradient(rgba(255,255,255,0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.13) 1px, transparent 1px);
-  background-size: auto, 72px 72px, 72px 72px;
-  mask-image: radial-gradient(circle 280px at var(--grid-cursor-x) var(--grid-cursor-y), black, rgba(0,0,0,0.82) 42%, transparent 74%);
-  -webkit-mask-image: radial-gradient(circle 280px at var(--grid-cursor-x) var(--grid-cursor-y), black, rgba(0,0,0,0.82) 42%, transparent 74%);
-  transform: scale(0.9); 
+  background-image: 
+    radial-gradient(circle 320px at var(--grid-cursor-x) var(--grid-cursor-y), rgba(59, 144, 166, 0.08), transparent 72%), 
+    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: auto, 40px 40px, 40px 40px;
+  mask-image: radial-gradient(circle 320px at var(--grid-cursor-x) var(--grid-cursor-y), black, rgba(0,0,0,0.7) 45%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle 320px at var(--grid-cursor-x) var(--grid-cursor-y), black, rgba(0,0,0,0.7) 45%, transparent 75%);
+  transform: scale(0.95); 
   transform-origin: var(--grid-cursor-x) var(--grid-cursor-y);
   transition: opacity 180ms ease, transform 220ms ease;
 }
 :root[data-theme='light'] .app-shell::after {
-    background-image: radial-gradient(circle 280px at var(--grid-cursor-x) var(--grid-cursor-y), rgba(0,0,0,0.025), transparent 72%), linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px);
+  background-image: 
+    radial-gradient(circle 320px at var(--grid-cursor-x) var(--grid-cursor-y), rgba(0,0,0,0.03), transparent 72%), 
+    linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px);
 }
 
 .app-shell:hover::after { 
