@@ -55,6 +55,10 @@ class MotorParamsIn(BaseModel):
     rated_current: float = Field(gt=0)
     rated_speed: float = Field(gt=0)
     rated_torque: float = Field(gt=0)
+    t_ambient: float = Field(default=25.0, ge=-20.0, le=80.0)
+    insulation_class: Literal["B", "F", "H"] = "F"
+    warn_c: float | None = Field(default=None, gt=0)
+    trip_c: float | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def _validate_params(self):
@@ -71,6 +75,10 @@ class MotorParamsIn(BaseModel):
             rated_current=self.rated_current,
             rated_speed=self.rated_speed,
             rated_torque=self.rated_torque,
+            t_ambient=self.t_ambient,
+            insulation_class=self.insulation_class,
+            warn_c=self.warn_c,
+            trip_c=self.trip_c,
         )
         ok, err_msg = validate_motor_params(p)
         if not ok:

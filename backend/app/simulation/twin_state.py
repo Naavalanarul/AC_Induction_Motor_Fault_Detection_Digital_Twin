@@ -63,8 +63,23 @@ class MotorSimulator:
         self.plant = MotorPlant(params, self.faults, fs=fs)
         self.vib = VibrationGenerator(seed=None if seed is None else seed + 1)
         self.ac = AcousticGenerator(seed=None if seed is None else seed + 2)
-        self.thermal = ThermalModel(tau_s=thermal_tau_s)
-        self.lptn = FourNodeThermalLPTN(t_ambient=25.0)
+        r_th = params.get_thermal_resistance()
+        t_amb = getattr(params, "t_ambient", 25.0)
+        tau = getattr(params, "tau_s", thermal_tau_s)
+        self.thermal = ThermalModel(t_ambient=t_amb, r_th=r_th, tau_s=tau)
+        s_scale = max(1e-4, r_th / 0.35)
+        self.lptn = FourNodeThermalLPTN(
+            t_ambient=t_amb,
+            c_w=180.0 / s_scale,
+            c_t=420.0 / s_scale,
+            c_r=250.0 / s_scale,
+            c_b=85.0 / s_scale,
+            r_wt=0.22 * s_scale,
+            r_ta=0.45 * s_scale,
+            r_tr=0.65 * s_scale,
+            r_rb=0.55 * s_scale,
+            r_ba=0.70 * s_scale,
+        )
         self.fs = fs
         self.chunk_s = chunk_s
         self.n_elec = int(round(fs * chunk_s))

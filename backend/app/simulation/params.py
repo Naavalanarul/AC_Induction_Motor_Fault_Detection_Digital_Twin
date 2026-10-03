@@ -46,6 +46,23 @@ class MotorParams:
     rated_speed: float     # Revolutions per minute (rpm)
     rated_torque: float    # Newton-meters (Nm)
 
+    # Thermal model parameters (scaled per motor size and insulation class)
+    t_ambient: float = 25.0
+    insulation_class: str = "F"
+    r_th: float | None = None
+    tau_s: float = 180.0
+    warn_c: float | None = None
+    trip_c: float | None = None
+
+    def get_thermal_resistance(self) -> float:
+        """Computes lumped thermal resistance R_th [K/W] targeted to 80 K rated-loss rise."""
+        if self.r_th is not None and self.r_th > 0:
+            return self.r_th
+        p_cu = 1.5 * (self.Rs + self.Rr) * (self.rated_current ** 2)
+        p_fe = 0.025 * self.rated_power
+        p_loss = max(10.0, p_cu + p_fe)
+        return 80.0 / p_loss
+
     def compute_derived_constants(self) -> DerivedConstants:
         """Precomputes derived constants used directly in the state-space dynamic model.
 
@@ -65,6 +82,13 @@ class MotorParams:
         K = self.Lm / (sigma * self.Ls * self.Lr)                            #Flux-to-current coupling factor (K)
 
         return DerivedConstants(sigma = sigma, Tr = Tr, gamma = gamma, K = K)
+
+
+INSULATION_LIMITS: dict[str, dict[str, float]] = {
+    "B": {"warn_c": 100.0, "trip_c": 125.0, "max_hotspot": 130.0},
+    "F": {"warn_c": 120.0, "trip_c": 145.0, "max_hotspot": 155.0},
+    "H": {"warn_c": 140.0, "trip_c": 170.0, "max_hotspot": 180.0},
+}
 
 
 def validate_motor_params(
@@ -117,14 +141,14 @@ def validate_motor_params(
             f"nameplate P/omega ({t_expected:.2f} Nm)"
         )
 
-    # 5. Magnetizing current ratio: Im = V_phase / (2*pi*f*Lm)
+    # 5. Magnetizing current ratio: Im = V_phase / (2*pi*f*Lm) between 15% and 95% of rated_current
     v_phase = p.rated_voltage / math.sqrt(3.0)
     i_m = v_phase / (2.0 * math.pi * supply_freq * p.Lm)
     im_ratio = i_m / p.rated_current
-    if not (0.15 <= im_ratio <= 1.50):
+    if not (0.15 <= im_ratio <= 0.95):
         return False, (
             f"Magnetizing current Im ({i_m:.2f} A, {im_ratio*100:.1f}% of rated) outside "
-            "plausible range [15%, 150%] of rated_current"
+            "plausible range [15%, 95%] of rated_current"
         )
 
     # 6. RK4 electrical eigenvalue stability: max|lambda| * dt <= 2.78

@@ -23,7 +23,7 @@ from app.diagnostics.schema import ChannelVerdict, DiagFault, DiagSource, FusedD
 from app.diagnostics.supply import SupplyDiagnostic
 from app.diagnostics.thermal import ThermalDiagnostic
 from app.sensors.base import SensorFrame, SensorStatus, SensorType
-from app.simulation.params import MotorParams
+from app.simulation.params import INSULATION_LIMITS, MotorParams
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,11 @@ class DiagnosticEngine:
         self.supply_freq = supply_freq
         self.electrical = ElectricalResidualDiagnostic(params, elec_fs)
         self.classifier = classifier or MechanicalClassifier()
-        self.thermal = ThermalDiagnostic()
+        insul = getattr(params, "insulation_class", "F").upper()
+        limits = INSULATION_LIMITS.get(insul, INSULATION_LIMITS["F"])
+        warn_c = getattr(params, "warn_c", None) or limits["warn_c"]
+        trip_c = getattr(params, "trip_c", None) or limits["trip_c"]
+        self.thermal = ThermalDiagnostic(warn_c=warn_c, trip_c=trip_c)
         self.supply = SupplyDiagnostic(params.rated_voltage * math.sqrt(2) / math.sqrt(3))
         self._vib: deque[np.ndarray] = deque()
         self._ac: deque[np.ndarray] = deque()
