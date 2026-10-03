@@ -44,7 +44,7 @@ class DiagnosticEngine:
         limits = INSULATION_LIMITS.get(insul, INSULATION_LIMITS["F"])
         warn_c = getattr(params, "warn_c", None) or limits["warn_c"]
         trip_c = getattr(params, "trip_c", None) or limits["trip_c"]
-        self.thermal = ThermalDiagnostic(warn_c=warn_c, trip_c=trip_c)
+        self.thermal = ThermalDiagnostic(warn_c=warn_c, trip_c=trip_c, params=params)
         self.supply = SupplyDiagnostic(params.rated_voltage * math.sqrt(2) / math.sqrt(3))
         self.protection = ProtectionDiagnostic(params)
         self._vib: deque[np.ndarray] = deque()
@@ -114,7 +114,12 @@ class DiagnosticEngine:
         tf = frames.get(SensorType.TEMP)
         if not self._ok(tf):
             return _unavailable(DiagSource.THERMAL, "temperature not available")
-        return self.thermal.update(t, float(tf.data["winding"][-1]))
+        cur = frames.get(SensorType.CURRENT)
+        i_rms = None
+        if self._ok(cur):
+            i_mat = np.vstack([cur.data[c] for c in "abc"])
+            i_rms = float(np.mean(np.sqrt(np.mean(i_mat**2, axis=1))))
+        return self.thermal.update(t, float(tf.data["winding"][-1]), i_rms=i_rms)
 
     def _run_supply(self, frames) -> ChannelVerdict:
         v = frames.get(SensorType.VOLTAGE)

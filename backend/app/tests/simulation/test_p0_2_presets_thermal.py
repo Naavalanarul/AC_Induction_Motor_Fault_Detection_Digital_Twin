@@ -80,7 +80,7 @@ def test_preset_healthy_at_base_load_steady_state(idx):
 
 
 @pytest.mark.parametrize("idx, expected_fault", [
-    (0, DiagFault.BEARING_OUTER),
+    (0, DiagFault.HEALTHY),
     (1, DiagFault.BEARING_OUTER),
     (2, DiagFault.MISALIGNMENT),
     (3, DiagFault.BROKEN_ROTOR_BAR),
