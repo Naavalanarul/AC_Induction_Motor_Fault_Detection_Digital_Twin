@@ -347,6 +347,19 @@ RECOMMENDATIONS_CATALOG: dict[str, dict[str, dict[str, Any]]] = {
 }
 
 
+_NON_FAULT_VALUES = frozenset({"healthy", "indeterminate", "unknown", "none", ""})
+
+
+def _is_real_fault(flt_val: str) -> bool:
+    """Returns True if flt_val represents a genuine motor fault (not healthy/unknown/indeterminate)."""
+    return flt_val not in _NON_FAULT_VALUES
+
+
+def _pretty_fault(flt_val: str) -> str:
+    """Returns a human-readable fault name from the snake_case enum value."""
+    return flt_val.replace("_", " ").title()
+
+
 def get_recommendation(
     motor_id: int,
     fault_type: str | DiagFault,
@@ -355,8 +368,28 @@ def get_recommendation(
 ) -> dict[str, Any]:
     """Generates structured maintenance recommendations based on fault type, zone, and MHI."""
     flt_val = fault_type.value if isinstance(fault_type, DiagFault) else str(fault_type).lower()
+    z = str(zone).upper()
 
-    if zone == "A":
+    if z == "A":
+        if _is_real_fault(flt_val):
+            # Active fault detected but health still in Zone A — early alert
+            return {
+                "motor_id": motor_id,
+                "fault_type": flt_val,
+                "zone": "A",
+                "mhi": mhi,
+                "urgency": "routine",
+                "title": f"Early Detection: {_pretty_fault(flt_val)}",
+                "action": (
+                    f"Low-level {_pretty_fault(flt_val).lower()} signature detected. "
+                    "Motor is within normal operating envelope. Increase monitoring frequency."
+                ),
+                "checklist": [
+                    f"Baseline {_pretty_fault(flt_val).lower()} diagnostic trend for comparison.",
+                    "Record baseline electrical, vibration, and thermal parameters.",
+                    "Schedule targeted inspection during next planned maintenance window.",
+                ],
+            }
         return {
             "motor_id": motor_id,
             "fault_type": flt_val,
@@ -371,15 +404,33 @@ def get_recommendation(
             ],
         }
 
-    if zone == "B":
+    if z == "B":
+        if _is_real_fault(flt_val):
+            return {
+                "motor_id": motor_id,
+                "fault_type": flt_val,
+                "zone": "B",
+                "mhi": mhi,
+                "urgency": "planned",
+                "title": f"Minor Degradation: {_pretty_fault(flt_val)}",
+                "action": (
+                    f"Minor {_pretty_fault(flt_val).lower()} degradation detected. "
+                    "Schedule inspection during next planned maintenance window."
+                ),
+                "checklist": [
+                    f"Log {_pretty_fault(flt_val).lower()} diagnostic trend and verify if severity is stable or increasing.",
+                    "Schedule detailed vibration / current signature check during next scheduled turnaround.",
+                    "Check motor grease and operating temperature.",
+                ],
+            }
         return {
             "motor_id": motor_id,
             "fault_type": flt_val,
             "zone": "B",
             "mhi": mhi,
             "urgency": "planned",
-            "title": f"Minor Degradation ({flt_val.replace('_', ' ').title()})",
-            "action": f"Minor degradation detected ({flt_val}). Schedule inspection during next planned maintenance window.",
+            "title": "Minor Degradation Detected",
+            "action": "Health index below Zone A threshold. Schedule inspection during next planned maintenance window.",
             "checklist": [
                 "Log diagnostic trend and verify if severity is stable or increasing.",
                 "Schedule detailed vibration / current signature check during next scheduled turnaround.",
@@ -387,14 +438,14 @@ def get_recommendation(
             ],
         }
 
-    # Zone C or D
+    # Zone C or D — first check the detailed catalog
     fault_catalog = RECOMMENDATIONS_CATALOG.get(flt_val, {})
-    rec = fault_catalog.get(zone)
+    rec = fault_catalog.get(z)
     if rec:
         return {
             "motor_id": motor_id,
             "fault_type": flt_val,
-            "zone": zone,
+            "zone": z,
             "mhi": mhi,
             "urgency": rec["urgency"],
             "title": rec["title"],
@@ -402,14 +453,26 @@ def get_recommendation(
             "checklist": rec["checklist"],
         }
 
-    # Generic Zone C/D fallback
-    urgency = "immediate" if zone == "D" else "prompt"
-    title = f"{'CRITICAL: ' if zone == 'D' else 'Warning: '}{flt_val.replace('_', ' ').title()}"
-    action = f"{'De-energize motor immediately and investigate active fault.' if zone == 'D' else 'Inspect motor systems and monitor diagnostic severity trends closely.'}"
+    # Generic Zone C/D fallback — guard against non-fault types producing misleading titles
+    urgency = "immediate" if z == "D" else "prompt"
+    if _is_real_fault(flt_val):
+        title = f"{'CRITICAL: ' if z == 'D' else 'Warning: '}{_pretty_fault(flt_val)}"
+        action = (
+            f"De-energize motor immediately and investigate {_pretty_fault(flt_val).lower()} fault."
+            if z == "D"
+            else f"Inspect motor for {_pretty_fault(flt_val).lower()} and monitor diagnostic severity trends closely."
+        )
+    else:
+        title = "CRITICAL: Motor Condition Degraded" if z == "D" else "Warning: Motor Condition Degraded"
+        action = (
+            "De-energize motor immediately and investigate root cause of health degradation."
+            if z == "D"
+            else "Inspect motor systems and monitor diagnostic severity trends closely."
+        )
     return {
         "motor_id": motor_id,
         "fault_type": flt_val,
-        "zone": zone,
+        "zone": z,
         "mhi": mhi,
         "urgency": urgency,
         "title": title,
