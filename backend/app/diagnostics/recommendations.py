@@ -217,6 +217,133 @@ RECOMMENDATIONS_CATALOG: dict[str, dict[str, dict[str, Any]]] = {
             ],
         },
     },
+    "eccentricity": {
+        "C": {
+            "urgency": "prompt",
+            "title": "Air-Gap Eccentricity Warning",
+            "action": "Check bearing play and shaft alignment. Perform air-gap measurement during next scheduled outage.",
+            "checklist": [
+                "Inspect bearing radial clearances and sleeve tolerances.",
+                "Verify static and dynamic air-gap concentricity using feeler gauge or eddy sensors.",
+                "Check foundation bolt torques and soft-foot conditions.",
+            ],
+        },
+        "D": {
+            "urgency": "immediate",
+            "title": "CRITICAL: Rotor-Stator Rub Risk",
+            "action": "EMERGENCY: Severe air-gap asymmetry detected. De-energize motor immediately to prevent catastrophic rotor-stator contact.",
+            "checklist": [
+                "Immediately trip supply breaker and lock out drive.",
+                "Inspect stator bore and rotor outer diameter for scoring marks.",
+                "Replace worn drive-end (DE) and non-drive-end (NDE) bearings.",
+            ],
+        },
+    },
+    "overload": {
+        "C": {
+            "urgency": "prompt",
+            "title": "Motor Thermal Overload Warning",
+            "action": "Reduce mechanical load or investigate driven mechanical equipment binding.",
+            "checklist": [
+                "Verify shaft load torque against motor rated continuous capacity.",
+                "Inspect gearbox, pump, or conveyor mechanical linkages for binding or blockage.",
+                "Monitor winding RTD temperatures and stator current RMS.",
+            ],
+        },
+        "D": {
+            "urgency": "immediate",
+            "title": "CRITICAL: Severe Overload Trip",
+            "action": "EMERGENCY: Motor exceeded thermal capacity under sustained overload. Trip and allow full cooldown.",
+            "checklist": [
+                "De-energize load immediately to prevent stator winding burnout.",
+                "Allow forced ventilation until core temperature returns to ambient.",
+                "Inspect mechanical transmission for lockup before restart attempt.",
+            ],
+        },
+    },
+    "overcurrent": {
+        "C": {
+            "urgency": "immediate",
+            "title": "Instantaneous Overcurrent Surge",
+            "action": "Inspect for transient supply surge, rapid mechanical jam, or partial stator insulation puncture.",
+            "checklist": [
+                "Check supply bus voltage stability during current surge event.",
+                "Perform insulation resistance test phase-to-phase and phase-to-ground.",
+            ],
+        },
+        "D": {
+            "urgency": "immediate",
+            "title": "CRITICAL: Instantaneous Overcurrent Trip",
+            "action": "EMERGENCY: Severe overcurrent trip executed. Inspect circuit breaker, cabling, and stator windings.",
+            "checklist": [
+                "Lock out motor power circuit immediately.",
+                "Check for shorted feeder cables or ground faults with high-voltage tester.",
+                "Do not re-close breaker without insulation clearance.",
+            ],
+        },
+    },
+    "stall": {
+        "C": {
+            "urgency": "immediate",
+            "title": "Motor Stall Warning",
+            "action": "Shaft speed depressed under excessive torque. Relieve shaft load immediately.",
+            "checklist": [
+                "Inspect mechanical process for jammed material or seized bearings.",
+                "Verify rotor can be rotated freely by hand with power locked out.",
+            ],
+        },
+        "D": {
+            "urgency": "immediate",
+            "title": "CRITICAL: Locked Rotor Stall Trip",
+            "action": "EMERGENCY: Motor stalled with locked rotor under power. Disconnect immediately to avoid thermal destruction.",
+            "checklist": [
+                "Enforce LOTO and inspect driven equipment for complete mechanical seizure.",
+                "Check rotor bars and end rings for heat discoloration.",
+                "Verify coupling alignment and brake release mechanism.",
+            ],
+        },
+    },
+    "phase_loss": {
+        "C": {
+            "urgency": "immediate",
+            "title": "Single-Phasing / Current Unbalance Alert",
+            "action": "Check three-phase current balance and supply contactor integrity.",
+            "checklist": [
+                "Measure phase currents on all three legs with calibrated clamp meter.",
+                "Inspect supply fuses, disconnect switch contacts, and VFD output terminals.",
+            ],
+        },
+        "D": {
+            "urgency": "immediate",
+            "title": "CRITICAL: Phase Loss Protection Trip",
+            "action": "EMERGENCY: Single-phasing condition tripped motor to protect rotor and stator from reverse-field destruction.",
+            "checklist": [
+                "Lock out supply breaker and trace lost supply phase.",
+                "Check upstream branch fuses and circuit breakers for blown poles.",
+                "Inspect terminal box connections for open circuit or burnt terminals.",
+            ],
+        },
+    },
+    "voltage_sag": {
+        "C": {
+            "urgency": "prompt",
+            "title": "Grid Voltage Sag Alert",
+            "action": "Verify plant distribution bus voltage and transformer tap settings.",
+            "checklist": [
+                "Monitor plant incoming feeder voltage and power factor.",
+                "Check for large across-the-line induction motors starting on same bus.",
+            ],
+        },
+        "D": {
+            "urgency": "immediate",
+            "title": "CRITICAL: Severe Supply Voltage Sag",
+            "action": "Isolate motor or switch to standby power to avoid torque collapse and stall.",
+            "checklist": [
+                "Verify bus voltage recovery before restarting drive.",
+                "Check undervoltage protection relay logs on switchgear.",
+            ],
+        },
+    },
 }
 
 

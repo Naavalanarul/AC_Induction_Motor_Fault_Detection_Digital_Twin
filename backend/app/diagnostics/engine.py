@@ -19,6 +19,7 @@ from app.diagnostics.features import HOP_S, WINDOW_S, window_features
 from app.diagnostics.fusion import fuse
 from app.diagnostics.ml.classifier import MechanicalClassifier
 from app.diagnostics.ml.dataset import SEQ_LEN
+from app.diagnostics.protection import ProtectionDiagnostic
 from app.diagnostics.schema import ChannelVerdict, DiagFault, DiagSource, FusedDiagnosis
 from app.diagnostics.supply import SupplyDiagnostic
 from app.diagnostics.thermal import ThermalDiagnostic
@@ -45,6 +46,7 @@ class DiagnosticEngine:
         trip_c = getattr(params, "trip_c", None) or limits["trip_c"]
         self.thermal = ThermalDiagnostic(warn_c=warn_c, trip_c=trip_c)
         self.supply = SupplyDiagnostic(params.rated_voltage * math.sqrt(2) / math.sqrt(3))
+        self.protection = ProtectionDiagnostic(params)
         self._vib: deque[np.ndarray] = deque()
         self._ac: deque[np.ndarray] = deque()
         self._since_hop = 0.0
@@ -118,12 +120,22 @@ class DiagnosticEngine:
             return _unavailable(DiagSource.SUPPLY, "voltage not available")
         return self.supply.analyze(np.vstack([v.data[c] for c in "abc"]), v.fs, self.supply_freq)
 
+    def _run_protection(self, frames, t: float, dt: float) -> ChannelVerdict:
+        cur = frames.get(SensorType.CURRENT)
+        sp = frames.get(SensorType.SPEED)
+        if not self._ok(cur):
+            return _unavailable(DiagSource.PROTECTION, "current not available")
+        i_abc = np.vstack([cur.data[c] for c in "abc"])
+        rpm = float(np.mean(sp.data["rpm"])) if self._ok(sp) else float(self.params.rated_speed)
+        return self.protection.update(t, i_abc, rpm, dt)
+
     def process(self, t: float, frames: dict[SensorType, SensorFrame], dt: float) -> FusedDiagnosis:
         runners = [
             (DiagSource.ELECTRICAL_RESIDUAL, lambda: self._run_electrical(frames)),
             (DiagSource.ML_CLASSIFIER, lambda: self._run_mechanical(frames, dt)),
             (DiagSource.THERMAL, lambda: self._run_thermal(frames, t)),
             (DiagSource.SUPPLY, lambda: self._run_supply(frames)),
+            (DiagSource.PROTECTION, lambda: self._run_protection(frames, t, dt)),
         ]
         for source, fn in runners:
             try:

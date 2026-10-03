@@ -147,7 +147,11 @@ class SadaSupervisor:
 
         thermal = d.per_sensor_scores.get(DiagSource.THERMAL.value, {})
         thermal_critical = bool(thermal.get("details", {}).get("critical"))
-        emergency = gated and d.severity >= c.emergency_severity and d.confidence >= c.emergency_confidence
+        emergency = gated and (
+            (d.severity >= c.emergency_severity and d.confidence >= c.emergency_confidence)
+            or (d.fault_type in (DiagFault.OVERCURRENT, DiagFault.STALL, DiagFault.PHASE_LOSS) and d.confidence >= 0.8)
+            or (d.fault_type == DiagFault.OVERLOAD and d.severity >= 0.95 and d.confidence >= 0.8)
+        )
 
         prev = self.state
         s = self.smoothed
@@ -156,7 +160,14 @@ class SadaSupervisor:
         elif thermal_critical:
             self._enter(SadaState.TRIP, "TRIP_THERMAL")
         elif emergency:
-            self._enter(SadaState.TRIP, f"TRIP_EMERGENCY_{d.fault_type.value.upper()}")
+            trip_reason = (
+                f"TRIP_{d.fault_type.value.upper()}"
+                if d.fault_type in (DiagFault.OVERCURRENT, DiagFault.STALL, DiagFault.PHASE_LOSS)
+                else f"TRIP_EMERGENCY_{d.fault_type.value.upper()}"
+            )
+            self.smoothed = 1.0
+            self.fault = d.fault_type
+            self._enter(SadaState.TRIP, trip_reason)
         elif s >= c.trip:
             self._enter(SadaState.TRIP, f"TRIP_{self.fault.value.upper()}")
         elif self.sensor_loss_active and c.sensor_loss_action == "derate":

@@ -37,8 +37,10 @@ class SupplyDiagnostic:
         thd = math.sqrt(sum(h * h for h in harm)) / abs(va)
         pu = v_pos / self.v_rated
         details = {"vuf": round(vuf, 4), "thd": round(thd, 4), "v_pos_pu": round(pu, 4)}
-        excess = max(vuf / self.vuf_limit, thd / self.thd_limit, (1 - pu) / (1 - self.sag_limit))
+        sag_excess = (1.0 - pu) / (1.0 - self.sag_limit)
+        excess = max(vuf / self.vuf_limit, thd / self.thd_limit, sag_excess)
         if excess >= 1.0:
-            return ChannelVerdict(DiagSource.SUPPLY, DiagFault.SUPPLY_ANOMALY, min(1.0, 0.6 + 0.2 * excess),
+            fault_type = DiagFault.VOLTAGE_SAG if (sag_excess >= excess - 1e-6 and pu < self.sag_limit) else DiagFault.SUPPLY_ANOMALY
+            return ChannelVerdict(DiagSource.SUPPLY, fault_type, min(1.0, 0.6 + 0.2 * excess),
                                   min(0.75, 0.3 + 0.15 * (excess - 1)), True, details)
         return ChannelVerdict(DiagSource.SUPPLY, DiagFault.HEALTHY, 0.9, 0.0, True, details)

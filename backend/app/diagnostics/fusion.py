@@ -23,6 +23,7 @@ WEIGHTS = {
     DiagSource.ML_CLASSIFIER: {"electrical": 0.3, "mechanical": 1.0, "other": 0.3},
     DiagSource.THERMAL: {"electrical": 0.2, "mechanical": 0.2, "other": 1.0},
     DiagSource.SUPPLY: {"electrical": 0.2, "mechanical": 0.2, "other": 1.0},
+    DiagSource.PROTECTION: {"electrical": 0.8, "mechanical": 0.3, "other": 1.0},
 }
 MIN_CONFIDENCE = 0.35
 

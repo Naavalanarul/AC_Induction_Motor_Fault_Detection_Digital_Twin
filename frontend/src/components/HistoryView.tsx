@@ -17,6 +17,11 @@ const DIAG_TYPES = [
   'misalignment',
   'overheating',
   'supply_anomaly',
+  'voltage_sag',
+  'overload',
+  'overcurrent',
+  'stall',
+  'phase_loss',
   'indeterminate',
 ]
 

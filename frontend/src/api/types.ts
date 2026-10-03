@@ -181,7 +181,14 @@ export const FAULT_TYPES = [
   'bearing_ball',
   'unbalance',
   'misalignment',
+  'overheating',
+  'supply_anomaly',
+  'voltage_sag',
   'voltage_anomaly',
+  'overload',
+  'overcurrent',
+  'stall',
+  'phase_loss',
 ] as const
 export type FaultType = (typeof FAULT_TYPES)[number]
 

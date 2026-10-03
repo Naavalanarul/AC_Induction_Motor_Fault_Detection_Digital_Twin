@@ -25,6 +25,11 @@ class DiagFault(str, Enum):
     MISALIGNMENT = "misalignment"
     OVERHEATING = "overheating"
     SUPPLY_ANOMALY = "supply_anomaly"
+    VOLTAGE_SAG = "voltage_sag"
+    OVERLOAD = "overload"
+    OVERCURRENT = "overcurrent"
+    STALL = "stall"
+    PHASE_LOSS = "phase_loss"
     INDETERMINATE = "indeterminate"
     UNKNOWN = "unknown"
 
@@ -34,6 +39,7 @@ class DiagSource(str, Enum):
     ML_CLASSIFIER = "ml_classifier"
     THERMAL = "thermal"
     SUPPLY = "supply"
+    PROTECTION = "protection"
     FUSED = "fused"
 
 
