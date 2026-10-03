@@ -114,16 +114,24 @@ class ElectricalResidualDiagnostic:
             "ecc_dyn": e(f - fr) + e(f + fr),
                     }
         total = sum(energies.values()) + 1e-12
+        rated_speed_hz = self.params.rated_speed / 60.0
+        sync_speed_hz = f / self.params.pole_pairs
+        rated_slip = max(0.01, (sync_speed_hz - rated_speed_hz) / max(1e-3, sync_speed_hz))
+        load_factor = max(0.35, min(1.2, slip / rated_slip))
+        # Slip/load normalization so electrical fault severity is load-invariant during derate
+        fd_norm = fd / math.sqrt(load_factor)
+
         details = {
-            "FD": round(fd, 5), "FL": [round(float(x), 3) for x in fl], "FL_phase": "abc"[worst],
+            "FD": round(fd, 5), "FD_norm": round(fd_norm, 5), "load_factor": round(float(load_factor), 3),
+            "FL": [round(float(x), 3) for x in fl], "FL_phase": "abc"[worst],
             "slip": round(slip, 4), "residual_rms_A": round(r_rms, 4),
             "energy_share": {k: round(v / total, 3) for k, v in energies.items()},
         }
-        if fd < FD_THRESHOLD:
-            conf = min(1.0, 0.6 + 0.4 * (1 - fd / FD_THRESHOLD))
+        if fd_norm < FD_THRESHOLD:
+            conf = min(1.0, 0.6 + 0.4 * (1 - fd_norm / FD_THRESHOLD))
             return ChannelVerdict(DiagSource.ELECTRICAL_RESIDUAL, DiagFault.HEALTHY, conf, 0.0, True, details)
 
-        severity = float(min(1.0, (fd - FD_THRESHOLD) / (FD_FULL_SCALE - FD_THRESHOLD)))
+        severity = float(min(1.0, (fd_norm - FD_THRESHOLD) / (FD_FULL_SCALE - FD_THRESHOLD)))
         share = {k: v / total for k, v in energies.items()}
         localized = fl[worst] > FL_THRESHOLD
         if localized and share["neg"] + share["fund"] > 0.5:

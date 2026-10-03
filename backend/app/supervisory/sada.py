@@ -50,6 +50,10 @@ class SadaConfig:
     warn_temp_c: float = 130.0        # Stator warning temperature limit (Class F)
     max_reset_attempts: int = 3       # Max allowed restarts within window
     reset_window_s: float = 600.0     # 10 minute restart window
+    # P1-1: Anti-hunting limit cycle protection
+    derate_min_dwell_s: float = 5.0   # Minimum dwell time in DERATE before upward recovery
+    ramp_down_rate: float = 0.8       # Max load decrease per second (fast ramp down on fault)
+    ramp_up_rate: float = 0.05        # Max load increase per second (slow ramp up on recovery)
 
 
 @dataclass
@@ -97,6 +101,9 @@ class SadaSupervisor:
         self.lockout: bool = False
         self.lockout_reason: str | None = None
         self.last_reset_error: str | None = None
+        # P1-1 Limit cycle protection & load rate-limiting
+        self._derate_dwell_timer: float = 0.0
+        self._current_load_cmd: float = 1.0
 
     # ---- operator actions ----------------------------------------------
     def can_reset(
@@ -163,6 +170,8 @@ class SadaSupervisor:
             self.reason = f"RESET_BY_OPERATOR ({forced_reason})" if forced_reason else "RESET_BY_OPERATOR"
             self.acknowledged = True
             self.last_reset_error = None
+            self._current_load_cmd = 1.0
+            self._derate_dwell_timer = 0.0
             if self.smoothed >= self.cfg.trip - self.cfg.hysteresis and forced_reason:
                 self.smoothed = 0.0
             return True
@@ -206,6 +215,12 @@ class SadaSupervisor:
                 self.current_temp = float(det["stator_temp"])
             elif "temp_c" in det:
                 self.current_temp = float(det["temp_c"])
+
+        if self.state == SadaState.DERATE:
+            self._derate_dwell_timer += dt
+        else:
+            self._derate_dwell_timer = 0.0
+
         if not math.isfinite(d.severity) or not math.isfinite(d.confidence):
             self.smoothed = 1.0
             self.fault = DiagFault.UNKNOWN
@@ -324,25 +339,45 @@ class SadaSupervisor:
             if s >= c.derate or (self.state == SadaState.DERATE and s >= c.derate - h):
                 new = SadaState.DERATE
             elif s >= c.watch or (self.state in (SadaState.WATCH, SadaState.DERATE) and s >= c.watch - h):
-                new = SadaState.WATCH
+                if self.state == SadaState.DERATE and self._derate_dwell_timer < c.derate_min_dwell_s:
+                    new = SadaState.DERATE
+                else:
+                    new = SadaState.WATCH
             else:
-                new = SadaState.NORMAL
+                if self.state == SadaState.DERATE and self._derate_dwell_timer < c.derate_min_dwell_s:
+                    new = SadaState.DERATE
+                else:
+                    new = SadaState.NORMAL
+
             if new != self.state:
+                if new == SadaState.DERATE:
+                    self._derate_dwell_timer = 0.0
                 self._enter(new, "OK" if new == SadaState.NORMAL else f"{new.value}_{self.fault.value.upper()}")
 
         if self.state == SadaState.NORMAL and s < c.watch - c.hysteresis and not self.sensor_loss_active:
             self.fault = DiagFault.HEALTHY
 
         if self.state == SadaState.TRIP:
-            load = 0.0
+            target_load = 0.0
+            self._current_load_cmd = 0.0
         elif self.state == SadaState.DERATE:
             if self.sensor_loss_active and c.sensor_loss_action == "derate":
-                load = c.sensor_loss_derate_load
+                target_load = c.sensor_loss_derate_load
             else:
                 frac = min(1.0, (s - c.derate) / (c.trip - c.derate)) if s > c.derate else 0.0
-                load = 1.0 - frac * (1.0 - c.min_load)
+                target_load = 1.0 - frac * (1.0 - c.min_load)
+            if target_load < self._current_load_cmd:
+                self._current_load_cmd = max(target_load, self._current_load_cmd - c.ramp_down_rate * dt)
+            else:
+                self._current_load_cmd = min(target_load, self._current_load_cmd + c.ramp_up_rate * dt)
         else:
-            load = 1.0
+            target_load = 1.0
+            if self._current_load_cmd < target_load:
+                self._current_load_cmd = min(target_load, self._current_load_cmd + c.ramp_up_rate * dt)
+            else:
+                self._current_load_cmd = target_load
+
+        load = self._current_load_cmd
         manual_load = self.manual_load
         manual = manual_load is not None and self.state != SadaState.TRIP
         if manual_load is not None and manual:
