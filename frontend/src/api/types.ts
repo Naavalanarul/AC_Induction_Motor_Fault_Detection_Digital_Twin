@@ -37,6 +37,11 @@ export type Supervisory = {
   manual_override: boolean
   base_load_nm: number
   acknowledged: boolean
+  latched_fault?: string | null
+  latched_severity?: number | null
+  latched_temp?: number | null
+  trip_time?: number | null
+  lockout?: boolean
 }
 
 export type SensorEntry = {

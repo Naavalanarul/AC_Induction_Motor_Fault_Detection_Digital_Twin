@@ -45,6 +45,11 @@ class SadaConfig:
     sensor_loss_action: str = "trip"  # "trip" | "derate" | "hold"
     sensor_loss_derate_load: float = 0.5
     unknown_decay_rate: float = 0.02  # per update tick when UNKNOWN and sensors healthy
+    # P0-6: Trip latching & reset guards
+    cooldown_s: float = 5.0           # Minimum off-time cooldown before reset
+    warn_temp_c: float = 130.0        # Stator warning temperature limit (Class F)
+    max_reset_attempts: int = 3       # Max allowed restarts within window
+    reset_window_s: float = 600.0     # 10 minute restart window
 
 
 @dataclass
@@ -57,6 +62,11 @@ class SadaOutput:
     fault_type: str
     manual_override: bool
     changed: bool
+    latched_fault: str | None = None
+    latched_severity: float | None = None
+    latched_temp: float | None = None
+    trip_time: float | None = None
+    lockout: bool = False
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -76,27 +86,101 @@ class SadaSupervisor:
         self._last_out: SadaOutput | None = None
         self._sensor_loss_timer: float = 0.0
         self.sensor_loss_active: bool = False
+        # P0-6 Latched trip evidence & reset tracking
+        self.latched_fault: DiagFault | None = None
+        self.latched_severity: float | None = None
+        self.latched_temp: float | None = None
+        self.trip_time: float | None = None
+        self.current_time: float = 0.0
+        self.current_temp: float = 25.0
+        self.reset_timestamps: list[float] = []
+        self.lockout: bool = False
+        self.lockout_reason: str | None = None
+        self.last_reset_error: str | None = None
 
     # ---- operator actions ----------------------------------------------
-    def reset(self) -> bool:
-        """Clear a latched trip. Refused while the smoothed severity is still at trip level or sensors lost."""
+    def can_reset(
+        self,
+        t: float | None = None,
+        forced_reason: str | None = None,
+        current_temp: float | None = None,
+    ) -> tuple[bool, str]:
+        """Check whether a latched trip can be safely reset."""
         if self.state != SadaState.TRIP:
-            return True
+            return True, "NOT_TRIPPED"
+
+        now = t if t is not None else self.current_time
+
+        # 1. Lockout check (restart-attempt limiting)
+        self.reset_timestamps = [ts for ts in self.reset_timestamps if (now - ts) <= self.cfg.reset_window_s]
+        if self.lockout or len(self.reset_timestamps) >= self.cfg.max_reset_attempts:
+            self.lockout = True
+            msg = (
+                f"LOCKOUT: exceeded {self.cfg.max_reset_attempts} restarts within "
+                f"{self.cfg.reset_window_s:.0f}s"
+            )
+            return False, msg
+
+        # 2. Critical sensor loss
         if self.sensor_loss_active:
-            return False
+            return False, "SENSOR_LOSS_ACTIVE: critical sensors offline"
+
+        # 3. Minimum off-time cooldown check (t_cooldown >= 5.0 s)
+        if self.trip_time is not None:
+            elapsed = now - self.trip_time
+            if elapsed < self.cfg.cooldown_s:
+                return False, f"COOLDOWN_ACTIVE: elapsed {elapsed:.1f}s < minimum {self.cfg.cooldown_s:.1f}s"
+
+        # 4. Temperature check: below warn_temp_c - 5.0 C
+        temp = current_temp if current_temp is not None else self.current_temp
+        if temp is not None and temp >= (self.cfg.warn_temp_c - 5.0):
+            if not forced_reason:
+                return False, f"THERMAL_HIGH: temperature {temp:.1f}°C >= safe limit {self.cfg.warn_temp_c - 5.0:.1f}°C"
+
+        # 5. Fault clearance check
         if self.smoothed >= self.cfg.trip - self.cfg.hysteresis:
+            if not forced_reason:
+                return False, f"FAULT_ACTIVE: smoothed severity {self.smoothed:.2f} still at trip level"
+
+        return True, "OK"
+
+    def reset(
+        self,
+        t: float | None = None,
+        forced_reason: str | None = None,
+        current_temp: float | None = None,
+    ) -> bool:
+        """Clear a latched trip with cooldown, thermal guard, fault clearance, and restart limiting."""
+        can, msg = self.can_reset(t=t, forced_reason=forced_reason, current_temp=current_temp)
+        if not can:
+            self.last_reset_error = msg
             return False
-        self.state = SadaState.NORMAL
-        self.reason = "RESET_BY_OPERATOR"
+
+        if self.state == SadaState.TRIP:
+            now = t if t is not None else self.current_time
+            self.reset_timestamps.append(now)
+            self.state = SadaState.NORMAL
+            self.reason = f"RESET_BY_OPERATOR ({forced_reason})" if forced_reason else "RESET_BY_OPERATOR"
+            self.acknowledged = True
+            self.last_reset_error = None
+            if self.smoothed >= self.cfg.trip - self.cfg.hysteresis and forced_reason:
+                self.smoothed = 0.0
+            return True
         return True
+
+    def clear_lockout(self) -> None:
+        """Explicitly clear restart lockout and reset history."""
+        self.lockout = False
+        self.lockout_reason = None
+        self.reset_timestamps.clear()
 
     def acknowledge(self) -> None:
         self.acknowledged = True
 
-    def trip(self, reason: str = "TRIP") -> None:
+    def trip(self, reason: str = "TRIP", t: float | None = None) -> None:
         self.smoothed = 1.0
         self.fault = DiagFault.UNKNOWN
-        self._enter(SadaState.TRIP, reason)
+        self._enter(SadaState.TRIP, reason, t=t)
 
     def set_manual_load(self, load: float | None) -> None:
         if load is not None and not 0.0 <= load <= 1.0:
@@ -109,8 +193,19 @@ class SadaSupervisor:
         d: FusedDiagnosis,
         dt: float = 0.1,
         critical_sensors_ok: bool = True,
+        current_temp: float | None = None,
     ) -> SadaOutput:
         c = self.cfg
+        self.current_time = d.t if hasattr(d, "t") and d.t > 0 else (self.current_time + dt)
+        if current_temp is not None:
+            self.current_temp = current_temp
+        else:
+            th_score = d.per_sensor_scores.get(DiagSource.THERMAL.value, {})
+            det = th_score.get("details", {})
+            if "stator_temp" in det:
+                self.current_temp = float(det["stator_temp"])
+            elif "temp_c" in det:
+                self.current_temp = float(det["temp_c"])
         if not math.isfinite(d.severity) or not math.isfinite(d.confidence):
             self.smoothed = 1.0
             self.fault = DiagFault.UNKNOWN
@@ -252,13 +347,31 @@ class SadaSupervisor:
         manual = manual_load is not None and self.state != SadaState.TRIP
         if manual_load is not None and manual:
             load = min(load, manual_load) if self.state == SadaState.DERATE else manual_load
-        out = SadaOutput(self.state, round(load, 4), "MANUAL_OVERRIDE" if manual else self.reason,
-                         self.state == SadaState.TRIP, round(s, 4), self.fault.value, manual,
-                         changed=prev != self.state)
+        out = SadaOutput(
+            self.state,
+            round(load, 4),
+            "MANUAL_OVERRIDE" if manual else self.reason,
+            self.state == SadaState.TRIP,
+            round(s, 4),
+            self.fault.value,
+            manual,
+            changed=prev != self.state,
+            latched_fault=self.latched_fault.value if self.latched_fault else None,
+            latched_severity=round(self.latched_severity, 4) if self.latched_severity is not None else None,
+            latched_temp=round(self.latched_temp, 2) if self.latched_temp is not None else None,
+            trip_time=round(self.trip_time, 2) if self.trip_time is not None else None,
+            lockout=self.lockout,
+        )
         self._last_out = out
         return out
 
-    def _enter(self, state: SadaState, reason: str) -> None:
+    def _enter(self, state: SadaState, reason: str, t: float | None = None) -> None:
+        prev = self.state
         self.state = state
         self.reason = reason
         self.acknowledged = False
+        if prev != SadaState.TRIP and state == SadaState.TRIP:
+            self.trip_time = t if t is not None else self.current_time
+            self.latched_fault = self.fault
+            self.latched_severity = self.smoothed
+            self.latched_temp = self.current_temp

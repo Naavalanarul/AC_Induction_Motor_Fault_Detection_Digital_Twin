@@ -278,22 +278,70 @@ async def override(motor_id: int, body: OverrideIn, p: Principal = Depends(requi
     sup = (latest or {}).get("supervisory") or {}
     if body.action == "reset" and sup.get("trip"):
         cfg = SadaConfig()
+        if sup.get("lockout"):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "cannot reset: lockout active, exceeded max restart attempts within 10 minutes",
+            )
+        if sup.get("reason_code") == "TRIP_SENSOR_LOSS":
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "cannot reset: critical sensors offline",
+            )
+        trip_time = sup.get("trip_time")
+        current_t = float((latest or {}).get("t", 0.0))
+        if trip_time is not None and (current_t - float(trip_time)) < cfg.cooldown_s:
+            elapsed = current_t - float(trip_time)
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"cannot reset: minimum cooldown of {cfg.cooldown_s:.1f}s not elapsed (elapsed {elapsed:.1f}s)",
+            )
+        stator_temp = (latest or {}).get("sensors", {}).get("temp", {}).get("value")
+        if stator_temp is None:
+            stator_temp = (latest or {}).get("sensors", {}).get("thermal", {}).get("value")
+        if stator_temp is not None and float(stator_temp) >= (cfg.warn_temp_c - 5.0):
+            if not body.force_reason:
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    f"cannot reset: stator temperature ({float(stator_temp):.1f}°C) exceeds safe restart limit ({cfg.warn_temp_c - 5.0:.1f}°C)",
+                )
         if float(sup.get("smoothed_severity", 1.0)) >= cfg.trip - cfg.hysteresis:
-            raise HTTPException(status.HTTP_409_CONFLICT, "cannot reset: fault severity still at trip level")
+            if not body.force_reason:
+                raise HTTPException(status.HTTP_409_CONFLICT, "cannot reset: fault severity still at trip level")
     load = body.load if body.action == "set_load" else float(sup.get("load_cmd", 1.0))
     # Durably log the operator action BEFORE it is applied.
+    reason_code = (
+        f"MANUAL_RESET_FORCED ({body.force_reason})"
+        if body.action == "reset" and body.force_reason
+        else f"MANUAL_{body.action.upper()}"
+    )
     row = SupervisoryAction(motor_id=motor_id, state=str(sup.get("state", "UNKNOWN")), load_cmd=load,
-                            reason_code=f"MANUAL_{body.action.upper()}", trip=bool(sup.get("trip", False)),
+                            reason_code=reason_code, trip=bool(sup.get("trip", False)),
                             smoothed_severity=sup.get("smoothed_severity"), actor=p.username,
                             request_id=idempotency_key)
     db.add(row)
+    if body.action == "reset" and body.force_reason:
+        audit_alert = Alert(
+            motor_id=motor_id,
+            severity="warning",
+            message=f"Forced reset executed by {p.username}: {body.force_reason}",
+        )
+        db.add(audit_alert)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
         return db.scalar(select(SupervisoryAction).where(SupervisoryAction.request_id == idempotency_key))
-    await rt.broker.publish(f"cmd:{motor_id}", {"cmd": "override", "action": body.action, "load": body.load,
-                                                "actor": p.username})
+    await rt.broker.publish(
+        f"cmd:{motor_id}",
+        {
+            "cmd": "override",
+            "action": body.action,
+            "load": body.load,
+            "actor": p.username,
+            "force_reason": body.force_reason,
+        },
+    )
     return row
 
 

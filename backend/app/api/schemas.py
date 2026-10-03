@@ -190,6 +190,7 @@ class Page(BaseModel):
 class OverrideIn(BaseModel):
     action: Literal["ack", "reset", "set_load", "release_load"]
     load: float | None = Field(default=None, ge=0.0, le=1.0)
+    force_reason: str | None = Field(default=None, max_length=256, description="Audit reason for forced reset")
 
     @model_validator(mode="after")
     def _load_required(self):

@@ -167,3 +167,15 @@ def test_rul_endpoint(client, auth):
     assert d["bearing_de"]["rul_hours"] > 0
 
 
+def test_reset_override_with_forced_reason(client, auth):
+    h = auth("operator")
+    r = client.post(
+        "/api/v1/motors/1/supervisory/override",
+        json={"action": "reset", "force_reason": "Pre-shift clearance"},
+        headers=h,
+    )
+    assert r.status_code == 200
+    assert "MANUAL_RESET_FORCED" in r.json()["reason_code"]
+
+
+

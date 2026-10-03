@@ -166,7 +166,7 @@ class MotorWorker:
                 self.sada.acknowledge()
                 self._operator_ack = True
             elif action == "reset":
-                ok = self.sada.reset()
+                ok = self.sada.reset(forced_reason=cmd.get("force_reason"))
             elif action == "set_load":
                 self.sada.set_manual_load(float(cmd["load"]))
             elif action == "release_load":
@@ -246,7 +246,19 @@ class MotorWorker:
         else:
             critical_sensors_ok = False if frames else True
 
-        out = self.sada.update(diag, dt=self.sim.chunk_s, critical_sensors_ok=critical_sensors_ok)
+        temp_f = frames.get(SensorType.TEMP)
+        temp_val: float | None = None
+        if temp_f is not None and getattr(temp_f, "status", None) == SensorStatus.OK:
+            w_data = getattr(temp_f, "data", {}).get("winding")
+            if w_data is not None and len(w_data) > 0:
+                temp_val = float(w_data[-1])
+
+        out = self.sada.update(
+            diag,
+            dt=self.sim.chunk_s,
+            critical_sensors_ok=critical_sensors_ok,
+            current_temp=temp_val,
+        )
         if out.trip and out.reason_code == "TRIP_SENSOR_LOSS" and out.changed:
             if self.writer is not None:
                 self.writer.put(
