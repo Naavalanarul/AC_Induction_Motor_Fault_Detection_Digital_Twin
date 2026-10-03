@@ -14,7 +14,7 @@ from collections import deque
 
 import numpy as np
 
-from app.diagnostics.electrical import ElectricalResidualDiagnostic
+from app.diagnostics.electrical import ElectricalResidualDiagnostic, estimate_grid_frequency
 from app.diagnostics.features import HOP_S, WINDOW_S, window_features
 from app.diagnostics.fusion import fuse
 from app.diagnostics.ml.classifier import MechanicalClassifier
@@ -77,7 +77,9 @@ class DiagnosticEngine:
         t_sp = sp.t0 + np.arange(len(rpm)) / sp.fs
         t_i = cur.t0 + np.arange(n) / cur.fs
         w = np.interp(t_i, t_sp, rpm) * math.pi / 30.0
-        return self.electrical.update(i, u, w, self.supply_freq)
+        tf = frames.get(SensorType.TEMP)
+        temp_c = float(tf.data["winding"][-1]) if self._ok(tf) else None
+        return self.electrical.update(i, u, w, supply_freq=self.supply_freq, temp_c=temp_c)
 
     def _run_mechanical(self, frames, dt: float) -> ChannelVerdict | None:
         vib, ac = frames.get(SensorType.VIBRATION), frames.get(SensorType.ACOUSTIC)
@@ -118,7 +120,9 @@ class DiagnosticEngine:
         v = frames.get(SensorType.VOLTAGE)
         if not self._ok(v):
             return _unavailable(DiagSource.SUPPLY, "voltage not available")
-        return self.supply.analyze(np.vstack([v.data[c] for c in "abc"]), v.fs, self.supply_freq)
+        u_mat = np.vstack([v.data[c] for c in "abc"])
+        f_grid = estimate_grid_frequency(u_mat, v.fs, default_freq=self.supply_freq)
+        return self.supply.analyze(u_mat, v.fs, f_grid)
 
     def _run_protection(self, frames, t: float, dt: float) -> ChannelVerdict:
         cur = frames.get(SensorType.CURRENT)

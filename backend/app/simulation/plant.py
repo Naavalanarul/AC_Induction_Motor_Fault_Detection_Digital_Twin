@@ -108,7 +108,7 @@ class MotorPlant:
         return ua, ub
 
     # -- ODE -------------------------------------------------------------
-    def _deriv(self, x, ua, ub, r11, r12, r22, lm, tl):
+    def _deriv(self, x, ua, ub, rs, r11, r12, r22, lm, tl):
         """General form allowing an asymmetric rotor resistance matrix [[r11, r12], [r12, r22]].
 
         Rotor:  dpsi_r/dt = -R_r (psi_r - Lm i_s) / Lr + omega_r J psi_r
@@ -116,7 +116,6 @@ class MotorPlant:
         With R_r = Rr * I this is exactly Chen et al. Eq. (3).
         """
         p = self.p
-        rs = p.Rs
         # Leakage inductances stay fixed when the magnetizing path is modulated
         ls = p.Ls - p.Lm + lm
         lr = p.Lr - p.Lm + lm
@@ -134,10 +133,17 @@ class MotorPlant:
         dwm = (te - tl - self.B * wm) / p.J
         return (dia, dib, dpa, dpb, dwm), te
 
-    def simulate(self, n: int, load_torque: float) -> PlantChunk:
+    def simulate(self, n: int, load_torque: float, temp_c: float | None = None) -> PlantChunk:
         """Advance n samples at fs with the given mean load torque."""
         p, f = self.p, self.faults
         h, hh = self.h, 0.5 * self.h
+        if temp_c is not None:
+            delta_t = temp_c - 20.0
+            rs = p.Rs * (1.0 + ALPHA_CU * delta_t)
+            rr = p.Rr * (1.0 + ALPHA_CU * delta_t)
+        else:
+            rs = p.Rs
+            rr = p.Rr
         brb = f.brb_delta
         ecc_dyn, ecc_stat = f.eccentricity
         unb, mis = f.unbalance, f.misalignment
@@ -164,10 +170,10 @@ class MotorPlant:
                 # Broken bars: resistance rises along one rotor axis. Rotated into the
                 # stationary frame this is R_r = Rr[(1+d/2)I + d/2 [[c2, s2], [s2, -c2]]].
                 c2, s2 = math.cos(2.0 * tr * th_m), math.sin(2.0 * tr * th_m)
-                half = 0.5 * brb * p.Rr
-                r11, r12, r22 = p.Rr + half * (1.0 + c2), half * s2, p.Rr + half * (1.0 - c2)
+                half = 0.5 * brb * rr
+                r11, r12, r22 = rr + half * (1.0 + c2), half * s2, rr + half * (1.0 - c2)
             else:
-                r11, r12, r22 = p.Rr, 0.0, p.Rr
+                r11, r12, r22 = rr, 0.0, rr
             lm = p.Lm
             # Pure static eccentricity is not observable in a lumped alpha-beta model;
             # it is modelled as mixed eccentricity with a weaker rotating component.
@@ -183,13 +189,13 @@ class MotorPlant:
             u0 = self._supply_ab(t)
             u1 = self._supply_ab(t + hh)
             u2 = self._supply_ab(t + h)
-            k1, te = self._deriv(x, u0[0], u0[1], r11, r12, r22, lm, tl)
+            k1, te = self._deriv(x, u0[0], u0[1], rs, r11, r12, r22, lm, tl)
             x2 = [x[i] + hh * k1[i] for i in range(5)]
-            k2, _ = self._deriv(x2, u1[0], u1[1], r11, r12, r22, lm, tl)
+            k2, _ = self._deriv(x2, u1[0], u1[1], rs, r11, r12, r22, lm, tl)
             x3 = [x[i] + hh * k2[i] for i in range(5)]
-            k3, _ = self._deriv(x3, u1[0], u1[1], r11, r12, r22, lm, tl)
+            k3, _ = self._deriv(x3, u1[0], u1[1], rs, r11, r12, r22, lm, tl)
             x4 = [x[i] + h * k3[i] for i in range(5)]
-            k4, _ = self._deriv(x4, u2[0], u2[1], r11, r12, r22, lm, tl)
+            k4, _ = self._deriv(x4, u2[0], u2[1], rs, r11, r12, r22, lm, tl)
             wm_old = x[4]
             x = [x[i] + (h / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) for i in range(5)]
             if not all(math.isfinite(val) for val in x):
@@ -237,7 +243,7 @@ class MotorPlant:
         wm_mean = float(np.mean(wm_arr)) if n else 0.0
         fault_heat += fric * wm_mean
         i_sq = float(np.mean(ia_arr**2 + ib_arr**2)) if n else 0.0
-        copper = 1.5 * (p.Rs + p.Rr) * i_sq * 0.5 + 40.0 * (self.voltage_scale > 0)
+        copper = 1.5 * (rs + rr) * i_sq * 0.5 + 40.0 * (self.voltage_scale > 0)
 
         has_nonfinite = self.nonfinite_tripped or not (
             np.all(np.isfinite(u_abc))
@@ -269,25 +275,43 @@ class MotorPlant:
             self.simulate(chunk, load_torque)
 
 
-class HealthyTwinObserver:
-    """Frozen-parameter healthy digital twin (electrical part only).
+ALPHA_CU = 0.00393  # 1/K copper temperature coefficient
 
-    Inputs are measured alpha-beta voltage and measured electrical rotor speed;
+
+class HealthyTwinObserver:
+    """Healthy digital twin (electrical part) with temperature compensation.
+
+    Inputs are measured alpha-beta voltage, measured electrical rotor speed,
+    and optional measured/estimated temperature [°C];
     output is the predicted healthy alpha-beta stator current.
     """
 
-    def __init__(self, params: MotorParams, fs: float):
+    def __init__(self, params: MotorParams, fs: float, initial_temp_c: float = 20.0):
         self.p = params
+        self.fs = fs
         self.h = 1.0 / fs
-        ls, lr, lm, rs, rr = params.Ls, params.Lr, params.Lm, params.Rs, params.Rr
+        self.temp_c = initial_temp_c
+        self._recompute_constants(initial_temp_c)
+        self.x = [0.0, 0.0, 0.0, 0.0]
+        self._last_u: tuple[float, float] | None = None
+        self._last_w: float | None = None
+
+    def _recompute_constants(self, temp_c: float) -> None:
+        self.temp_c = temp_c
+        delta_t = temp_c - 20.0
+        rs = self.p.Rs * (1.0 + ALPHA_CU * delta_t)
+        rr = self.p.Rr * (1.0 + ALPHA_CU * delta_t)
+        ls, lr, lm = self.p.Ls, self.p.Lr, self.p.Lm
         self.inv_tr = rr / lr
         self.sls = (1.0 - lm * lm / (ls * lr)) * ls
         self.gamma = (rs + lm * lm * rr / (lr * lr)) / self.sls
         self.k = lm / (self.sls * lr)
         self.lm = lm
-        self.x = [0.0, 0.0, 0.0, 0.0]
-        self._last_u: tuple[float, float] | None = None
-        self._last_w: float | None = None
+
+    def set_temperature(self, temp_c: float) -> None:
+        """Dynamically adapt observer resistance parameters to motor operating temperature."""
+        if abs(temp_c - self.temp_c) > 0.05:
+            self._recompute_constants(temp_c)
 
     def reset(self) -> None:
         self.x = [0.0, 0.0, 0.0, 0.0]
@@ -304,12 +328,20 @@ class HealthyTwinObserver:
             lm * itr * ib - itr * pb + wr * pa,
         )
 
-    def run(self, u_alpha: np.ndarray, u_beta: np.ndarray, omega_r: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run(
+        self,
+        u_alpha: np.ndarray,
+        u_beta: np.ndarray,
+        omega_r: np.ndarray,
+        temp_c: float | None = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Predict healthy currents for a chunk of measured samples.
 
         Sample k of the outputs corresponds to the state *at* sample k's timestamp,
         integrating from sample k-1 with linearly interpolated inputs.
         """
+        if temp_c is not None:
+            self.set_temperature(temp_c)
         n = len(u_alpha)
         out_a = np.empty(n)
         out_b = np.empty(n)

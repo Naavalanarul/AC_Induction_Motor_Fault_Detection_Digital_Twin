@@ -91,7 +91,7 @@ class MotorSimulator:
         self.plant.voltage_scale = 0.0 if st.tripped else 1.0
         load = st.base_load_nm * st.load_cmd * (0.0 if st.tripped else 1.0)
         t0 = self.plant.t
-        chunk = self.plant.simulate(self.n_elec, load)
+        chunk = self.plant.simulate(self.n_elec, load, temp_c=st.temperature_c)
         if chunk.has_nonfinite or self.plant.nonfinite_tripped:
             st.nonfinite_fault = True
             st.tripped = True

@@ -61,8 +61,8 @@ def test_p0_1_monkeypatched_nan_triggers_trip_and_no_nan_wire(monkeypatch):
         # Monkeypatch plant.simulate to return a chunk with NaNs
         real_simulate = w.sim.plant.simulate
 
-        def fake_simulate(n, load_torque):
-            chunk = real_simulate(n, load_torque)
+        def fake_simulate(n, load_torque, *args, **kwargs):
+            chunk = real_simulate(n, load_torque, *args, **kwargs)
             chunk.omega_m[:] = float("nan")
             chunk.i_abc[:] = float("nan")
             chunk.has_nonfinite = True

@@ -34,6 +34,34 @@ FD_FULL_SCALE = 0.15     # FD at which severity saturates to 1
 FL_THRESHOLD = 1.25
 
 
+def estimate_grid_frequency(
+    u_abc: np.ndarray,
+    fs: float,
+    default_freq: float = 50.0,
+) -> float:
+    """Estimates fundamental electrical grid frequency from 3-phase voltage waveform.
+
+    Uses Clarke transformation (alpha-beta) and analytic instantaneous phase unwrapping:
+        theta_e(t) = unwrap(arctan2(u_beta, u_alpha))
+        f_grid = (d theta_e / dt) / (2 * pi)
+    Robust against sensor noise, voltage unbalance, and harmonics.
+    """
+    if u_abc.shape[1] < 10:
+        return default_freq
+    ua, ub = abc_to_alphabeta(u_abc)
+    u_rms = math.sqrt(float(np.mean(ua**2 + ub**2)))
+    if u_rms < 5.0:  # de-energized
+        return default_freq
+    theta = np.unwrap(np.arctan2(ub, ua))
+    n = len(theta)
+    t = np.arange(n, dtype=np.float64) / fs
+    slope = float(np.polyfit(t, theta, 1)[0])
+    freq = slope / (2.0 * math.pi)
+    if 10.0 <= freq <= 120.0:
+        return float(freq)
+    return default_freq
+
+
 class ElectricalResidualDiagnostic:
     def __init__(self, params: MotorParams, fs: float, window_s: float = 2.0, settle_s: float = 1.0):
         self.params = params
@@ -52,7 +80,14 @@ class ElectricalResidualDiagnostic:
         self._buf_len = 0
         self._seen = 0
 
-    def update(self, i_abc: np.ndarray, u_abc: np.ndarray, omega_m: np.ndarray, supply_freq: float) -> ChannelVerdict:
+    def update(
+        self,
+        i_abc: np.ndarray,
+        u_abc: np.ndarray,
+        omega_m: np.ndarray,
+        supply_freq: float | None = None,
+        temp_c: float | None = None,
+    ) -> ChannelVerdict:
         """Feed one chunk of measured current, voltage, mechanical speed (rad/s, same fs)."""
         if not (np.all(np.isfinite(i_abc)) and np.all(np.isfinite(u_abc)) and np.all(np.isfinite(omega_m))):
             return ChannelVerdict(
@@ -63,9 +98,10 @@ class ElectricalResidualDiagnostic:
                 True,
                 {"error": "non_finite_signal", "reason": "non-finite sensor signals detected"},
             )
+        f_est = estimate_grid_frequency(u_abc, self.fs, default_freq=supply_freq or 50.0)
         ua, ub = abc_to_alphabeta(u_abc)
         ia, ib = abc_to_alphabeta(i_abc)
-        pa, pb = self.twin.run(ua, ub, omega_m * self.params.pole_pairs)
+        pa, pb = self.twin.run(ua, ub, omega_m * self.params.pole_pairs, temp_c=temp_c)
         block = np.vstack([ia, ib, ia - pa, ib - pb, omega_m])
         self._buf.append(block)
         self._buf_len += block.shape[1]
@@ -78,7 +114,7 @@ class ElectricalResidualDiagnostic:
             return ChannelVerdict(DiagSource.ELECTRICAL_RESIDUAL, DiagFault.UNKNOWN, 0.0, 0.0, False,
                                   {"reason": "twin settling"})
         data = np.hstack(self._buf)[:, -self.n_window:]
-        return self.analyze(data, supply_freq)
+        return self.analyze(data, f_est)
 
     def analyze(self, data: np.ndarray, f: float) -> ChannelVerdict:
         ia, ib, ra, rb, wm = data
