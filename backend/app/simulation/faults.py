@@ -47,6 +47,7 @@ class BearingDefect(str, Enum):
 class EccentricityType(str, Enum):
     STATIC = "static"
     DYNAMIC = "dynamic"
+    MIXED = "mixed"
 
 
 class VoltageAnomalyType(str, Enum):
@@ -139,8 +140,12 @@ class FaultState:
         dyn = stat = 0.0
         for f in self.of_type(FaultType.ECCENTRICITY):
             depth = 0.15 * f.severity
-            if f.params.get("type", EccentricityType.DYNAMIC.value) == EccentricityType.STATIC.value:
+            kind = f.params.get("type", EccentricityType.DYNAMIC.value)
+            if kind == EccentricityType.STATIC.value:
                 stat = max(stat, depth)
+            elif kind == EccentricityType.MIXED.value:
+                dyn = max(dyn, depth * 0.6)
+                stat = max(stat, depth * 0.4)
             else:
                 dyn = max(dyn, depth)
         return dyn, stat

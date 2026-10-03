@@ -20,6 +20,11 @@ from enum import Enum
 from typing import Any, Literal
 
 from app.core_physics.fault_models import FaultState, FaultType
+from app.diagnostics.calibration import (
+    brb_db_to_severity,
+    eccentricity_db_to_severity,
+    residual_fd_to_severity,
+)
 from app.signal_processing.feature_extraction import SignalFeatures
 from app.signal_processing.mcsa_pipeline import MCSAResult
 from app.signal_processing.vibration_analysis import VibrationResult
@@ -177,15 +182,8 @@ class FaultClassifier:
             threshold = self.thresholds["brb_sideband_dbc"]
 
             if worst_brb.magnitude_db > threshold:
-                # Determine severity based on sideband level
-                if worst_brb.magnitude_db > -30:
-                    sev = FaultSeverity.CRITICAL
-                elif worst_brb.magnitude_db > -35:
-                    sev = FaultSeverity.HIGH
-                elif worst_brb.magnitude_db > -40:
-                    sev = FaultSeverity.MODERATE
-                else:
-                    sev = FaultSeverity.LOW
+                sev_score = brb_db_to_severity(worst_brb.magnitude_db)
+                sev = self._severity_from_score(sev_score)
 
                 diagnoses.append(FaultDiagnosis(
                     fault_type=FaultType.BROKEN_ROTOR_BAR,
@@ -199,6 +197,7 @@ class FaultClassifier:
                     ],
                     metrics={
                         "worst_brb_sideband_dbc": worst_brb.magnitude_db,
+                        "severity_score": round(sev_score, 4),
                         "slip": mcsa.slip,
                         "num_brb_peaks": len(mcsa.brb_peaks),
                     },
@@ -212,12 +211,8 @@ class FaultClassifier:
             threshold = self.thresholds["ecc_sideband_dbc"]
 
             if worst_ecc.magnitude_db > threshold:
-                if worst_ecc.magnitude_db > -30:
-                    sev = FaultSeverity.HIGH
-                elif worst_ecc.magnitude_db > -35:
-                    sev = FaultSeverity.MODERATE
-                else:
-                    sev = FaultSeverity.LOW
+                sev_score = eccentricity_db_to_severity(worst_ecc.magnitude_db)
+                sev = self._severity_from_score(sev_score)
 
                 diagnoses.append(FaultDiagnosis(
                     fault_type=FaultType.ECCENTRICITY,
@@ -231,6 +226,7 @@ class FaultClassifier:
                     ],
                     metrics={
                         "worst_ecc_sideband_dbc": worst_ecc.magnitude_db,
+                        "severity_score": round(sev_score, 4),
                         "rotor_freq_hz": mcsa.rotor_freq_hz,
                         "num_ecc_peaks": len(mcsa.ecc_peaks),
                     },
@@ -546,17 +542,20 @@ class FaultClassifier:
             ))
         elif ecc_energy > max(brb_energy, fund_energy):
             # Eccentricity
+            fd_score = residual_fd_to_severity(fd, self.thresholds["residual_fd_threshold"])
+            sev = self._severity_from_score(fd_score)
             diagnoses.append(FaultDiagnosis(
                 fault_type=FaultType.ECCENTRICITY,
                 category=FaultCategory.MECHANICAL,
-                severity=FaultSeverity.MODERATE,
-                confidence=ecc_energy * 1.5,
+                severity=sev,
+                confidence=min(1.0, ecc_energy * 1.5),
                 evidence=[
                     f"Dynamic eccentricity energy share: {ecc_energy:.1%}",
                     f"FD index: {fd:.3f}",
                 ],
                 metrics={
                     "FD": fd,
+                    "severity_score": round(fd_score, 4),
                     "energy_share": energy_share,
                     "slip": slip,
                 },
@@ -565,17 +564,20 @@ class FaultClassifier:
             ))
         elif brb_energy > 0.3:
             # Broken rotor bar
+            fd_score = residual_fd_to_severity(fd, self.thresholds["residual_fd_threshold"])
+            sev = self._severity_from_score(fd_score)
             diagnoses.append(FaultDiagnosis(
                 fault_type=FaultType.BROKEN_ROTOR_BAR,
                 category=FaultCategory.ELECTRICAL,
-                severity=FaultSeverity.MODERATE,
-                confidence=brb_energy + 0.5 * fund_energy,
+                severity=sev,
+                confidence=min(1.0, brb_energy + 0.5 * fund_energy),
                 evidence=[
                     f"BRB sideband energy share: {brb_energy:.1%}",
                     f"FD index: {fd:.3f}, Slip: {slip:.4f}",
                 ],
                 metrics={
                     "FD": fd,
+                    "severity_score": round(fd_score, 4),
                     "energy_share": energy_share,
                     "slip": slip,
                 },
@@ -584,6 +586,19 @@ class FaultClassifier:
             ))
 
         return diagnoses
+
+    def _severity_from_score(self, score: float) -> FaultSeverity:
+        """Determine discrete FaultSeverity from continuous score in [0, 1]."""
+        if score >= 0.75:
+            return FaultSeverity.CRITICAL
+        elif score >= 0.50:
+            return FaultSeverity.HIGH
+        elif score >= 0.25:
+            return FaultSeverity.MODERATE
+        elif score > 0.0:
+            return FaultSeverity.LOW
+        else:
+            return FaultSeverity.NONE
 
     def _severity_from_amplitude(self, amplitude: float, threshold: float) -> FaultSeverity:
         """Determine severity from amplitude vs threshold ratio."""

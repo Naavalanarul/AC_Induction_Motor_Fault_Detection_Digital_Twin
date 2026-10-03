@@ -146,8 +146,8 @@ class FaultIn(BaseModel):
             raise ValueError(f"unexpected params for {self.fault_type.value}: {sorted(extra)}")
         if "phase" in p and p["phase"] not in ("a", "b", "c"):
             raise ValueError("phase must be a, b or c")
-        if self.fault_type == FaultType.ECCENTRICITY and p.get("type", "dynamic") not in ("static", "dynamic"):
-            raise ValueError("eccentricity type must be static or dynamic")
+        if self.fault_type == FaultType.ECCENTRICITY and p.get("type", "dynamic") not in ("static", "dynamic", "mixed"):
+            raise ValueError("eccentricity type must be static, dynamic, or mixed")
         if self.fault_type == FaultType.VOLTAGE_ANOMALY and p.get("type", "sag") not in (
             "sag",
             "imbalance",

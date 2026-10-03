@@ -18,6 +18,8 @@ from typing import Literal
 import numpy as np
 from scipy.signal import find_peaks, welch
 
+from app.diagnostics.calibration import brb_db_to_severity, eccentricity_db_to_severity
+
 
 @dataclass
 class PeakMarker:
@@ -49,8 +51,11 @@ class MCSAResult:
     brb_peaks: list[PeakMarker] = field(default_factory=list)
     ecc_peaks: list[PeakMarker] = field(default_factory=list)
     worst_brb_sideband_db: float | None = None
+    worst_ecc_sideband_db: float | None = None
     brb_fault_detected: bool = False
     eccentricity_detected: bool = False
+    brb_severity: float = 0.0
+    eccentricity_severity: float = 0.0
 
 
 class MCSAAnalyzer:
@@ -221,10 +226,12 @@ class MCSAAnalyzer:
                         all_peaks.append(marker)
 
         worst_brb_db = max((p.magnitude_db for p in brb_peaks), default=None)
+        worst_ecc_db = max((p.magnitude_db for p in ecc_peaks), default=None)
         # Threshold: if BRB sideband is greater than -45 dBc, flag fault
         brb_detected = worst_brb_db is not None and worst_brb_db > -45.0
         ecc_detected = len(ecc_peaks) > 0 and any(p.magnitude_db > -45.0 for p in ecc_peaks)
-
+        brb_sev = brb_db_to_severity(worst_brb_db)
+        ecc_sev = eccentricity_db_to_severity(worst_ecc_db)
 
         return MCSAResult(
             fs=self.fs,
@@ -241,6 +248,9 @@ class MCSAAnalyzer:
             brb_peaks=brb_peaks,
             ecc_peaks=ecc_peaks,
             worst_brb_sideband_db=worst_brb_db,
+            worst_ecc_sideband_db=worst_ecc_db,
             brb_fault_detected=brb_detected,
             eccentricity_detected=ecc_detected,
+            brb_severity=round(brb_sev, 4),
+            eccentricity_severity=round(ecc_sev, 4),
         )
