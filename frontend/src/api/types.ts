@@ -162,6 +162,12 @@ export type Prognosis = {
   time_to_trip_s: number | null
   trend: 'increasing' | 'decreasing' | 'stable'
   sample_count: number
+  status?: string
+  method?: string
+  r2?: number | null
+  rul_hours?: number | null
+  rul_lower_hours?: number | null
+  rul_upper_hours?: number | null
 }
 
 export type Recommendation = {

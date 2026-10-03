@@ -148,7 +148,11 @@ class FaultIn(BaseModel):
             raise ValueError("phase must be a, b or c")
         if self.fault_type == FaultType.ECCENTRICITY and p.get("type", "dynamic") not in ("static", "dynamic"):
             raise ValueError("eccentricity type must be static or dynamic")
-        if self.fault_type == FaultType.VOLTAGE_ANOMALY and p.get("type", "sag") not in ("sag", "imbalance", "harmonic"):
+        if self.fault_type == FaultType.VOLTAGE_ANOMALY and p.get("type", "sag") not in (
+            "sag",
+            "imbalance",
+            "harmonic",
+        ):
             raise ValueError("voltage anomaly type must be sag, imbalance or harmonic")
         if "count" in p and not (isinstance(p["count"], int) and 1 <= p["count"] <= 8):
             raise ValueError("count must be an integer in [1, 8]")
@@ -233,6 +237,12 @@ class PrognosisOut(BaseModel):
     time_to_trip_s: float | None = None
     trend: str
     sample_count: int
+    status: str = "stable"
+    method: str = "linear_trend"
+    r2: float | None = None
+    rul_hours: float | None = None
+    rul_lower_hours: float | None = None
+    rul_upper_hours: float | None = None
 
 
 class RecommendationOut(BaseModel):
@@ -334,6 +344,3 @@ class RULResultOut(BaseModel):
     insulation: InsulationRULOut
     bearing_de: BearingRULOut
     bearing_nde: BearingRULOut
-
-
-

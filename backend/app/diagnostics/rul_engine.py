@@ -328,9 +328,7 @@ class RULEngine:
 
         # Overall health is weighted average (insulation 50%, bearings 25% each)
         overall_health = (
-            0.5 * insulation.health_percent
-            + 0.25 * bearing_de.health_percent
-            + 0.25 * bearing_nde.health_percent
+            0.5 * insulation.health_percent + 0.25 * bearing_de.health_percent + 0.25 * bearing_nde.health_percent
         )
 
         return RULResult(
@@ -357,29 +355,33 @@ class RULEngine:
         Returns:
             (projected_rul_hours, confidence)
         """
-        if len(history) < 3:
+        if len(history) < 30:
             return 0.0, 0.0
 
-        times = np.array([h[0] for h in history])
-        health = np.array([h[1] for h in history])
+        times = np.array([h[0] for h in history], dtype=np.float64)
+        health = np.array([h[1] for h in history], dtype=np.float64)
+
+        # Monotonicity filter (health is non-increasing)
+        health_mono = np.minimum.accumulate(health)
 
         # Linear fit
-        coeffs = np.polyfit(times, health, 1)
-        slope = coeffs[0]  # health loss per hour
+        coeffs = np.polyfit(times, health_mono, 1)
+        slope = float(coeffs[0])  # health loss per hour
 
-        if slope >= 0:
+        if slope >= -1e-5:
             return float("inf"), 0.0  # Health improving or stable
 
-        current_health = health[-1]
+        pred = np.polyval(coeffs, times)
+        ss_res = float(np.sum((health_mono - pred) ** 2))
+        ss_tot = float(np.sum((health_mono - np.mean(health_mono)) ** 2))
+        r2 = float(1.0 - ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+        if r2 < 0.5:
+            return float("inf"), float(max(0.0, min(1.0, r2)))
+
+        current_health = float(health_mono[-1])
         if current_health <= threshold_health:
             return 0.0, 1.0
 
         rul = (current_health - threshold_health) / (-slope)
-
-        # Confidence based on R²
-        pred = np.polyval(coeffs, times)
-        ss_res = np.sum((health - pred) ** 2)
-        ss_tot = np.sum((health - np.mean(health)) ** 2)
-        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
-
-        return max(0.0, rul), float(max(0.0, r2))
+        return max(0.0, float(rul)), float(max(0.0, min(1.0, r2)))
