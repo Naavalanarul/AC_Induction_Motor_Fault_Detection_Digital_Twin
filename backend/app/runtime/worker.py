@@ -266,7 +266,8 @@ class MotorWorker:
                         motor_id=self.cfg.motor_id,
                         severity="critical",
                         message="Critical sensors unavailable exceeding grace period: emergency trip TRIP_SENSOR_LOSS",
-                    )
+                    ),
+                    priority=True,
                 )
         # --- SADA-trip override: don't persist "healthy" when channels are starved ---
         # After a trip, fault-sensitive channels (electrical, ML) mark themselves
@@ -352,13 +353,27 @@ class MotorWorker:
         if out.changed or self._last_state is None:
             if out.trip:
                 SADA_TRIPS.labels(str(mid)).inc()
-            self.writer.put(SupervisoryAction(motor_id=mid, state=out.state.value, load_cmd=out.load_cmd,
-                                              reason_code=out.reason_code, trip=out.trip,
-                                              smoothed_severity=out.smoothed_severity))
+            self.writer.put(
+                SupervisoryAction(
+                    motor_id=mid,
+                    state=out.state.value,
+                    load_cmd=out.load_cmd,
+                    reason_code=out.reason_code,
+                    trip=out.trip,
+                    smoothed_severity=out.smoothed_severity,
+                ),
+                priority=True,
+            )
             if self._last_state is not None:
                 level = {"TRIP": "critical", "DERATE": "warning", "WATCH": "warning"}.get(out.state.value, "info")
-                self.writer.put(Alert(motor_id=mid, severity=level,
-                                      message=f"SADA {self._last_state.value} -> {out.state.value}: {out.reason_code}"))
+                self.writer.put(
+                    Alert(
+                        motor_id=mid,
+                        severity=level,
+                        message=f"SADA {self._last_state.value} -> {out.state.value}: {out.reason_code}",
+                    ),
+                    priority=True,
+                )
             self._last_state = out.state
 
         anomaly_onset = diag.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN, DiagFault.INDETERMINATE) and diag.fault_type != self._last_fault
