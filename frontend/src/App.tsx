@@ -17,6 +17,7 @@ import { Motor3DViewer } from './components/Motor3DViewer'
 import { MotorParamsStudio } from './components/MotorParamsStudio'
 import { SadaPanel } from './components/SadaPanel'
 import { SensorPanels } from './components/SensorPanels'
+import { TripBanner } from './components/TripBanner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignOutConfirmModal } from './components/SignOutConfirmModal'
 import { ProfileDatabaseModal } from './components/ProfileDatabaseModal'
@@ -89,6 +90,12 @@ function Shell() {
 
   return (
     <main ref={shellRef} className="app-shell" onPointerMove={handleGridPointer}>
+      {/* Persistent Emergency Trip Banner */}
+      <TripBanner
+        trippedMotors={trippedMotors}
+        onAcknowledged={() => { reconnect(); motors.refetch() }}
+      />
+
       {/* Floating Navigation Bar with Separated Islands (No Continuous Bar, Gap across Center) */}
       <header className="floating-nav-bar">
         {/* Left: Brand Lockup (Standing cleanly without navbar covering, fixed at top-left) */}

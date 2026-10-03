@@ -130,7 +130,6 @@ class MotorWorker:
         self._res_buf: deque[np.ndarray] = deque(maxlen=20)
         self._spectra: dict = {}
         self._scalogram: dict | None = None
-        self._operator_ack = False
         self._spectra_dirty = self._scalogram_dirty = False
         self.severity_history: deque[tuple[float, float]] = deque(maxlen=120)
         self._last_mhi: float = 100.0
@@ -164,7 +163,6 @@ class MotorWorker:
             ok = True
             if action == "ack":
                 self.sada.acknowledge()
-                self._operator_ack = True
             elif action == "reset":
                 ok = self.sada.reset(forced_reason=cmd.get("force_reason"))
             elif action == "set_load":
