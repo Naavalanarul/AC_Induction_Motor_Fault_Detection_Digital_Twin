@@ -16,6 +16,26 @@ export default defineConfig({
       '/api': { target: backend, changeOrigin: true, ws: true },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor-react'
+          }
+          if (id.includes('node_modules/@tanstack/react-query/')) {
+            return 'vendor-query'
+          }
+          if (id.includes('node_modules/recharts/')) {
+            return 'vendor-charts'
+          }
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'vendor-icons'
+          }
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

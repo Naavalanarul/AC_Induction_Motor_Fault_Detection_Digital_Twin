@@ -88,7 +88,7 @@ GET  /healthz  /readyz  /metrics
 ## Tests
 
 ```bash
-cd backend && pytest -q --cov=app              # 83 tests, ~92 % line coverage (SQLite)
+cd backend && pytest -q --cov=app              # 290 tests, ~88 % line coverage (SQLite)
 TEST_DATABASE_URL=mysql+pymysql://dt:pw@127.0.0.1:3306/dt_test pytest app/tests/api   # same contract tests on MySQL
 TEST_REDIS_URL=redis://127.0.0.1:6379/0 pytest app/tests/runtime
 cd frontend && npm test                        # Vitest + Testing Library
@@ -110,12 +110,13 @@ Run it from `backend/`. It writes `artifacts/conv_bilstm.pt` and `metrics.json`.
   - Inter-turn heating uses an explicit hot-spot factor.
 - The residual thresholds (`FD_THRESHOLD` and others) were tuned against this simulator's noise
   floor. They must be re-tuned for real sensors.
-- `CHEN_2025_MOTOR` in `params.py` gives σ ≈ 0.77. That is unrealistic, and these values were not
-  re-checked against the paper. The live twin uses `DEFAULT_MOTOR` instead: a widely used 1.5 kW
-  parameter set whose origin I have not independently verified.
+- The live twin uses `DEFAULT_MOTOR`: a widely used 1.5 kW parameter set (Rs=1.405, Rr=1.395, Ls=Lr=0.178039,
+  Lm=0.1722, J=0.0131) from the field-oriented/DTC control literature. Unverified parameter sets (e.g.
+  CHEN_2025_MOTOR with σ ≈ 0.77) have been pruned from the codebase to ensure physical and numerical plausibility.
 - The thermal time constant is shortened to 180 s so demos show thermal behaviour. Real TEFC
   motors take tens of minutes.
-- One backend process sustains about 2–3 motors, or about 50–100 viewers at the full 10 Hz. Scale
-  out with replicas. See `backend/loadtest/RESULTS.md`.
+- One backend process sustains 5+ simulated motors in real time on a single CPU core with the rules backend
+  (or 2–3 with neural networks enabled), and about 50–100 viewers at the full 10 Hz. Scale out with replicas.
+  See `backend/loadtest/RESULTS.md`.
 - The hardware sensor classes are placeholders. MySQL table partitioning is not implemented; the
   retention job deletes old rows instead. The rate limiter is per process.

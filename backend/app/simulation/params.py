@@ -182,27 +182,6 @@ def validate_motor_params(
     return True, "OK"
 
 
-CHEN_2025_MOTOR = MotorParams(
-    Rs=1.2,
-    Rr=0.69,
-    Ls=0.241,
-    Lr=0.241,
-    Lm=0.115,
-    J=0.02,               # Standard nominal inertia for a 1.5 kW frame
-    pole_pairs=2,         # 4 poles (p = 2)
-    rated_power=1500.0,   # 1.5 kW
-    rated_voltage=380.0,  # 380 V (standard 3-phase line-to-line)
-    rated_current=3.5,    # Approximate rated phase current [A]
-    rated_speed=1420.0,   # 1420 rpm (typical 4-pole 50 Hz induction motor)
-    rated_torque=10.1,    # T = P / ω_mech ≈ 1500 / (1420 * 2π / 60) ≈ 10.09 N·m
-)
-
-
-# NOTE: The CHEN_2025_MOTOR values above give a total leakage factor sigma ~= 0.77
-# (Lm is less than half of Ls), which limits direct-on-line starting current to ~5 A
-# and produces almost no starting torque. These values have not been re-verified
-# against the paper; they are kept for traceability only.
-#
 # DEFAULT_MOTOR is a widely used 1.5 kW, 4-pole, 50 Hz parameter set from the
 # field-oriented / DTC control literature (Rs=1.405, Rr=1.395, Lls=Llr=5.839 mH,
 # Lm=172.2 mH, J=0.0131). It yields realistic starting, slip and rated current,

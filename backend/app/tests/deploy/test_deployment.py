@@ -72,7 +72,8 @@ class TestComposeAndEdgeConfigurations:
             data = yaml.safe_load(f)
         mysql_env = data["services"]["mysql"]["environment"]
         assert "MYSQL_PASSWORD" in mysql_env
-        assert ":-" in str(mysql_env["MYSQL_PASSWORD"])
+        # P3: Insecure default passwords disallowed; mandatory variable substitution required
+        assert ":?set MYSQL_PASSWORD" in str(mysql_env["MYSQL_PASSWORD"])
 
     def test_compose_prod_overlay_validity(self):
         prod_compose_path = PROJECT_ROOT / "compose.prod.yaml"

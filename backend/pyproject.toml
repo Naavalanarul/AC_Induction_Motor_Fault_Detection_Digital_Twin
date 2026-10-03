@@ -51,7 +51,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 source = ["app"]
-omit = ["app/tests/*", "app/ml/train.py"]
+omit = ["app/tests/*", "app/diagnostics/ml/train.py"]
 
 [tool.ruff]
 line-length = 120

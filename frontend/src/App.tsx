@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { Box, Sun, Moon, Bell, Clock3, User } from 'lucide-react'
 import { api } from './api/client'
 import type { Frame, Motor, Role, SensorRow } from './api/types'
@@ -11,9 +11,7 @@ import { FaultConsole } from './components/FaultConsole'
 import { FleetDashboard } from './components/FleetDashboard'
 import { FleetPriorityQueue } from './components/FleetPriorityQueue'
 import { HealthMaintenanceTab } from './components/HealthMaintenanceTab'
-import { HistoryView } from './components/HistoryView'
 import { LoginForm } from './components/LoginForm'
-import { Motor3DViewer } from './components/Motor3DViewer'
 import { MotorParamsStudio } from './components/MotorParamsStudio'
 import { SadaPanel } from './components/SadaPanel'
 import { SensorPanels } from './components/SensorPanels'
@@ -21,9 +19,14 @@ import { TripBanner } from './components/TripBanner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignOutConfirmModal } from './components/SignOutConfirmModal'
 import { ProfileDatabaseModal } from './components/ProfileDatabaseModal'
-import { EngineeringDocsModal } from './components/EngineeringDocsModal'
 import { AlertsModal } from './components/AlertsModal'
 import { useMotorStream } from './hooks/useMotorStream'
+
+const Motor3DViewer = lazy(() => import('./components/Motor3DViewer').then((m) => ({ default: m.Motor3DViewer })))
+const HistoryView = lazy(() => import('./components/HistoryView').then((m) => ({ default: m.HistoryView })))
+const EngineeringDocsModal = lazy(() =>
+  import('./components/EngineeringDocsModal').then((m) => ({ default: m.EngineeringDocsModal })),
+)
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
 
@@ -278,11 +281,15 @@ function Shell() {
 
             {tab === 'history' ? (
               <ErrorBoundary fallbackTitle="Error loading History View">
-                <HistoryView motorId={motorId} />
+                <Suspense fallback={<div className="glass-card" style={{ textAlign: 'center', padding: '64px', color: 'var(--muted)' }}>Loading history…</div>}>
+                  <HistoryView motorId={motorId} />
+                </Suspense>
               </ErrorBoundary>
             ) : tab === '3d' ? (
               <ErrorBoundary fallbackTitle="Error loading 3D Digital Twin Viewer">
-                <Motor3DViewer frame={frame} motorName={selectedMotor?.name} />
+                <Suspense fallback={<div className="glass-card" style={{ textAlign: 'center', padding: '64px', color: 'var(--muted)' }}>Loading 3D twin…</div>}>
+                  <Motor3DViewer frame={frame} motorName={selectedMotor?.name} />
+                </Suspense>
               </ErrorBoundary>
             ) : !frame ? (
               <div className="glass-card" style={{ textAlign: 'center', padding: '64px' }}>
@@ -470,10 +477,14 @@ function Shell() {
       />
 
       {/* Engineering, Physics & Architecture Documentation Modal */}
-      <EngineeringDocsModal
-        isOpen={isDocsModalOpen}
-        onClose={() => setIsDocsModalOpen(false)}
-      />
+      {isDocsModalOpen && (
+        <Suspense fallback={null}>
+          <EngineeringDocsModal
+            isOpen={isDocsModalOpen}
+            onClose={() => setIsDocsModalOpen(false)}
+          />
+        </Suspense>
+      )}
 
       {/* Supervisory Alerts Modal */}
       <AlertsModal

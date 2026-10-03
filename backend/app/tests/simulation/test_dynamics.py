@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from app.simulation.dynamics import ElectricalState, InductionMotorElectricalDynamics
-from app.simulation.params import CHEN_2025_MOTOR, DEFAULT_MOTOR
+from app.simulation.params import DEFAULT_MOTOR
 from app.simulation.transforms import AlphaBeta
 
 
@@ -16,7 +16,7 @@ def test_derived_constants_match_closed_form():
 
 
 def test_zero_state_zero_input_has_zero_derivative():
-    dyn = InductionMotorElectricalDynamics(CHEN_2025_MOTOR)
+    dyn = InductionMotorElectricalDynamics(DEFAULT_MOTOR)
     d = dyn.evaluate_derivatives(ElectricalState.zero(), AlphaBeta(0.0, 0.0), omega_r=100.0)
     assert np.allclose(d.to_numpy(), 0.0)
 
