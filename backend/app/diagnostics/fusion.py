@@ -28,6 +28,9 @@ WEIGHTS = {
 MIN_CONFIDENCE = 0.35
 
 
+SUPPLY_DOMAIN = {DiagFault.SUPPLY_ANOMALY, DiagFault.VOLTAGE_SAG}
+
+
 def _domain(f: DiagFault) -> str:
     return "electrical" if f in ELECTRICAL else "mechanical" if f in MECHANICAL else "other"
 
@@ -59,13 +62,26 @@ def fuse(t: float, verdicts: list[ChannelVerdict]) -> FusedDiagnosis:
         e["severity"] = max(e["severity"], v.severity)
         e["sources"].append(v.source.value)
 
-    ranked = sorted(faults.items(), key=lambda kv: kv[1]["vote"], reverse=True)
+    def _rank_key(kv: tuple[DiagFault, dict]) -> tuple:
+        f, e = kv
+        conf = min(1.0, e["vote"])
+        is_emergency = 1 if (e["severity"] >= 0.95 and conf >= 0.9) else 0
+        is_motor = 1 if f not in SUPPLY_DOMAIN else 0
+        score = round(conf * e["severity"], 4)
+        return (is_emergency, is_motor, score, round(e["vote"], 4), round(e["severity"], 4), f.value)
+
+    ranked = sorted(faults.items(), key=_rank_key, reverse=True)
     secondary = [{"fault_type": f.value, "confidence": round(min(1.0, e["vote"]), 4),
-                  "severity": round(e["severity"], 4), "sources": e["sources"]} for f, e in ranked]
+                  "severity": round(e["severity"], 4), "sources": sorted(set(e["sources"]))} for f, e in ranked]
     if ranked:
         top, e = ranked[0]
         conf = min(1.0, e["vote"])
         if conf >= MIN_CONFIDENCE:
-            return FusedDiagnosis(t, top, conf, e["severity"], per_sensor, secondary[1:])
+            credible_severities = [
+                entry["severity"] for _, entry in faults.items()
+                if min(1.0, entry["vote"]) >= MIN_CONFIDENCE
+            ]
+            fused_sev = max(e["severity"], max(credible_severities, default=e["severity"]))
+            return FusedDiagnosis(t, top, conf, round(fused_sev, 4), per_sensor, secondary[1:])
     conf = healthy_votes / healthy_weight if healthy_weight else 0.5
     return FusedDiagnosis(t, DiagFault.HEALTHY, conf, 0.0, per_sensor, secondary)

@@ -19,6 +19,7 @@ import math
 from dataclasses import asdict, dataclass
 from enum import Enum
 
+from app.diagnostics.fusion import SUPPLY_DOMAIN
 from app.diagnostics.schema import DiagFault, DiagSource, FusedDiagnosis
 
 
@@ -132,26 +133,76 @@ class SadaSupervisor:
             self._sensor_loss_timer = 0.0
             self.sensor_loss_active = False
 
-        gated = d.confidence >= c.confidence_gate and d.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
-        target = d.severity if gated else 0.0
+        candidates: list[dict] = []
+        if d.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN):
+            candidates.append({
+                "fault_type": d.fault_type,
+                "confidence": d.confidence,
+                "severity": d.severity,
+            })
+        for sec in (d.secondary or []):
+            ft_raw = sec.get("fault_type", "")
+            try:
+                ft_enum = DiagFault(ft_raw)
+            except (ValueError, KeyError):
+                continue
+            if ft_enum not in (DiagFault.HEALTHY, DiagFault.UNKNOWN):
+                candidates.append({
+                    "fault_type": ft_enum,
+                    "confidence": float(sec.get("confidence", 0.0)),
+                    "severity": float(sec.get("severity", 0.0)),
+                })
 
-        if d.fault_type == DiagFault.UNKNOWN:
-            if critical_sensors_ok and not self.sensor_loss_active:
-                # Sensors are healthy, fault is unclassified/cleared -> decay smoothed severity
-                self.smoothed = max(0.0, self.smoothed - c.unknown_decay_rate)
-        elif math.isfinite(target):
-            self.smoothed += c.ema_alpha * (target - self.smoothed)
-
-        if gated and self.state != SadaState.TRIP:
-            self.fault = d.fault_type
+        credible = [c_cand for c_cand in candidates if c_cand["confidence"] >= c.confidence_gate]
 
         thermal = d.per_sensor_scores.get(DiagSource.THERMAL.value, {})
         thermal_critical = bool(thermal.get("details", {}).get("critical"))
-        emergency = gated and (
-            (d.severity >= c.emergency_severity and d.confidence >= c.emergency_confidence)
-            or (d.fault_type in (DiagFault.OVERCURRENT, DiagFault.STALL, DiagFault.PHASE_LOSS) and d.confidence >= 0.8)
-            or (d.fault_type == DiagFault.OVERLOAD and d.severity >= 0.95 and d.confidence >= 0.8)
-        )
+
+        def _is_emergency_candidate(c_item: dict) -> bool:
+            f_type = c_item["fault_type"]
+            f_sev = c_item["severity"]
+            f_conf = c_item["confidence"]
+            return bool(
+                (f_sev >= c.emergency_severity and f_conf >= c.emergency_confidence)
+                or (f_type in (DiagFault.OVERCURRENT, DiagFault.STALL, DiagFault.PHASE_LOSS) and f_conf >= 0.8)
+                or (f_type == DiagFault.OVERLOAD and f_sev >= 0.95 and f_conf >= 0.8)
+            )
+
+        emergency_candidates = [c_cand for c_cand in credible if _is_emergency_candidate(c_cand)]
+        emergency = bool(emergency_candidates)
+        emergency_fault: DiagFault | None = None
+        if emergency:
+            emergency_worst = max(
+                emergency_candidates,
+                key=lambda c_cand: (round(c_cand["severity"], 4), round(c_cand["confidence"], 4)),
+            )
+            emergency_fault = emergency_worst["fault_type"]
+
+        if credible:
+            worst = max(
+                credible,
+                key=lambda c_cand: (
+                    1 if _is_emergency_candidate(c_cand) else 0,
+                    1 if c_cand["fault_type"] not in SUPPLY_DOMAIN else 0,
+                    round(c_cand["severity"], 4),
+                    round(c_cand["confidence"], 4),
+                ),
+            )
+            target = worst["severity"]
+            if self.state != SadaState.TRIP:
+                self.fault = worst["fault_type"]
+        else:
+            target = 0.0
+
+        if not credible:
+            if d.fault_type == DiagFault.UNKNOWN:
+                if critical_sensors_ok and not self.sensor_loss_active:
+                    # Sensors are healthy, fault is unclassified/cleared -> decay smoothed severity
+                    self.smoothed = max(0.0, self.smoothed - c.unknown_decay_rate)
+            elif math.isfinite(target):
+                self.smoothed += c.ema_alpha * (target - self.smoothed)
+        elif math.isfinite(target):
+            self.smoothed += c.ema_alpha * (target - self.smoothed)
 
         prev = self.state
         s = self.smoothed
@@ -159,14 +210,14 @@ class SadaSupervisor:
             pass  # latched
         elif thermal_critical:
             self._enter(SadaState.TRIP, "TRIP_THERMAL")
-        elif emergency:
+        elif emergency and emergency_fault is not None:
             trip_reason = (
-                f"TRIP_{d.fault_type.value.upper()}"
-                if d.fault_type in (DiagFault.OVERCURRENT, DiagFault.STALL, DiagFault.PHASE_LOSS)
-                else f"TRIP_EMERGENCY_{d.fault_type.value.upper()}"
+                f"TRIP_{emergency_fault.value.upper()}"
+                if emergency_fault in (DiagFault.OVERCURRENT, DiagFault.STALL, DiagFault.PHASE_LOSS)
+                else f"TRIP_EMERGENCY_{emergency_fault.value.upper()}"
             )
             self.smoothed = 1.0
-            self.fault = d.fault_type
+            self.fault = emergency_fault
             self._enter(SadaState.TRIP, trip_reason)
         elif s >= c.trip:
             self._enter(SadaState.TRIP, f"TRIP_{self.fault.value.upper()}")

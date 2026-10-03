@@ -142,7 +142,7 @@ class ProtectionDiagnostic:
             unbalance = (i_max - i_min) / max(1e-3, i_mean)
             details["current_unbalance"] = round(unbalance, 3)
 
-            is_phase_loss = i_min < 0.20 * i_mean or unbalance > 0.60
+            is_phase_loss = i_min < 0.10 * i_mean or (unbalance > 1.10 and i_min < 0.15 * i_mean)
             if is_phase_loss:
                 self._phase_loss_timer += dt
                 if self._phase_loss_timer >= 0.3:
