@@ -54,6 +54,15 @@ class ElectricalResidualDiagnostic:
 
     def update(self, i_abc: np.ndarray, u_abc: np.ndarray, omega_m: np.ndarray, supply_freq: float) -> ChannelVerdict:
         """Feed one chunk of measured current, voltage, mechanical speed (rad/s, same fs)."""
+        if not (np.all(np.isfinite(i_abc)) and np.all(np.isfinite(u_abc)) and np.all(np.isfinite(omega_m))):
+            return ChannelVerdict(
+                DiagSource.ELECTRICAL_RESIDUAL,
+                DiagFault.UNKNOWN,
+                1.0,
+                1.0,
+                True,
+                {"error": "non_finite_signal", "reason": "non-finite sensor signals detected"},
+            )
         ua, ub = abc_to_alphabeta(u_abc)
         ia, ib = abc_to_alphabeta(i_abc)
         pa, pb = self.twin.run(ua, ub, omega_m * self.params.pole_pairs)

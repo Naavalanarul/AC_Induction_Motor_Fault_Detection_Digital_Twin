@@ -10,6 +10,8 @@ secondary findings.
 
 from __future__ import annotations
 
+import math
+
 from app.diagnostics.schema import ChannelVerdict, DiagFault, DiagSource, FusedDiagnosis
 
 ELECTRICAL = {DiagFault.BROKEN_ROTOR_BAR, DiagFault.INTERTURN_SHORT, DiagFault.ECCENTRICITY}
@@ -31,6 +33,14 @@ def _domain(f: DiagFault) -> str:
 
 def fuse(t: float, verdicts: list[ChannelVerdict]) -> FusedDiagnosis:
     per_sensor = {v.source.value: v.to_dict() for v in verdicts}
+    for v in verdicts:
+        if (
+            not math.isfinite(v.severity)
+            or not math.isfinite(v.confidence)
+            or v.details.get("error") == "non_finite_signal"
+        ):
+            return FusedDiagnosis(t, DiagFault.UNKNOWN, 1.0, 1.0, per_sensor)
+
     available = [v for v in verdicts if v.available and v.fault_type != DiagFault.UNKNOWN]
     if not available:
         return FusedDiagnosis(t, DiagFault.UNKNOWN, 0.0, 0.0, per_sensor)

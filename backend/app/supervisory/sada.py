@@ -15,6 +15,7 @@ Downward transitions use hysteresis so the state does not chatter.
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 from enum import Enum
 
@@ -83,6 +84,11 @@ class SadaSupervisor:
     def acknowledge(self) -> None:
         self.acknowledged = True
 
+    def trip(self, reason: str = "TRIP") -> None:
+        self.smoothed = 1.0
+        self.fault = DiagFault.UNKNOWN
+        self._enter(SadaState.TRIP, reason)
+
     def set_manual_load(self, load: float | None) -> None:
         if load is not None and not 0.0 <= load <= 1.0:
             raise ValueError("manual load must be within [0, 1]")
@@ -91,9 +97,14 @@ class SadaSupervisor:
     # ---- main update -----------------------------------------------------
     def update(self, d: FusedDiagnosis) -> SadaOutput:
         c = self.cfg
+        if not math.isfinite(d.severity) or not math.isfinite(d.confidence):
+            self.smoothed = 1.0
+            self.fault = DiagFault.UNKNOWN
+            self._enter(SadaState.TRIP, "TRIP_SIM_NONFINITE")
+
         gated = d.confidence >= c.confidence_gate and d.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
         target = d.severity if gated else 0.0
-        if d.fault_type != DiagFault.UNKNOWN:
+        if d.fault_type != DiagFault.UNKNOWN and math.isfinite(target):
             self.smoothed += c.ema_alpha * (target - self.smoothed)
         if gated and self.state != SadaState.TRIP:
             self.fault = d.fault_type

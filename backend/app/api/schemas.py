@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.simulation.faults import FaultType
+from app.simulation.params import MotorParams, validate_motor_params
 
 
 class LoginIn(BaseModel):
@@ -56,9 +57,24 @@ class MotorParamsIn(BaseModel):
     rated_torque: float = Field(gt=0)
 
     @model_validator(mode="after")
-    def _physical(self):
-        if self.Lm >= min(self.Ls, self.Lr):
-            raise ValueError("Lm must be smaller than Ls and Lr (positive leakage)")
+    def _validate_params(self):
+        p = MotorParams(
+            Rs=self.Rs,
+            Rr=self.Rr,
+            Ls=self.Ls,
+            Lr=self.Lr,
+            Lm=self.Lm,
+            J=self.J,
+            pole_pairs=self.pole_pairs,
+            rated_power=self.rated_power,
+            rated_voltage=self.rated_voltage,
+            rated_current=self.rated_current,
+            rated_speed=self.rated_speed,
+            rated_torque=self.rated_torque,
+        )
+        ok, err_msg = validate_motor_params(p)
+        if not ok:
+            raise ValueError(err_msg)
         return self
 
 

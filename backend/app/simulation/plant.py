@@ -50,6 +50,7 @@ class PlantChunk:
     fs: float               # sample rate [Hz]
     fault_heat_w: float     # mean extra heat from faults [W]
     copper_loss_w: float    # mean stator + rotor copper loss [W]
+    has_nonfinite: bool = False
 
 
 def abc_to_alphabeta(abc: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -84,6 +85,7 @@ class MotorPlant:
         self.voltage_scale = 1.0   # 0 = supply off (trip)
         self.t = 0.0
         self.theta_m = 0.0
+        self.nonfinite_tripped = False
         # [i_alpha, i_beta, psi_alpha, psi_beta, omega_m]
         self.x = [0.0, 0.0, 0.0, 0.0, 0.0]
 
@@ -190,6 +192,20 @@ class MotorPlant:
             k4, _ = self._deriv(x4, u2[0], u2[1], r11, r12, r22, lm, tl)
             wm_old = x[4]
             x = [x[i] + (h / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) for i in range(5)]
+            if not all(math.isfinite(val) for val in x):
+                self.voltage_scale = 0.0
+                self.nonfinite_tripped = True
+                self.x = [0.0, 0.0, 0.0, 0.0, 0.0]
+                t_arr[j:] = t + h * np.arange(n - j)
+                ua_arr[j:] = 0.0
+                ub_arr[j:] = 0.0
+                ia_arr[j:] = 0.0
+                ib_arr[j:] = 0.0
+                wm_arr[j:] = 0.0
+                th_arr[j:] = th_m
+                te_arr[j:] = 0.0
+                tl_arr[j:] = tl
+                break
             if x[4] < 0.0 and load_torque >= 0.0:
                 x[4] = 0.0  # passive load cannot drive the rotor backwards
             th_m += 0.5 * (wm_old + x[4]) * h
@@ -223,10 +239,27 @@ class MotorPlant:
         i_sq = float(np.mean(ia_arr**2 + ib_arr**2)) if n else 0.0
         copper = 1.5 * (p.Rs + p.Rr) * i_sq * 0.5 + 40.0 * (self.voltage_scale > 0)
 
+        has_nonfinite = self.nonfinite_tripped or not (
+            np.all(np.isfinite(u_abc))
+            and np.all(np.isfinite(i_abc))
+            and np.all(np.isfinite(wm_arr))
+            and np.all(np.isfinite(te_arr))
+        )
+        if has_nonfinite:
+            self.nonfinite_tripped = True
+            self.voltage_scale = 0.0
+            u_abc = np.nan_to_num(u_abc, nan=0.0, posinf=0.0, neginf=0.0)
+            i_abc = np.nan_to_num(i_abc, nan=0.0, posinf=0.0, neginf=0.0)
+            wm_arr = np.nan_to_num(wm_arr, nan=0.0, posinf=0.0, neginf=0.0)
+            te_arr = np.nan_to_num(te_arr, nan=0.0, posinf=0.0, neginf=0.0)
+            fault_heat = 0.0 if not math.isfinite(fault_heat) else fault_heat
+            copper = 0.0 if not math.isfinite(copper) else copper
+
         return PlantChunk(
             t=t_arr, u_abc=u_abc, i_abc=i_abc, omega_m=wm_arr, theta_m=th_arr,
             te=te_arr, load_torque=tl_arr, supply_freq=self.supply_freq, fs=self.fs,
             fault_heat_w=fault_heat, copper_loss_w=copper,
+            has_nonfinite=has_nonfinite,
         )
 
     def warm_start(self, load_torque: float, seconds: float = 1.5) -> None:

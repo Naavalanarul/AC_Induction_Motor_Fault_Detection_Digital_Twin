@@ -7,6 +7,7 @@ channels. `MotorSimulator` advances it chunk by chunk.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -42,6 +43,7 @@ class MotorTwinState:
     load_cmd: float = 1.0          # supervisory load command (fraction of base load)
     base_load_nm: float = 8.0      # process load demand [N*m]
     tripped: bool = False
+    nonfinite_fault: bool = False
 
 
 class MotorSimulator:
@@ -75,18 +77,27 @@ class MotorSimulator:
         load = st.base_load_nm * st.load_cmd * (0.0 if st.tripped else 1.0)
         t0 = self.plant.t
         chunk = self.plant.simulate(self.n_elec, load)
+        if chunk.has_nonfinite or self.plant.nonfinite_tripped:
+            st.nonfinite_fault = True
+            st.tripped = True
+            self.plant.voltage_scale = 0.0
+
         # Extend with the pre-chunk point so interpolation covers [t0, t0+chunk]
         t_e = np.concatenate([[t0], chunk.t])
         th_prev = st.electrical.theta_m[-1] if st.electrical is not None else 0.0
         w_prev = st.electrical.omega_m[-1] if st.electrical is not None else 0.0
         th_e = np.concatenate([[th_prev], chunk.theta_m])
         w_e = np.concatenate([[w_prev], chunk.omega_m])
-        load_frac = min(1.5, max(0.0, float(np.mean(chunk.te)) / st.params.rated_torque))
+        denom = st.params.rated_torque if st.params.rated_torque > 0 else 1.0
+        te_mean = float(np.mean(chunk.te)) if math.isfinite(float(np.mean(chunk.te))) else 0.0
+        load_frac = min(1.5, max(0.0, te_mean / denom))
 
         _, th_v, w_v = interp_shaft(t_e, th_e, w_e, t0, self.n_vib, VIB_FS)
         vib = self.vib.generate(th_v, w_v, chunk.supply_freq, load_frac, self.faults)
+        vib = np.nan_to_num(vib, nan=0.0, posinf=0.0, neginf=0.0)
         _, th_a, w_a = interp_shaft(t_e, th_e, w_e, t0, self.n_ac, ACOUSTIC_FS)
         ac = self.ac.generate(th_a, w_a, chunk.supply_freq, load_frac, self.faults)
+        ac = np.nan_to_num(ac, nan=0.0, posinf=0.0, neginf=0.0)
 
         # 4-Node Lumped Parameter Thermal Network (LPTN) & Arrhenius RUL calculation
         p_cu_s = 0.55 * chunk.copper_loss_w

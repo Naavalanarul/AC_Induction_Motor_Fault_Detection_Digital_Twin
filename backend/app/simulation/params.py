@@ -5,7 +5,10 @@ This module contains the core motor parameters and precomputes derived state spa
 Reference: Chen et al. (Energies 2025, 'Digital Twin-Based Online Diagnosis...').
 """
 
+import math
 from dataclasses import dataclass
+
+import numpy as np
 
 
 @dataclass(frozen = True)
@@ -62,6 +65,98 @@ class MotorParams:
         K = self.Lm / (sigma * self.Ls * self.Lr)                            #Flux-to-current coupling factor (K)
 
         return DerivedConstants(sigma = sigma, Tr = Tr, gamma = gamma, K = K)
+
+
+def validate_motor_params(
+    p: MotorParams,
+    fs: float = 5000.0,
+    supply_freq: float = 50.0,
+) -> tuple[bool, str]:
+    """Validates physical plausibility and RK4 numerical stability of motor parameters.
+
+    Returns:
+        (True, "OK") if parameters are physically plausible and numerically stable.
+        (False, error_message) describing the violation.
+    """
+    dt = 1.0 / fs
+
+    # 1. Non-negativity & physical minimums
+    if p.rated_voltage < 50.0 or p.rated_voltage > 15000.0:
+        return False, f"rated_voltage ({p.rated_voltage} V) out of plausible industrial range [50.0, 15000.0] V"
+    if p.rated_power <= 0.0:
+        return False, f"rated_power ({p.rated_power} W) must be positive"
+    if p.rated_current <= 0.0:
+        return False, f"rated_current ({p.rated_current} A) must be positive"
+    if p.rated_speed <= 0.0:
+        return False, f"rated_speed ({p.rated_speed} rpm) must be positive"
+    if p.rated_torque <= 0.0:
+        return False, f"rated_torque ({p.rated_torque} Nm) must be positive"
+    if p.Rs <= 0.0 or p.Rr <= 0.0 or p.Ls <= 0.0 or p.Lr <= 0.0 or p.Lm <= 0.0:
+        return False, "All resistances and inductances must be strictly positive"
+    if p.Lm >= min(p.Ls, p.Lr):
+        return False, "Lm must be strictly smaller than Ls and Lr (positive leakage inductance required)"
+    if p.J < 1e-4:
+        return False, f"Rotor inertia J ({p.J} kg*m^2) too small for physical motor (minimum 1e-4 kg*m^2)"
+
+    # 2. Total leakage factor sigma in [0.02, 0.25]
+    sigma = 1.0 - (p.Lm ** 2) / (p.Ls * p.Lr)
+    if not (0.02 <= sigma <= 0.25):
+        return False, f"Total leakage factor sigma={sigma:.5f} outside plausible range [0.02, 0.25]"
+
+    # 3. Synchronous speed vs rated speed (induction motors require slip > 0)
+    n_sync = 60.0 * supply_freq / p.pole_pairs
+    if p.rated_speed >= n_sync:
+        return False, f"rated_speed ({p.rated_speed} rpm) must be strictly below synchronous speed ({n_sync} rpm)"
+
+    # 4. Consistency of rated torque vs rated power / omega_rated (within 15%)
+    omega_rated = p.rated_speed * 2.0 * math.pi / 60.0
+    t_expected = p.rated_power / omega_rated
+    if abs(p.rated_torque - t_expected) / t_expected > 0.15:
+        return False, (
+            f"rated_torque ({p.rated_torque} Nm) deviates by more than 15% from "
+            f"nameplate P/omega ({t_expected:.2f} Nm)"
+        )
+
+    # 5. Magnetizing current ratio: Im = V_phase / (2*pi*f*Lm)
+    v_phase = p.rated_voltage / math.sqrt(3.0)
+    i_m = v_phase / (2.0 * math.pi * supply_freq * p.Lm)
+    im_ratio = i_m / p.rated_current
+    if not (0.15 <= im_ratio <= 1.50):
+        return False, (
+            f"Magnetizing current Im ({i_m:.2f} A, {im_ratio*100:.1f}% of rated) outside "
+            "plausible range [15%, 150%] of rated_current"
+        )
+
+    # 6. RK4 electrical eigenvalue stability: max|lambda| * dt <= 2.78
+    der = p.compute_derived_constants()
+    lam = der.gamma
+    K = der.K
+    inv_tr = 1.0 / der.Tr
+    lm_over_tr = p.Lm * inv_tr
+    k_over_tr = K * inv_tr
+    wr_sync = 2.0 * math.pi * supply_freq
+    for wr in (0.0, wr_sync):
+        A = np.array([
+            [-lam, 0.0, k_over_tr, K * wr],
+            [0.0, -lam, -K * wr, k_over_tr],
+            [lm_over_tr, 0.0, -inv_tr, -wr],
+            [0.0, lm_over_tr, wr, -inv_tr],
+        ])
+        max_ev = float(np.max(np.abs(np.linalg.eigvals(A))))
+        if max_ev * dt > 2.78:
+            return False, (
+                f"RK4 numerical stability exceeded: max|lambda|*dt = {max_ev*dt:.2f} > 2.78 "
+                f"(stiff electrical system at fs={fs} Hz)"
+            )
+
+    # 7. RK4 mechanical pole stability: (B / J) * dt <= 2.78 (viscous damping B=0.002)
+    b_viscous = 0.002
+    mech_ev = (b_viscous / p.J) * dt
+    if mech_ev > 2.78:
+        return False, f"Mechanical RK4 stability exceeded: (B/J)*dt = {mech_ev:.2f} > 2.78"
+
+    return True, "OK"
+
 
 CHEN_2025_MOTOR = MotorParams(
     Rs=1.2,

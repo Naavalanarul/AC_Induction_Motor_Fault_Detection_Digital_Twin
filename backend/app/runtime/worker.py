@@ -81,6 +81,19 @@ def _npz(**arrays) -> bytes:
     return buf.getvalue()
 
 
+def sanitize_for_wire(val: object) -> object:
+    if isinstance(val, float):
+        return val if math.isfinite(val) else None
+    if isinstance(val, (np.floating, np.integer)):
+        f = float(val)
+        return f if math.isfinite(f) else None
+    if isinstance(val, dict):
+        return {k: sanitize_for_wire(v) for k, v in val.items()}
+    if isinstance(val, (list, tuple)):
+        return [sanitize_for_wire(v) for v in val]
+    return val
+
+
 _classifier_cache: dict[bool, MechanicalClassifier] = {}
 
 
@@ -195,11 +208,32 @@ class MotorWorker:
     async def tick(self) -> dict:
         t0 = time.perf_counter()
         st = await asyncio.to_thread(self.sim.step)
+        if st.nonfinite_fault:
+            self.sada.trip("TRIP_SIM_NONFINITE")
+            if self.writer is not None:
+                self.writer.put(
+                    Alert(
+                        motor_id=self.cfg.motor_id,
+                        severity="critical",
+                        message="Simulation diverged to non-finite values (NaN/Inf): emergency trip TRIP_SIM_NONFINITE",
+                    )
+                )
         frames = await self.registry.read_all()
         SIM_TICK_SECONDS.observe(time.perf_counter() - t0)
         t1 = time.perf_counter()
         diag = await asyncio.to_thread(self.engine.process, st.t, frames, self.sim.chunk_s)
         DIAG_SECONDS.observe(time.perf_counter() - t1)
+        if st.nonfinite_fault:
+            diag = FusedDiagnosis(
+                t=st.t,
+                fault_type=DiagFault.UNKNOWN,
+                confidence=1.0,
+                severity=1.0,
+                per_sensor_scores=diag.per_sensor_scores,
+                secondary=[{"fault_type": "sim_nonfinite", "confidence": 1.0, "severity": 1.0, "sources": ["plant"]}],
+                source=diag.source,
+                schema_version=diag.schema_version,
+            )
         out = self.sada.update(diag)
         # --- SADA-trip override: don't persist "healthy" when channels are starved ---
         # After a trip, fault-sensitive channels (electrical, ML) mark themselves
@@ -252,19 +286,24 @@ class MotorWorker:
 
         self._record(st, frames, diag, out, mhi, err)
         msg = self._build_message(st, frames, diag, out, mhi, err, zone)
+        clean_msg = sanitize_for_wire(msg)
+        assert isinstance(clean_msg, dict)
         every = max(1, round((1.0 / self.sim.chunk_s) / self.cfg.stream_hz))
         if self._chunk_idx % every == 0:
             # Spectra/scalogram change at 2 Hz / 1 Hz: send them only when updated (clients keep the
             # last ones) and encode each frame ONCE for all viewers.
-            wire = dict(msg)
+            wire = dict(clean_msg)
             if not self._spectra_dirty:
-                wire.pop("spectra")
+                wire.pop("spectra", None)
             if not self._scalogram_dirty:
-                wire.pop("scalogram")
+                wire.pop("scalogram", None)
             self._spectra_dirty = self._scalogram_dirty = False
-            await self.broker.publish(f"motor:{self.cfg.motor_id}", json.dumps(wire, separators=(",", ":")))
-            await self.broker.set_latest(self.cfg.motor_id, msg)
-        return msg
+            await self.broker.publish(
+                f"motor:{self.cfg.motor_id}",
+                json.dumps(wire, allow_nan=False, separators=(",", ":")),
+            )
+            await self.broker.set_latest(self.cfg.motor_id, clean_msg)
+        return clean_msg
 
     # ------------------------------------------------------------------ persistence
     def _record(self, st, frames, diag, out, mhi: float, err: str) -> None:
