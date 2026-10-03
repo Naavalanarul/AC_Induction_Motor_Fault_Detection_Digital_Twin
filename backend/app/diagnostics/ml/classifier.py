@@ -96,17 +96,32 @@ class MechanicalClassifier:
                 with self._torch.no_grad():
                     logits = self.model(self._torch.tensor(x))
                     probs = self._torch.softmax(logits, dim=1)[0].numpy()
-                fault = CLASSES[int(np.argmax(probs))]
-                conf = float(np.max(probs))
-                backend = "conv_bilstm"
             except Exception as exc:  # noqa: BLE001
                 log.exception("ML inference failed; falling back to rules")
                 self.load_error = f"inference: {exc}"
                 probs = None
-        if probs is None:
+        is_ood = False
+        if probs is not None:
+            max_prob = float(np.max(probs))
+            # OOD gating: low confidence across all classes or non-finite features
+            if max_prob < 0.40 or not np.all(np.isfinite(latest)):
+                fault = "unknown"
+                conf = max_prob
+                is_ood = True
+            else:
+                fault = CLASSES[int(np.argmax(probs))]
+                conf = max_prob
+            backend = "conv_bilstm"
+        else:
             fault, conf = rule_classify(latest)
             backend = "rules"
-        details: dict[str, Any] = {"backend": backend}
+            # OOD check: non-finite features or extreme unphysical amplitudes
+            if not np.all(np.isfinite(latest)) or _f(latest, "rms") > 20.0:
+                fault = "unknown"
+                conf = 0.2
+                is_ood = True
+
+        details: dict[str, Any] = {"backend": backend, "ood": is_ood}
         if probs is not None:
             details["probabilities"] = {c: round(float(p), 4) for c, p in zip(CLASSES, probs, strict=True)}
         return ChannelVerdict(DiagSource.ML_CLASSIFIER, DiagFault(fault), conf,
