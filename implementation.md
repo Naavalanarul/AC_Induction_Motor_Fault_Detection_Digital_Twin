@@ -410,12 +410,17 @@ Everything from the earlier 12-phase plan stays, with these production-hardening
   - Softened CWT Morlet vibration scalogram colormap (`Scalogram.tsx`) with a multi-level desaturated slate-steel ramp.
   - Re-styled metric tiles, motor cards (`MotorCard.tsx`), status badges (`StatusBadge.tsx`), emergency trip banner (`TripBanner.tsx`), and thermal node indicators with softened translucent borders and non-glaring hover glows.
   - Re-captured updated operational telemetry screenshot in `docs/dashboard.png`.
+- [x] **Phase 35 — Pure Black Canvas & Dynamic Hover-Zoom Background Grid**:
+  - Enforced pure black background (`#000000`) across `--page`, app shell, dialogs, and navigation backdrops.
+  - Decreased contrast and lowered saturation across all UI accent colors (text, borders, badges, status colors, and charts).
+  - Added subtle $40 \times 40\text{ px}$ background grid lines (`rgba(255, 255, 255, 0.065)`) rendered at `z-index: 0` directly behind dashboard cards and telemetry decks.
+  - Implemented dynamic hover zoom-in effect: when the operator hovers over the page, the background grid smoothly zooms in by 6% (`transform: scale(1.06)`), while the cursor-following illumination spotlight expands by 16% (`transform: scale(1.16)` with `transform-origin` dynamically anchored to `var(--grid-cursor-x)` and `var(--grid-cursor-y)`).
 
 ---
 
-## Implementation status (2026-09-29)
+## Implementation status (2026-10-03)
 
-All phases (0–34) are fully implemented, tested, and verified:
+All phases (0–35) are fully implemented, tested, and verified:
 - Phases 0–11: Core plant simulator, sensors, fault injection, electrical/ML/thermal/supply diagnostics, weighted fusion, MySQL persistence, WebSocket streaming, SADA supervisory layer, and React dashboard.
 - Phase 12 & Phase 18: Concrete hardware sensor drivers for all sensor channels are implemented and verified with automated unit tests and circuit breaker fallbacks.
 - Phases 13–15: Observability, Prometheus metrics, structured JSON logging, supervised workers, automated retention cleanup, test coverage thresholds ($\ge 85\%$), and integration test suites.
@@ -436,4 +441,5 @@ All phases (0–34) are fully implemented, tested, and verified:
 - Phase 32: Interactive 7-Chapter Engineering & Physics Documentation Book (`EngineeringDocsModal.tsx`) with book spine styling, page turn buttons, keyboard arrow navigation, dedicated Book Footer with GitHub repository link and creation year 2026, and in-depth explanations of software stack, continuous ODE state-space physics, mathematical fault injection, first-principles sensor synthesis, multi-modal fault detection, 4-node LPTN thermal modeling, system architecture, and canonical research papers. Playwright E2E test (`docs-modal.spec.ts`) verified.
 - Phase 33: CI pipeline hardening (100% pass on Ruff, Mypy, Pytest, ESLint, TypeScript, Vitest, Playwright), Chapter 7 DSA foundations in documentation, default startup fault seeding, and official repository footer string.
 - Phase 34: Telemetry palette softening & contrast/saturation ergonomics across all dashboard components, charts, and modal dialogues.
+- Phase 35: Pure black canvas (`#000000`), desaturated low-contrast colors, visible background grid (`rgba(255, 255, 255, 0.065)`), and smooth dynamic cursor-anchored hover zoom-in effect.
 

@@ -6,6 +6,11 @@ tagged with the git SHA and with the release tag.
 ## [Unreleased]
 
 ### Added
+- Phase 35: Pure Black Canvas & Dynamic Hover-Zoom Background Grid:
+  - Enforced pure black canvas (`#000000`) across `--page`, app shell, dialogs, and navigation backdrops.
+  - Enabled subtle $40 \times 40\text{ px}$ background grid lines (`rgba(255, 255, 255, 0.065)`) rendered at `z-index: 0` directly behind dashboard cards and telemetry decks.
+  - Implemented dynamic hover zoom-in effect: when the operator hovers over the page, the background grid smoothly zooms in by 6% (`transform: scale(1.06)`), while the cursor-following illumination spotlight expands by 16% (`transform: scale(1.16)` with `transform-origin` dynamically anchored to `var(--grid-cursor-x)` and `var(--grid-cursor-y)`).
+  - Maintained desaturated, low-contrast telemetry color palette for all waveforms, gauges, badges, and CWT scalograms.
 - Phase 33: Telemetry Palette Softening & Contrast / Saturation Ergonomics:
   - Softened overall UI contrast and decreased color saturation across dark and light theme tokens in `frontend/src/index.css`.
   - Replaced harsh OLED pitch-black background (`#050505`) with a refined, ergonomic telemetry dark slate tone (`#0e121a`), eliminating 21:1 stark contrast fatigue.

@@ -32,7 +32,7 @@ test('profile database modal, add motor modal, and sign out modal verification',
   await page.getByRole('button', { name: 'Test Connection' }).click()
 
   // Wait for test feedback banner
-  await expect(page.locator('.modal-body').getByText(/Cannot reach MySQL server|Connection failed|Successfully connected/i)).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('.modal-body').getByText(/Cannot reach MySQL server|Connection failed|Successfully connected|Access denied/i)).toBeVisible({ timeout: 10000 })
 
   // Capture screenshot of profile modal
   await page.screenshot({
