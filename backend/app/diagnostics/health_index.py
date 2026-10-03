@@ -13,6 +13,7 @@ Generates concise industrial error codes:
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from app.diagnostics.schema import DiagFault, DiagSource, FusedDiagnosis
@@ -24,6 +25,18 @@ STATE_PENALTY: dict[str, float] = {
     "WATCH": 10.0,
     "DERATE": 25.0,
     "TRIP": 60.0,
+}
+
+# Criticality weights for channel penalties when degraded/stale/lost
+CHANNEL_CRITICALITY: dict[str, float] = {
+    "current": 12.0,
+    "voltage": 10.0,
+    "speed": 10.0,
+    "vibration": 8.0,
+    "temp": 6.0,
+    "temperature": 6.0,
+    "thermal": 6.0,
+    "acoustic": 4.0,
 }
 
 # Abbreviation mappings for error codes
@@ -94,6 +107,7 @@ def compute_mhi(
     diag_or_severity: FusedDiagnosis | float,
     sada_state: SadaState | str = SadaState.NORMAL,
     channel_status: dict[str, Any] | None = None,
+    latched_severity: float | None = None,
 ) -> tuple[float, str]:
     """Computes the Motor Health Index (MHI) in [0.0, 100.0] and the ISO zone.
 
@@ -101,6 +115,8 @@ def compute_mhi(
         diag_or_severity: FusedDiagnosis instance or float severity in [0.0, 1.0].
         sada_state: Current SADA supervisory state.
         channel_status: Optional mapping of sensor channel statuses.
+        latched_severity: Optional latched severity (e.g. from SADA) to ensure MHI never
+            increases during channel starvation or sensor loss.
 
     Returns:
         tuple (mhi: float, zone: str) where zone is 'A', 'B', 'C', or 'D'.
@@ -109,6 +125,8 @@ def compute_mhi(
         severity = float(diag_or_severity.severity)
     else:
         severity = float(diag_or_severity)
+    if latched_severity is not None and math.isfinite(latched_severity):
+        severity = max(severity, float(latched_severity))
     severity = max(0.0, min(1.0, severity))
 
     state_name = sada_state.value if isinstance(sada_state, SadaState) else str(sada_state).upper()
@@ -117,18 +135,22 @@ def compute_mhi(
     # Severity deduction: scales from 0 to 60.0
     sev_pen = severity * 60.0
 
-    # Sensor channel deduction (if any channel is degraded/error)
+    # Sensor channel deduction (if any channel is degraded/error/stale/lost)
     chan_pen = 0.0
     if channel_status:
-        for status_val in channel_status.values():
+        for chan_name, status_val in channel_status.items():
             st = getattr(status_val, "value", str(status_val)).lower()
-            if st in ("degraded", "fault", "error", "lost"):
-                chan_pen += 5.0
-        chan_pen = min(15.0, chan_pen)
+            if st in ("degraded", "fault", "error", "lost", "stale", "offline"):
+                crit = CHANNEL_CRITICALITY.get(str(chan_name).lower(), 6.0)
+                chan_pen += crit
+        chan_pen = min(50.0, chan_pen)
 
     mhi = max(0.0, min(100.0, 100.0 - sev_pen - state_pen - chan_pen))
     mhi = round(mhi, 1)
     return mhi, zone_from_mhi(mhi)
+
+
+compute_health_index = compute_mhi
 
 
 def error_code(

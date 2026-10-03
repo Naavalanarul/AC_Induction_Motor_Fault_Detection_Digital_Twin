@@ -40,6 +40,10 @@ class SadaConfig:
     min_load: float = 0.5
     emergency_severity: float = 0.95
     emergency_confidence: float = 0.9
+    sensor_loss_grace_s: float = 3.0
+    sensor_loss_action: str = "trip"  # "trip" | "derate" | "hold"
+    sensor_loss_derate_load: float = 0.5
+    unknown_decay_rate: float = 0.02  # per update tick when UNKNOWN and sensors healthy
 
 
 @dataclass
@@ -69,12 +73,16 @@ class SadaSupervisor:
         self.manual_load: float | None = None
         self.acknowledged = False
         self._last_out: SadaOutput | None = None
+        self._sensor_loss_timer: float = 0.0
+        self.sensor_loss_active: bool = False
 
     # ---- operator actions ----------------------------------------------
     def reset(self) -> bool:
-        """Clear a latched trip. Refused while the smoothed severity is still at trip level."""
+        """Clear a latched trip. Refused while the smoothed severity is still at trip level or sensors lost."""
         if self.state != SadaState.TRIP:
             return True
+        if self.sensor_loss_active:
+            return False
         if self.smoothed >= self.cfg.trip - self.cfg.hysteresis:
             return False
         self.state = SadaState.NORMAL
@@ -95,17 +103,45 @@ class SadaSupervisor:
         self.manual_load = load
 
     # ---- main update -----------------------------------------------------
-    def update(self, d: FusedDiagnosis) -> SadaOutput:
+    def update(
+        self,
+        d: FusedDiagnosis,
+        dt: float = 0.1,
+        critical_sensors_ok: bool = True,
+    ) -> SadaOutput:
         c = self.cfg
         if not math.isfinite(d.severity) or not math.isfinite(d.confidence):
             self.smoothed = 1.0
             self.fault = DiagFault.UNKNOWN
             self._enter(SadaState.TRIP, "TRIP_SIM_NONFINITE")
 
+        # Sensor-health watchdog
+        if not critical_sensors_ok:
+            self._sensor_loss_timer += dt
+            if self._sensor_loss_timer >= c.sensor_loss_grace_s:
+                self.sensor_loss_active = True
+                if c.sensor_loss_action == "trip":
+                    if self.state != SadaState.TRIP:
+                        self.smoothed = 1.0
+                        self.fault = DiagFault.UNKNOWN
+                        self._enter(SadaState.TRIP, "TRIP_SENSOR_LOSS")
+                elif c.sensor_loss_action == "derate":
+                    if self.state not in (SadaState.TRIP, SadaState.DERATE):
+                        self._enter(SadaState.DERATE, "DERATE_SENSOR_LOSS")
+        else:
+            self._sensor_loss_timer = 0.0
+            self.sensor_loss_active = False
+
         gated = d.confidence >= c.confidence_gate and d.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
         target = d.severity if gated else 0.0
-        if d.fault_type != DiagFault.UNKNOWN and math.isfinite(target):
+
+        if d.fault_type == DiagFault.UNKNOWN:
+            if critical_sensors_ok and not self.sensor_loss_active:
+                # Sensors are healthy, fault is unclassified/cleared -> decay smoothed severity
+                self.smoothed = max(0.0, self.smoothed - c.unknown_decay_rate)
+        elif math.isfinite(target):
             self.smoothed += c.ema_alpha * (target - self.smoothed)
+
         if gated and self.state != SadaState.TRIP:
             self.fault = d.fault_type
 
@@ -123,6 +159,9 @@ class SadaSupervisor:
             self._enter(SadaState.TRIP, f"TRIP_EMERGENCY_{d.fault_type.value.upper()}")
         elif s >= c.trip:
             self._enter(SadaState.TRIP, f"TRIP_{self.fault.value.upper()}")
+        elif self.sensor_loss_active and c.sensor_loss_action == "derate":
+            if self.state != SadaState.DERATE:
+                self._enter(SadaState.DERATE, "DERATE_SENSOR_LOSS")
         else:
             h = c.hysteresis
             if s >= c.derate or (self.state == SadaState.DERATE and s >= c.derate - h):
@@ -133,14 +172,18 @@ class SadaSupervisor:
                 new = SadaState.NORMAL
             if new != self.state:
                 self._enter(new, "OK" if new == SadaState.NORMAL else f"{new.value}_{self.fault.value.upper()}")
-        if self.state == SadaState.NORMAL and s < c.watch - c.hysteresis:
+
+        if self.state == SadaState.NORMAL and s < c.watch - c.hysteresis and not self.sensor_loss_active:
             self.fault = DiagFault.HEALTHY
 
         if self.state == SadaState.TRIP:
             load = 0.0
         elif self.state == SadaState.DERATE:
-            frac = min(1.0, (s - c.derate) / (c.trip - c.derate)) if s > c.derate else 0.0
-            load = 1.0 - frac * (1.0 - c.min_load)
+            if self.sensor_loss_active and c.sensor_loss_action == "derate":
+                load = c.sensor_loss_derate_load
+            else:
+                frac = min(1.0, (s - c.derate) / (c.trip - c.derate)) if s > c.derate else 0.0
+                load = 1.0 - frac * (1.0 - c.min_load)
         else:
             load = 1.0
         manual_load = self.manual_load

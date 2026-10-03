@@ -103,6 +103,7 @@ class SensorOut(BaseModel):
 
 class SensorPatch(BaseModel):
     mode: Literal["simulated", "hardware"]
+    confirm_hardware: bool = False
 
 
 class MotorOut(BaseModel):

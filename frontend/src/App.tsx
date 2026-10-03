@@ -75,7 +75,7 @@ function Shell() {
   const trippedMotors = (motors.data || [])
     .map((m) => {
       const f = fleetFrames[m.id] || (m.id === motorId ? frame : null)
-      if (f?.supervisory?.trip && !f.supervisory.acknowledged) {
+      if ((f?.supervisory?.trip || f?.supervisory?.reason_code?.includes('SENSOR_LOSS')) && !f.supervisory.acknowledged) {
         return { id: m.id, name: m.name, reason_code: f.supervisory.reason_code, acknowledged: f.supervisory.acknowledged }
       }
       return null

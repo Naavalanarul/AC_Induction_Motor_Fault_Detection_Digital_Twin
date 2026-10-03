@@ -66,7 +66,16 @@ def test_sensor_mode_switch(client, auth):
     sensors = client.get("/api/v1/motors/1/sensors", headers=auth("viewer")).json()
     assert {s["type"] for s in sensors} == {"current", "vibration", "acoustic", "temp", "speed", "voltage"}
     ac = next(s for s in sensors if s["type"] == "acoustic")
-    r = client.patch(f"/api/v1/motors/1/sensors/{ac['id']}", json={"mode": "hardware"}, headers=auth("admin"))
+    # Must reject without confirmation
+    r_bad = client.patch(f"/api/v1/motors/1/sensors/{ac['id']}", json={"mode": "hardware"}, headers=auth("admin"))
+    assert r_bad.status_code == 400
+    # Must succeed with confirmation
+    r = client.patch(
+        f"/api/v1/motors/1/sensors/{ac['id']}",
+        json={"mode": "hardware", "confirm_hardware": True},
+        headers=auth("admin"),
+    )
+    assert r.status_code == 200
     assert r.json()["mode"] == "hardware"
     assert wait_for(lambda: state_sensor(client, auth, "acoustic") == "stale")
     client.patch(f"/api/v1/motors/1/sensors/{ac['id']}", json={"mode": "simulated"}, headers=auth("admin"))

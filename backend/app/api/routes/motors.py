@@ -177,12 +177,24 @@ def list_sensors(motor_id: int, _: Principal = Depends(require("viewer")), db: S
 
 
 @router.patch("/{motor_id}/sensors/{sensor_id}", response_model=SensorOut)
-async def patch_sensor(motor_id: int, sensor_id: int, body: SensorPatch, _: Principal = Depends(require("admin")),
+async def patch_sensor(motor_id: int, sensor_id: int, body: SensorPatch, principal: Principal = Depends(require("admin")),
                        db: Session = Depends(get_db), rt=Depends(runtime)):
     s = db.get(Sensor, sensor_id)
     if s is None or s.motor_id != motor_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "sensor not found")
+    if body.mode == "hardware" and not body.confirm_hardware:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Switching sensor to hardware mode requires confirmation ('confirm_hardware': true) "
+            "as hardware drivers may be offline or placeholders.",
+        )
     s.mode = SensorModeEnum(body.mode)
+    audit_alert = Alert(
+        motor_id=motor_id,
+        severity="warning" if body.mode == "hardware" else "info",
+        message=f"Sensor {s.type.value} switched to {body.mode} by admin {principal.username}",
+    )
+    db.add(audit_alert)
     db.commit()
     await rt.broker.publish(f"cmd:{motor_id}", {"cmd": "sensor_mode", "sensor_type": s.type.value, "mode": body.mode})
     return s

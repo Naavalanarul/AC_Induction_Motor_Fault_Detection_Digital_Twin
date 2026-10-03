@@ -24,9 +24,16 @@ function SensorCard({
 
   const toggle = async () => {
     if (!row) return
+    const nextMode = row.mode === 'simulated' ? 'hardware' : 'simulated'
+    if (nextMode === 'hardware') {
+      const ok = window.confirm(
+        `Switch ${title} channel to HARDWARE mode?\n\nWarning: If physical hardware drivers are unconfigured or disconnected, this channel will report STALE data and may trigger protective watchdog derate or trip.`
+      )
+      if (!ok) return
+    }
     await api(`/motors/${row.motor_id}/sensors/${row.id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ mode: row.mode === 'simulated' ? 'hardware' : 'simulated' }),
+      body: JSON.stringify({ mode: nextMode, confirm_hardware: true }),
     })
     onModeChanged()
   }

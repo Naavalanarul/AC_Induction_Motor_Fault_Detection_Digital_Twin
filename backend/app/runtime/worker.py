@@ -234,7 +234,28 @@ class MotorWorker:
                 source=diag.source,
                 schema_version=diag.schema_version,
             )
-        out = self.sada.update(diag)
+        # Check critical sensors
+        critical_types = (SensorType.CURRENT, SensorType.VOLTAGE, SensorType.SPEED)
+        critical_present = [frames[st] for st in critical_types if st in frames]
+        if critical_present:
+            critical_sensors_ok = all(
+                getattr(f, "status", SensorStatus.OK) == SensorStatus.OK
+                and getattr(f, "n", 1) > 0
+                for f in critical_present
+            )
+        else:
+            critical_sensors_ok = False if frames else True
+
+        out = self.sada.update(diag, dt=self.sim.chunk_s, critical_sensors_ok=critical_sensors_ok)
+        if out.trip and out.reason_code == "TRIP_SENSOR_LOSS" and out.changed:
+            if self.writer is not None:
+                self.writer.put(
+                    Alert(
+                        motor_id=self.cfg.motor_id,
+                        severity="critical",
+                        message="Critical sensors unavailable exceeding grace period: emergency trip TRIP_SENSOR_LOSS",
+                    )
+                )
         # --- SADA-trip override: don't persist "healthy" when channels are starved ---
         # After a trip, fault-sensitive channels (electrical, ML) mark themselves
         # unavailable because the motor is de-energised.  If only benign channels
@@ -270,7 +291,13 @@ class MotorWorker:
         self.severity_history.append((st.t, out.smoothed_severity))
 
         # Health index & error codes (Phase 20)
-        mhi, zone = compute_mhi(diag, out.state, {k.value: v.status for k, v in frames.items()})
+        chan_statuses = {k.value: getattr(v, "status", "ok") for k, v in frames.items()}
+        mhi, zone = compute_mhi(
+            diag,
+            out.state,
+            chan_statuses,
+            latched_severity=out.smoothed_severity,
+        )
         err = error_code(diag.source.value, diag.fault_type.value, zone)
         self._last_mhi = mhi
         self._last_error_code = err
