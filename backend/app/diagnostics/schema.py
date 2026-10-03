@@ -43,6 +43,16 @@ class DiagSource(str, Enum):
     FUSED = "fused"
 
 
+def _sanitize_val(val: object) -> object:
+    if hasattr(val, "item") and callable(val.item):
+        return val.item()
+    if isinstance(val, dict):
+        return {k: _sanitize_val(v) for k, v in val.items()}
+    if isinstance(val, list):
+        return [_sanitize_val(v) for v in val]
+    return val
+
+
 @dataclass
 class ChannelVerdict:
     source: DiagSource
@@ -51,6 +61,12 @@ class ChannelVerdict:
     severity: float             # [0, 1]
     available: bool = True      # False when the channel could not produce a verdict
     details: dict = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.confidence = float(self.confidence)
+        self.severity = float(self.severity)
+        if self.details:
+            self.details = _sanitize_val(self.details)  # type: ignore[assignment]
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -70,12 +86,21 @@ class FusedDiagnosis:
     source: DiagSource = DiagSource.FUSED
     schema_version: str = SCHEMA_VERSION
 
+    def __post_init__(self) -> None:
+        self.t = float(self.t)
+        self.confidence = float(self.confidence)
+        self.severity = float(self.severity)
+        if self.per_sensor_scores:
+            self.per_sensor_scores = _sanitize_val(self.per_sensor_scores)  # type: ignore[assignment]
+        if self.secondary:
+            self.secondary = _sanitize_val(self.secondary)  # type: ignore[assignment]
+
     def to_dict(self) -> dict:
         return {
-            "t": self.t,
+            "t": float(self.t),
             "fault_type": self.fault_type.value,
-            "confidence": round(self.confidence, 4),
-            "severity": round(self.severity, 4),
+            "confidence": round(float(self.confidence), 4),
+            "severity": round(float(self.severity), 4),
             "per_sensor_scores": self.per_sensor_scores,
             "secondary": self.secondary,
             "source": self.source.value,

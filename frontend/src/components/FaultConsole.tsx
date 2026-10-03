@@ -154,19 +154,26 @@ export function FaultConsole({ motorId, faults, canOperate }: { motorId: number;
             )}
 
             {ft === 'voltage_anomaly' && (
-              <label className="flex items-center gap-2">
-                <span className="text-[var(--muted)] font-medium w-16">Kind</span>
-                <select
-                  className="input flex-1 bg-[var(--surface-raised)]"
-                  value={p.volt}
-                  onChange={(e) => setP({ ...p, volt: e.target.value })}
-                  aria-label="voltage anomaly type"
-                >
-                  <option value="sag">Voltage Sag</option>
-                  <option value="imbalance">Phase Imbalance</option>
-                  <option value="harmonic">Harmonic Distortion</option>
-                </select>
-              </label>
+              <>
+                <label className="flex items-center gap-2">
+                  <span className="text-[var(--muted)] font-medium w-16">Kind</span>
+                  <select
+                    className="input flex-1 bg-[var(--surface-raised)]"
+                    value={p.volt}
+                    onChange={(e) => setP({ ...p, volt: e.target.value })}
+                    aria-label="voltage anomaly type"
+                  >
+                    <option value="sag">Voltage Sag</option>
+                    <option value="imbalance">Phase Imbalance</option>
+                    <option value="harmonic">Harmonic Distortion</option>
+                  </select>
+                </label>
+                {p.volt === 'harmonic' && (
+                  <p className="text-[11px] text-[var(--muted)] bg-[var(--surface-raised)] p-2 rounded border border-[var(--border)] leading-relaxed">
+                    Harmonic note: Severity 0.5 injects ~6% THD. Per EN 50160, THD &le; 8% is nominal and not flagged by design. Severity &ge; 0.70 is required to trigger a supply anomaly.
+                  </p>
+                )}
+              </>
             )}
 
             <button

@@ -44,7 +44,10 @@ markers = [
     "slow: long-running simulation/ML tests",
     "mysql: requires a live MySQL (DATABASE_URL)",
 ]
-filterwarnings = ["ignore::DeprecationWarning"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "error::RuntimeWarning",
+]
 
 [tool.coverage.run]
 source = ["app"]
