@@ -280,13 +280,18 @@ class MotorWorker:
             and diag.fault_type == DiagFault.HEALTHY
             and self.sada.fault not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
         ):
+            latched_sev = (
+                out.latched_severity
+                if (out.latched_severity is not None and out.latched_severity > 0)
+                else out.smoothed_severity
+            )
             override_meta = {
                 "sada_latched_fault": self.sada.fault.value,
-                "sada_latched_severity": round(out.smoothed_severity, 4),
+                "sada_latched_severity": round(latched_sev, 4),
                 "reason": "channels_starved_during_trip",
                 "fault_type": self.sada.fault.value,
                 "confidence": round(diag.confidence, 4),
-                "severity": round(out.smoothed_severity, 4),
+                "severity": round(latched_sev, 4),
                 "sources": ["sada_latched"],
             }
             per_scores = {**diag.per_sensor_scores, "sada_override": override_meta}
@@ -294,7 +299,7 @@ class MotorWorker:
                 t=diag.t,
                 fault_type=DiagFault.INDETERMINATE,
                 confidence=diag.confidence,
-                severity=diag.severity,
+                severity=round(latched_sev, 4),
                 per_sensor_scores=per_scores,
                 secondary=[override_meta] + diag.secondary,
                 source=diag.source,
@@ -305,13 +310,27 @@ class MotorWorker:
 
         # Health index & error codes (Phase 20)
         chan_statuses = {k.value: getattr(v, "status", "ok") for k, v in frames.items()}
+        latched_for_mhi = (
+            out.latched_severity
+            if (out.trip and out.latched_severity is not None and out.latched_severity > 0)
+            else out.smoothed_severity
+        )
         mhi, zone = compute_mhi(
             diag,
             out.state,
             chan_statuses,
-            latched_severity=out.smoothed_severity,
+            latched_severity=latched_for_mhi,
         )
-        err = error_code(diag.source.value, diag.fault_type.value, zone)
+        actual_fault_for_code = (
+            self.sada.latched_fault.value
+            if (
+                out.trip
+                and self.sada.latched_fault
+                and self.sada.latched_fault not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
+            )
+            else diag.fault_type.value
+        )
+        err = error_code(diag.source.value, actual_fault_for_code, zone)
         self._last_mhi = mhi
         self._last_error_code = err
         self._last_zone = zone

@@ -43,7 +43,10 @@ export const HealthGauge: React.FC<HealthGaugeProps> = ({
   const strokeDashoffset = circumference - (clamped / 100) * circumference
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div
+      className="flex flex-col items-center justify-center cursor-help"
+      title="Motor Health Index (MHI): composite health [0, 100] = 100 - (60 × severity) - state_penalty - channel_penalty. Zones A–D inspired by ISO 20816 grading nomenclature."
+    >
       <div className="relative inline-flex items-center justify-center" style={{ width: dimensions.dim, height: dimensions.dim }}>
         <svg
           width={dimensions.dim}

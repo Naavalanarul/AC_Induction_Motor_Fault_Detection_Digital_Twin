@@ -1,7 +1,9 @@
 """diagnostics/health_index.py — Motor Health Index (MHI) and diagnostic error codes.
 
 Computes a composite [0.0, 100.0] health scalar based on fused severity,
-SADA supervisory state, and channel status. Maps to ISO 10816 / 20816 condition zones:
+SADA supervisory state, and channel status. Maps to MHI condition zones
+(inspired by ISO 20816 zone naming, but applied to a composite 0-100 motor
+health index rather than vibration velocity):
   - Zone A (Good):       85.0 <= MHI <= 100.0
   - Zone B (Acceptable): 70.0 <= MHI < 85.0
   - Zone C (Alert):      50.0 <= MHI < 70.0
@@ -98,7 +100,8 @@ FAULT_DEFAULT_SOURCE: dict[str, str] = {
 
 
 def zone_from_mhi(mhi: float) -> str:
-    """Classifies Motor Health Index into ISO zones A, B, C, or D."""
+    """Classifies Motor Health Index into MHI condition zones A, B, C, or D
+    (inspired by ISO 20816 grading nomenclature, applied to a composite 0-100 scalar)."""
     if mhi >= 85.0:
         return "A"
     if mhi >= 70.0:
@@ -114,14 +117,22 @@ def compute_mhi(
     channel_status: dict[str, Any] | None = None,
     latched_severity: float | None = None,
 ) -> tuple[float, str]:
-    """Computes the Motor Health Index (MHI) in [0.0, 100.0] and the ISO zone.
+    """Computes the Motor Health Index (MHI) in [0.0, 100.0] and the condition zone.
+
+    Formula:
+        MHI = max(0.0, min(100.0, 100.0 - severity_penalty - state_penalty - channel_penalty))
+    where:
+        severity_penalty = severity * 60.0
+        state_penalty: NORMAL=0, WATCH=10, DERATE=25, TRIP=60
+        channel_penalty: sum of offline/stale/degraded channel criticalities (capped at 50)
+        During TRIP, latched fault severity is retained to prevent artificial MHI elevation.
 
     Args:
         diag_or_severity: FusedDiagnosis instance or float severity in [0.0, 1.0].
         sada_state: Current SADA supervisory state.
         channel_status: Optional mapping of sensor channel statuses.
-        latched_severity: Optional latched severity (e.g. from SADA) to ensure MHI never
-            increases during channel starvation or sensor loss.
+        latched_severity: Optional latched severity (e.g. from SADA) to ensure MHI
+            reflects true trip severity and does not reset to 40.0 on starved channels.
 
     Returns:
         tuple (mhi: float, zone: str) where zone is 'A', 'B', 'C', or 'D'.
