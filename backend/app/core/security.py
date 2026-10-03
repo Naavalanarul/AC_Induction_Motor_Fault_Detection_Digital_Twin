@@ -36,11 +36,27 @@ def create_token(username: str, role: str, kind: str = "access") -> str:
     return jwt.encode(payload, s.jwt_secret, algorithm=s.jwt_algorithm)
 
 
+_REVOKED_JTIS: set[str] = set()
+
+
+def revoke_token(jti: str) -> None:
+    """Revoke a token by its unique identifier (JTI)."""
+    _REVOKED_JTIS.add(jti)
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Check if a token has been revoked."""
+    return jti in _REVOKED_JTIS
+
+
 def decode_token(token: str, expected_kind: str = "access") -> dict:
     s = get_settings()
     payload = jwt.decode(token, s.jwt_secret, algorithms=[s.jwt_algorithm], options={"require": ["exp", "sub"]})
     if payload.get("type") != expected_kind:
         raise jwt.InvalidTokenError("wrong token type")
+    jti = payload.get("jti")
+    if jti and is_token_revoked(jti):
+        raise jwt.InvalidTokenError("token has been revoked")
     return payload
 
 

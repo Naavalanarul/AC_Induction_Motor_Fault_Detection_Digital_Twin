@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import time
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 
@@ -64,6 +65,8 @@ async def stream(ws: WebSocket, motor_id: int):
         async with rt.broker.subscribe(f"motor:{motor_id}") as events:
             recv = asyncio.create_task(ws.receive_text())  # detects client disconnect
             it = events.__aiter__()
+            last_reval = time.monotonic()
+            reval_interval_s = float(getattr(ws.app.state, "ws_reval_interval_s", 5.0))
             while True:
                 nxt = asyncio.create_task(it.__anext__())
                 done, _ = await asyncio.wait({nxt, recv}, return_when=asyncio.FIRST_COMPLETED)
@@ -75,6 +78,20 @@ async def stream(ws: WebSocket, motor_id: int):
                     recv = asyncio.create_task(ws.receive_text())  # ignore client chatter (e.g. pings)
                     continue
                 item = nxt.result()
+
+                now = time.monotonic()
+                if now - last_reval >= reval_interval_s:
+                    last_reval = now
+                    try:
+                        with session_factory()() as db:
+                            p = principal_from_token(token, db)
+                            if not role_allows(p.role, "viewer"):
+                                await ws.close(code=4403, reason="role downgraded")
+                                return
+                    except HTTPException:
+                        await ws.close(code=4401, reason="token expired or revoked")
+                        return
+
                 if isinstance(item, str):
                     await ws.send_text(item)  # pre-encoded once by the worker
                 else:

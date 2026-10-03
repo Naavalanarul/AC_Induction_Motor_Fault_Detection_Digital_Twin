@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import contextlib
+
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import Principal, current_principal, require
+from app.api.deps import Principal, bearer, current_principal, require
 from app.api.schemas import LoginIn, RefreshIn, TokenOut, UserIn, UserOut
 from app.config import get_settings
 from app.core.ratelimit import rate_limit
-from app.core.security import create_token, decode_token, hash_password, verify_password
+from app.core.security import create_token, decode_token, hash_password, revoke_token, verify_password
 from app.db.models import RoleEnum, User
 from app.db.session import get_db
 
@@ -37,10 +40,29 @@ def refresh(body: RefreshIn, db: Session = Depends(get_db)):
         payload = decode_token(body.refresh_token, "refresh")
     except jwt.PyJWTError as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid refresh token") from exc
+    # Revoke old refresh token to enforce rotation
+    if "jti" in payload:
+        revoke_token(payload["jti"])
     user = db.scalar(select(User).where(User.username == payload["sub"]))
     if user is None or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "user disabled or missing")
     return _tokens(user)
+
+
+@router.post("/auth/logout", status_code=200)
+def logout(body: RefreshIn | None = None, creds: HTTPAuthorizationCredentials | None = Depends(bearer)):
+    """Revokes access and/or refresh tokens upon user logout."""
+    if creds is not None:
+        with contextlib.suppress(Exception):
+            payload = decode_token(creds.credentials, "access")
+            if "jti" in payload:
+                revoke_token(payload["jti"])
+    if body and body.refresh_token:
+        with contextlib.suppress(Exception):
+            payload = decode_token(body.refresh_token, "refresh")
+            if "jti" in payload:
+                revoke_token(payload["jti"])
+    return {"message": "logged out successfully"}
 
 
 @router.get("/auth/me")

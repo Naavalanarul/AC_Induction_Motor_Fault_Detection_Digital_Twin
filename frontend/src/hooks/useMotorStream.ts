@@ -49,7 +49,7 @@ export function useMotorStream(motorId: number | null, historyLen = 120, onFrame
       if (stopped) return
 
       const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-      ws = new WebSocket(`${proto}://${location.host}/api/v1/ws/motors/${motorId}/stream?token=${encodeURIComponent(token)}`)
+      ws = new WebSocket(`${proto}://${location.host}/api/v1/ws/motors/${motorId}/stream`, ['bearer', token])
 
       ws.onopen = () => {
         retry.current = 0
