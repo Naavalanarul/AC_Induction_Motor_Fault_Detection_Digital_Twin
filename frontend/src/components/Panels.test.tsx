@@ -9,6 +9,7 @@ import { FaultConsole } from './FaultConsole'
 import { HealthGauge } from './HealthGauge'
 import { HistoryView } from './HistoryView'
 import { MotorCard } from './MotorCard'
+import { MotorParamsStudio } from './MotorParamsStudio'
 import { SadaPanel } from './SadaPanel'
 import { StatusBadge } from './StatusBadge'
 import { TripBanner } from './TripBanner'
@@ -253,6 +254,56 @@ describe('MotorCard', () => {
     expect(screen.getByText(/1.5 kW/)).toBeInTheDocument()
     expect(screen.getByText('SYS-OK-A')).toBeInTheDocument()
     expect(screen.getByText('Zone A')).toBeInTheDocument()
+  })
+})
+
+describe('MotorParamsStudio', () => {
+  it('pre-fills from currentMotor params_json and applies to backend', async () => {
+    const fetchMock = mockFetch({ id: 1, name: 'Conveyor 5.5kW' }, 200)
+    const onApply = vi.fn()
+    const motor = {
+      id: 1,
+      name: 'Conveyor 5.5kW',
+      rated_power: 5500,
+      rated_speed: 1460,
+      rated_torque: 36.0,
+      base_load_nm: 25.0,
+      params_json: {
+        Rs: 0.82,
+        Rr: 0.65,
+        Ls: 0.095,
+        Lr: 0.095,
+        Lm: 0.091,
+        J: 0.045,
+        pole_pairs: 2,
+        rated_power: 5500,
+        rated_voltage: 400,
+        rated_current: 11.2,
+        rated_speed: 1460,
+        rated_torque: 36.0,
+        t_ambient: 25.0,
+        warn_c: 85.0,
+        trip_c: 110.0,
+      },
+    }
+
+    render(<MotorParamsStudio currentMotor={motor} onApplyParams={onApply} />)
+
+    expect(screen.getByText(/Active Motor Target: Conveyor 5.5kW/)).toBeInTheDocument()
+    const applyBtn = screen.getByRole('button', { name: 'Apply to Motor Twin' })
+    expect(applyBtn).toBeInTheDocument()
+    expect(applyBtn).not.toBeDisabled()
+
+    await userEvent.click(applyBtn)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/motors/1/params',
+      expect.objectContaining({
+        method: 'PATCH',
+      }),
+    )
+    expect(onApply).toHaveBeenCalled()
+    expect(await screen.findByText(/Parameters applied to Conveyor 5.5kW/)).toBeInTheDocument()
   })
 })
 

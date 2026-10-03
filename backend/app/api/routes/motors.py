@@ -22,6 +22,7 @@ from app.api.schemas import (
     MotorDetail,
     MotorIn,
     MotorOut,
+    MotorParamsIn,
     OverrideIn,
     Page,
     PrognosisOut,
@@ -114,6 +115,44 @@ async def set_load(motor_id: int, body: LoadPatch, p: Principal = Depends(requir
     m.base_load_nm = body.base_load_nm
     db.commit()
     await rt.broker.publish(f"cmd:{motor_id}", {"cmd": "base_load", "value": body.base_load_nm, "actor": p.username})
+    return m
+
+
+@router.patch("/{motor_id}/params", response_model=MotorOut)
+async def update_motor_params(
+    motor_id: int,
+    body: MotorParamsIn,
+    p: Principal = Depends(require("admin")),
+    db: Session = Depends(get_db),
+    rt=Depends(runtime),
+):
+    m = _motor(db, motor_id)
+    params_dict = body.model_dump()
+    m.params_json = params_dict
+    m.rated_power = params_dict["rated_power"]
+    m.rated_speed = params_dict["rated_speed"]
+    m.rated_torque = params_dict["rated_torque"]
+    db.commit()
+    db.refresh(m)
+
+    # Durably write an audit record
+    audit_act = SupervisoryAction(
+        motor_id=motor_id,
+        state="CONFIG_UPDATE",
+        load_cmd=1.0,
+        reason_code=f"PARAMS_UPDATED_BY_{p.username.upper()}",
+        trip=False,
+        smoothed_severity=0.0,
+        actor=p.username,
+    )
+    db.add(audit_act)
+    db.commit()
+
+    # Restart worker with new parameters if simulation is active
+    if rt.settings.run_simulation and hasattr(rt, "manager"):
+        await rt.manager.stop(motor_id)
+        rt.manager.start(motor_id)
+
     return m
 
 

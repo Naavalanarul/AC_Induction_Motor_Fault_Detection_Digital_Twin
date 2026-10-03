@@ -285,7 +285,10 @@ function Shell() {
             ) : tab === 'params' ? (
               <div className="space-y-6">
                 <ErrorBoundary fallbackTitle="Error loading Parameters Studio">
-                  <MotorParamsStudio currentMotor={selectedMotor} />
+                  <MotorParamsStudio
+                    currentMotor={selectedMotor}
+                    onApplyParams={() => { motors.refetch() }}
+                  />
                 </ErrorBoundary>
 
                 {/* Simulation Bench & Supervisory Interlock Transferred from Maintenance */}

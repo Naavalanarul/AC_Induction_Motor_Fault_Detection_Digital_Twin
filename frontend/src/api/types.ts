@@ -132,6 +132,7 @@ export type Motor = {
   rated_speed: number
   rated_torque: number
   base_load_nm: number
+  params_json?: Record<string, unknown>
 }
 
 export type SensorRow = { id: number; motor_id: number; type: string; mode: 'simulated' | 'hardware' }

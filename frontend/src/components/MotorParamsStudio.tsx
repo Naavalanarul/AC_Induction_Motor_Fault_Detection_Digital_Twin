@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import type { Motor } from '../api/types'
+import { api } from '../api/client'
 
 interface MotorParamsStudioProps {
   currentMotor?: Motor
@@ -147,11 +148,107 @@ const PRESETS: Record<string, { label: string; description: string; params: Moto
   },
 }
 
-export function MotorParamsStudio({ currentMotor }: MotorParamsStudioProps) {
+export function MotorParamsStudio({ currentMotor, onApplyParams }: MotorParamsStudioProps) {
   const [selectedPreset, setSelectedPreset] = useState<string>('default_1_5kw')
-  const [params, setParams] = useState<MotorFullParams>(PRESETS.default_1_5kw.params)
+  const [params, setParams] = useState<MotorFullParams>(() => {
+    if (currentMotor?.params_json) {
+      const p = currentMotor.params_json as Record<string, number>
+      const base = PRESETS.default_1_5kw.params
+      return {
+        ...base,
+        Rs: p.Rs ?? base.Rs,
+        Rr: p.Rr ?? base.Rr,
+        Ls: p.Ls ?? base.Ls,
+        Lr: p.Lr ?? base.Lr,
+        Lm: p.Lm ?? base.Lm,
+        J: p.J ?? base.J,
+        pole_pairs: p.pole_pairs ?? base.pole_pairs,
+        rated_power: p.rated_power ?? currentMotor.rated_power ?? base.rated_power,
+        rated_voltage: p.rated_voltage ?? base.rated_voltage,
+        rated_current: p.rated_current ?? base.rated_current,
+        rated_speed: p.rated_speed ?? currentMotor.rated_speed ?? base.rated_speed,
+        rated_torque: p.rated_torque ?? currentMotor.rated_torque ?? base.rated_torque,
+        base_load_nm: p.base_load_nm ?? currentMotor.base_load_nm ?? base.base_load_nm,
+        T_ambient: p.t_ambient ?? base.T_ambient,
+        T_warning: p.warn_c ?? base.T_warning,
+        T_trip: p.trip_c ?? base.T_trip,
+      }
+    }
+    return PRESETS.default_1_5kw.params
+  })
+  const [prevMotorId, setPrevMotorId] = useState<number | undefined>(currentMotor?.id)
   const [activeTab, setActiveTab] = useState<'circuit' | 'mechanical' | 'nameplate' | 'thermal' | 'grid'>('circuit')
-  const [savedStatus, setSavedStatus] = useState<string | null>(null)
+  const [savedStatus, setSavedStatus] = useState<string | null>(
+    currentMotor?.params_json ? `Pre-filled parameters from: ${currentMotor.name}` : null
+  )
+  const [applying, setApplying] = useState(false)
+  const [applyError, setApplyError] = useState<string | null>(null)
+
+  if (currentMotor && currentMotor.id !== prevMotorId) {
+    setPrevMotorId(currentMotor.id)
+    if (currentMotor.params_json) {
+      const p = currentMotor.params_json as Record<string, number>
+      setParams((prev) => ({
+        ...prev,
+        Rs: p.Rs ?? prev.Rs,
+        Rr: p.Rr ?? prev.Rr,
+        Ls: p.Ls ?? prev.Ls,
+        Lr: p.Lr ?? prev.Lr,
+        Lm: p.Lm ?? prev.Lm,
+        J: p.J ?? prev.J,
+        pole_pairs: p.pole_pairs ?? prev.pole_pairs,
+        rated_power: p.rated_power ?? currentMotor.rated_power ?? prev.rated_power,
+        rated_voltage: p.rated_voltage ?? prev.rated_voltage,
+        rated_current: p.rated_current ?? prev.rated_current,
+        rated_speed: p.rated_speed ?? currentMotor.rated_speed ?? prev.rated_speed,
+        rated_torque: p.rated_torque ?? currentMotor.rated_torque ?? prev.rated_torque,
+        base_load_nm: p.base_load_nm ?? currentMotor.base_load_nm ?? prev.base_load_nm,
+        T_ambient: p.t_ambient ?? prev.T_ambient,
+        T_warning: p.warn_c ?? prev.T_warning,
+        T_trip: p.trip_c ?? prev.T_trip,
+      }))
+      setSavedStatus(`Pre-filled parameters from: ${currentMotor.name}`)
+    }
+  }
+
+  const handleApply = async () => {
+    if (!currentMotor) {
+      setApplyError('No active motor selected')
+      return
+    }
+    setApplying(true)
+    setApplyError(null)
+    try {
+      const payload: Record<string, number> = {
+        Rs: params.Rs,
+        Rr: params.Rr,
+        Ls: params.Ls,
+        Lr: params.Lr,
+        Lm: params.Lm,
+        J: params.J,
+        pole_pairs: params.pole_pairs,
+        rated_power: params.rated_power,
+        rated_voltage: params.rated_voltage,
+        rated_current: params.rated_current,
+        rated_speed: params.rated_speed,
+        rated_torque: params.rated_torque,
+        t_ambient: params.T_ambient,
+        warn_c: params.T_warning,
+        trip_c: params.T_trip,
+      }
+      await api<Motor>(`/motors/${currentMotor.id}/params`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+      setSavedStatus(`Parameters applied to ${currentMotor.name}. Worker restarted with new RK4 state.`)
+      onApplyParams?.(payload)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to apply parameters'
+      setApplyError(msg)
+    } finally {
+      setApplying(false)
+    }
+  }
 
   const handlePresetSelect = (presetKey: string) => {
     setSelectedPreset(presetKey)
@@ -669,14 +766,31 @@ export function MotorParamsStudio({ currentMotor }: MotorParamsStudioProps) {
             </div>
           </div>
 
-          {/* Active Motor Association Info */}
+          {/* Active Motor Association Info & Apply Action */}
           <div className="mt-5 pt-3 border-t border-[var(--border)] text-xs text-[var(--muted)]">
-            <span className="font-semibold text-[var(--ink)] block mb-1">
-              Active Motor Target: {currentMotor ? currentMotor.name : 'Default Twin Instance'}
-            </span>
-            <p className="text-[11px] text-[var(--muted)]">
-              Parameters are ready for RK4 state integration and healthy twin observer current-residual computation.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <span className="font-semibold text-[var(--ink)] block mb-1">
+                  Active Motor Target: {currentMotor ? currentMotor.name : 'Default Twin Instance'}
+                </span>
+                <p className="text-[11px] text-[var(--muted)]">
+                  Parameters will be validated for RK4 stability and applied to the live simulation worker.
+                </p>
+              </div>
+              <button
+                className="btn btn-primary"
+                disabled={applying || !currentMotor || !derived.isPhysical}
+                onClick={handleApply}
+                title={!derived.isPhysical ? 'Parameters have invalid leakage (Lm >= min(Ls, Lr))' : 'Apply parameters to live motor worker'}
+              >
+                {applying ? 'Applying...' : 'Apply to Motor Twin'}
+              </button>
+            </div>
+            {applyError && (
+              <p className="mt-2 text-xs text-rose-400 font-sans" role="alert">
+                {applyError}
+              </p>
+            )}
           </div>
         </section>
       </div>
