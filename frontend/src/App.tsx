@@ -22,6 +22,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignOutConfirmModal } from './components/SignOutConfirmModal'
 import { ProfileDatabaseModal } from './components/ProfileDatabaseModal'
 import { EngineeringDocsModal } from './components/EngineeringDocsModal'
+import { AlertsModal } from './components/AlertsModal'
 import { useMotorStream } from './hooks/useMotorStream'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
@@ -36,6 +37,7 @@ function Shell() {
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false)
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
   const shellRef = useRef<HTMLElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (typeof window !== 'undefined' && (localStorage.getItem('app-theme') as 'dark' | 'light')) || 'dark'
@@ -162,7 +164,12 @@ function Shell() {
           </button>
 
           <div className="notification-wrap">
-            <button className="nav-icon-btn" aria-label="Notifications">
+            <button
+              className="nav-icon-btn"
+              aria-label="Notifications"
+              onClick={() => setIsAlertsModalOpen(true)}
+              title="View System Alerts"
+            >
               <Bell size={18} />
             </button>
             {trippedMotors.length > 0 && (
@@ -466,6 +473,15 @@ function Shell() {
       <EngineeringDocsModal
         isOpen={isDocsModalOpen}
         onClose={() => setIsDocsModalOpen(false)}
+      />
+
+      {/* Supervisory Alerts Modal */}
+      <AlertsModal
+        isOpen={isAlertsModalOpen}
+        onClose={() => setIsAlertsModalOpen(false)}
+        motorId={motorId}
+        motorName={selectedMotor?.name}
+        canOperate={can('operator')}
       />
     </main>
   )

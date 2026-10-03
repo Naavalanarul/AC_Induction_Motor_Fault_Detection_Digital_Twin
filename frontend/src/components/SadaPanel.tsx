@@ -6,8 +6,25 @@ import { StatusBadge } from './StatusBadge'
 
 export function SadaPanel({ motorId, sup, canOperate }: { motorId: number; sup: Supervisory; canOperate: boolean }) {
   const [manual, setManual] = useState(0.6)
+  const [processLoad, setProcessLoad] = useState(8.0)
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const setProcessDemand = async () => {
+    setMsg(null)
+    setBusy(true)
+    try {
+      await api(`/motors/${motorId}/load`, {
+        method: 'PATCH',
+        body: JSON.stringify({ base_load_nm: processLoad }),
+      })
+      setMsg(`Process shaft load set to ${processLoad} N·m`)
+    } catch (e) {
+      setMsg((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const send = async (action: string, load?: number) => {
     setMsg(null)
@@ -143,6 +160,26 @@ export function SadaPanel({ motorId, sup, canOperate }: { motorId: number; sup: 
                 Release
               </button>
             )}
+          </div>
+
+          <div className="flex items-center gap-2 bg-[var(--surface-raised)] p-2 rounded-md border border-[var(--border)] mt-2">
+            <label className="text-xs text-[var(--ink-2)] flex items-center gap-2 flex-1">
+              <span className="text-[11px] text-[var(--muted)] whitespace-nowrap">Shaft Demand:</span>
+              <input
+                type="number"
+                min={0}
+                max={500}
+                step={0.5}
+                value={processLoad}
+                aria-label="process demand load"
+                className="input py-0.5 px-2 text-xs num w-20 bg-[var(--surface)] text-[var(--ink)]"
+                onChange={(e) => setProcessLoad(Number(e.target.value))}
+              />
+              <span className="text-xs text-[var(--muted)]">N·m</span>
+            </label>
+            <button className="btn btn-primary text-xs py-1 px-3" onClick={setProcessDemand} disabled={busy}>
+              Set Demand
+            </button>
           </div>
         </div>
       ) : (

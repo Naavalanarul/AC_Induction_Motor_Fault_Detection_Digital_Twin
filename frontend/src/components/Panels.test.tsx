@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveSession } from '../api/client'
 import { diagnosis, supervisory } from '../test/fixtures'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AlertsModal } from './AlertsModal'
 import { DiagnosisPanel } from './DiagnosisPanel'
 import { FaultConsole } from './FaultConsole'
 import { HealthGauge } from './HealthGauge'
@@ -304,6 +305,48 @@ describe('MotorParamsStudio', () => {
     )
     expect(onApply).toHaveBeenCalled()
     expect(await screen.findByText(/Parameters applied to Conveyor 5.5kW/)).toBeInTheDocument()
+  })
+})
+
+describe('AlertsModal', () => {
+  it('renders alerts and allows operator to acknowledge', async () => {
+    const alertsData = [
+      {
+        id: 42,
+        motor_id: 1,
+        ts: new Date().toISOString(),
+        severity: 'warning',
+        message: 'Sensor vibration switched to hardware mode',
+        acknowledged: false,
+      },
+    ]
+    const fetchMock = mockFetch(alertsData, 200)
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AlertsModal
+          isOpen={true}
+          onClose={() => {}}
+          motorId={1}
+          motorName="Conveyor 5.5kW"
+          canOperate={true}
+        />
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText(/Sensor vibration switched to hardware mode/)).toBeInTheDocument()
+    const ackBtn = screen.getByRole('button', { name: 'Acknowledge' })
+    expect(ackBtn).toBeInTheDocument()
+
+    await userEvent.click(ackBtn)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/motors/1/alerts/42/ack',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    )
   })
 })
 

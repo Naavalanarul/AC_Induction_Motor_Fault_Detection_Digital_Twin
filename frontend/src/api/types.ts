@@ -216,6 +216,14 @@ export const getZoneFromMHI = (val: number): ConditionZone => {
   return 'D'
 }
 
+export interface AlertOut {
+  id: number
+  ts: string
+  severity: string
+  message: string
+  acknowledged: boolean
+}
+
 export interface DatabaseStatus {
   connected: boolean
   engine: string
