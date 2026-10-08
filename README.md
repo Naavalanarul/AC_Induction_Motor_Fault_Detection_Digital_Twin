@@ -62,6 +62,7 @@ cd frontend && npm ci && npm run dev         # http://localhost:5173 (proxies /a
 | Runtime | `backend/app/runtime/` | One supervised worker per motor with restart backoff. Batched DB writer with high-priority audit queue. In-memory or Redis broker, with a per-motor ownership lock for multiple replicas. Retention job. |
 | Observability | `core/logging.py`, `core/metrics.py`, `deploy/` | JSON logs carry the request id and motor id. `/metrics`, `/healthz` and `/readyz` are exposed. Prometheus alert rules and a Grafana dashboard are provisioned. |
 | Frontend | `frontend/` | Fleet operations grid, motor provisioning modal (7 presets + custom dq physics), DSA priority queue, live telemetry deck with Telemetry Mode Badge (`Real Hardware Stream` vs. `Dynamic State-Space Emulation`), 4-node LPTN thermal matrix & Arrhenius RUL meter, parameters studio, database inspector, and 8-chapter interactive Engineering & Physics Documentation Book (`EngineeringDocsModal.tsx`) featuring book spine styling, turn-page navigation, dedicated chapter on Data Structures & Algorithmic Foundations (DSA: Binary Max-Heap priority queues, O(1) circular ring buffers, SADA hysteresis FSM, hash registries), dedicated main dashboard footer (`https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin · 2026 · Naavalanarul · MIT License`), and in-depth explanations of scientific libraries, state-space ODEs, mathematical fault models, first-principles sensor synthesis, multi-modal diagnostics, system architecture, and research papers with DOI links. |
+| Real-data validation | `backend/app/validation/`, [docs/validation.md](docs/validation.md) | Offline sim-to-real study (no effect on the live simulation). Loaders for LIMAN-C, ESTOGU, Bruinsma (NLN-EMP) and USP BRB; grouped splits; experiments 1–9 plus severity; results in `reports/validation/`. Real data is not committed. |
 | Ops | `compose.yaml`, `compose.prod.yaml`, `deploy/`, `.github/workflows/ci.yml` | Local and production stacks, TLS edge, backups with a tested restore check, CI/CD. See [docs/operations.md](docs/operations.md). |
 
 ## API summary
@@ -96,6 +97,15 @@ npx playwright test                            # E2E: inject fault -> diagnosis 
 python backend/loadtest/ws_load.py --password ... --motors 2 --viewers 100   # load test, see backend/loadtest/RESULTS.md
 ```
 
+Real-data validation (datasets downloaded separately into `data/validation/<name>/`, see [docs/validation.md](docs/validation.md)):
+
+```bash
+cd backend && pip install -e '.[validation]'
+python -m app.validation.run --dataset liman_c --protocol all --seeds 0 1 2
+```
+
+If a dataset is missing or unreadable the CLI exits with status 2; it never substitutes synthetic data.
+
 Retrain the classifier with `python -m app.diagnostics.ml.train --runs-per-class 40 --seeds 0 1 2`.
 Run it from `backend/`. It writes `artifacts/conv_bilstm.pt` and `metrics.json`.
 
@@ -105,6 +115,8 @@ Run it from `backend/`. It writes `artifacts/conv_bilstm.pt` and `metrics.json`.
   (3 seeds, 48 held-out runs each). That result only shows the simulator's fault signatures are
   easy to separate. It says nothing about accuracy on real motors. Retrain and re-validate on
   measured data before relying on it.
+- The real-data loaders in `app/validation/` were written against the published dataset descriptions
+  and tested on small synthetic stand-in files only; they have not yet been run on the real downloads.
 - The fault models are simplified lumped models, documented in `simulation/faults.py`. Examples:
   - Pure static eccentricity can't be observed in an α-β model, so it is modelled as mixed eccentricity.
   - Inter-turn heating uses an explicit hot-spot factor.

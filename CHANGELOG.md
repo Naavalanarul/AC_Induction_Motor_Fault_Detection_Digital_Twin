@@ -5,6 +5,16 @@ tagged with the git SHA and with the release tag.
 
 ## [Unreleased]
 
+### Added
+- `backend/app/validation/`: offline real-data validation and sim-to-real study. Loaders for LIMAN-C,
+  ESTOGU, Bruinsma (NLN-EMP) and USP BRB returning a common record; explicit channel-evaluability report;
+  resampling to twin rates, 50/60 Hz and VFD handling, explicit NaN policy, label mapping with
+  `out_of_scope`; grouped splits with a leakage assertion. Protocols: sim baseline, zero-shot (gap, ECE,
+  Brier, AUROC), real-only LOMO, few-shot, domain shift (MMD, Wasserstein, C2ST, MCSA sidebands),
+  equivalent-circuit calibration, domain randomisation, channel ablation, thresholds, severity (Spearman,
+  monotonicity; no RUL claim). CLI `python -m app.validation.run`; exits with status 2 when a dataset
+  cannot be loaded. See docs/validation.md.
+
 ### Fixed
 - Fault injection: the UI offered 16 fault types but the API only accepts the 9 injectable ones, so 7
   (diagnosis-only labels) failed with HTTP 422. The UI list now matches backend `FaultType` (a test parses

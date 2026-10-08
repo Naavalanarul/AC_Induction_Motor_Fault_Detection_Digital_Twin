@@ -10,3 +10,6 @@ htmlcov/
 test-results/
 .DS_Store
 
+# real validation datasets are never committed; feature caches are regenerable
+data/validation/
+reports/validation/*/_cache/
