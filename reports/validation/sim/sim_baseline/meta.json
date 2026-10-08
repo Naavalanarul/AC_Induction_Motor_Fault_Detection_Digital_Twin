@@ -1,0 +1,45 @@
+{
+  "dataset": "sim",
+  "experiment": "sim_baseline",
+  "git_commit": "17bd0111e779a9bf040e35e24a91b74f09e52be7",
+  "git_dirty": false,
+  "created_utc": "2026-10-08T12:15:43+00:00",
+  "dataset_title": "simulator only",
+  "dataset_version": "this commit",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "model": "rf",
+  "sim_runs_per_class": 20,
+  "sim_seconds": 4.0,
+  "split": "label-stratified group holdout on simulated runs, test_fraction=0.3",
+  "classes": [
+    "bearing",
+    "broken_rotor_bar",
+    "eccentricity",
+    "healthy",
+    "interturn_short",
+    "misalignment",
+    "unbalance"
+  ],
+  "convbilstm_reference": {
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "protocol": "group split by simulation run (60/20/20), train-only normalization, multi-seed",
+    "runs_per_class": 40,
+    "classes": [
+      "healthy",
+      "bearing_inner",
+      "bearing_outer",
+      "bearing_ball",
+      "unbalance",
+      "misalignment"
+    ],
+    "reproduce": "python -m app.diagnostics.ml.train --runs-per-class 40 --seeds 0 1 2"
+  },
+  "note": "Simulator-only. High accuracy here shows the simulated signatures are separable, nothing more."
+}
