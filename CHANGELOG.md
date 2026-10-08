@@ -5,6 +5,29 @@ tagged with the git SHA and with the release tag.
 
 ## [Unreleased]
 
+### Fixed
+- Fault injection: the UI offered 16 fault types but the API only accepts the 9 injectable ones, so 7
+  (diagnosis-only labels) failed with HTTP 422. The UI list now matches backend `FaultType` (a test parses
+  the frontend list); `voltage_sag`/`supply_anomaly` are accepted as aliases of `voltage_anomaly`; the
+  diagnosis-only labels return a 422 explaining why; 422 errors are rendered readably.
+- Maintenance tab after a trip: prognosis used the decaying smoothed severity (reported ~0 while the latch
+  was 0.80); the recommendation used a stale pre-trip diagnosis (e.g. eccentricity for an outer-race
+  fault); post-trip fused diagnoses were bare `indeterminate` or stale misclassifications. Prognosis now
+  uses the latched severity while tripped, the recommendation uses the latched fault (also in the DB
+  fallback), and every post-trip fused result carries the latched fault in `sada_override`
+  (`apply_trip_override`, single source of truth). The tab shows an explicit tripped state, the latched
+  fault, and distinct "Tripped / Exceeded / Not projected / unavailable" states instead of "Indefinite".
+- Recommendations no longer depend on persistence: `_last_fault` was only updated when a DB writer existed.
+- Trips could never be cleared: after a reset the restart inrush (~5.4x rated) re-tripped on
+  `TRIP_OVERCURRENT` because the DOL start allowance was keyed on absolute simulation time (t <= 0.5 s).
+  It is now measured from energisation.
+- Bearing severity calibration: diagnosed severity now tracks injected severity (outer race 0.35 used to
+  read 0.51 -> DERATE). Per-defect linear RMS maps, simulator-specific.
+- Trip UX: the trip banner stays visible after acknowledgement and offers Reset (showing the refusal
+  reason); the Fault Console explains that clearing a fault does not restart a tripped motor and offers
+  Reset; the default injected severity is 0.3 (WATCH) instead of 0.5.
+- `SEED_DEFAULT_FAULTS` now defaults to false so a fresh dashboard starts healthy.
+
 ### Added
 - Phase 35: Pure Black Canvas & Dynamic Hover-Zoom Background Grid:
   - Enforced pure black canvas (`#000000`) across `--page`, app shell, dialogs, and navigation backdrops.

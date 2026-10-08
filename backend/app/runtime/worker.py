@@ -104,6 +104,51 @@ def shared_classifier(use_ml: bool) -> MechanicalClassifier:
     return _classifier_cache[use_ml]
 
 
+
+def apply_trip_override(
+    diag: FusedDiagnosis, out, latched_fault: DiagFault | None, latched_confidence: float = 1.0
+) -> FusedDiagnosis:
+    """While SADA is tripped, report the latched fault instead of whatever the starved channels say.
+
+    After a trip the fault-sensitive channels (electrical residual, ML) are unavailable because the
+    motor is de-energised, so fusion yields HEALTHY (only benign channels left), INDETERMINATE, or a
+    stale spin-down misclassification. None of these describes the motor. Any fused result other than
+    the latched fault becomes INDETERMINATE with the latched fault/severity in `sada_override`, so
+    persisted diagnoses, the Diagnosis panel and the Maintenance tab all show the latched fault.
+    """
+    if not (
+        out.trip
+        and latched_fault is not None
+        and latched_fault not in (DiagFault.HEALTHY, DiagFault.UNKNOWN, DiagFault.INDETERMINATE)
+        and diag.fault_type != latched_fault
+    ):
+        return diag
+    latched_sev = (
+        out.latched_severity
+        if (out.latched_severity is not None and out.latched_severity > 0)
+        else out.smoothed_severity
+    )
+    override_meta = {
+        "sada_latched_fault": latched_fault.value,
+        "sada_latched_severity": round(latched_sev, 4),
+        "reason": "channels_starved_during_trip",
+        "raw_fault_type": diag.fault_type.value,
+        "fault_type": latched_fault.value,
+        "confidence": round(latched_confidence, 4),
+        "severity": round(latched_sev, 4),
+        "sources": ["sada_latched"],
+    }
+    return FusedDiagnosis(
+        t=diag.t,
+        fault_type=DiagFault.INDETERMINATE,
+        confidence=diag.confidence,
+        severity=round(latched_sev, 4),
+        per_sensor_scores={**diag.per_sensor_scores, "sada_override": override_meta},
+        secondary=[override_meta] + diag.secondary,
+        source=diag.source,
+        schema_version=diag.schema_version,
+    )
+
 class MotorWorker:
     def __init__(self, cfg: WorkerConfig, broker: Broker, writer: DBWriter | None):
         self.cfg = cfg
@@ -123,6 +168,7 @@ class MotorWorker:
         self._chunk_idx = 0
         self._last_persist = -1e9
         self._last_fault = DiagFault.HEALTHY
+        self._latched_confidence = 1.0
         self._last_state: SadaState | None = None
         self._cur_buf: deque[np.ndarray] = deque(maxlen=20)   # 2 s of phase-a current
         self._vib_buf: deque[np.ndarray] = deque(maxlen=5)    # 0.5 s of vib-y
@@ -267,44 +313,25 @@ class MotorWorker:
                     ),
                     priority=True,
                 )
-        # --- SADA-trip override: don't persist "healthy" when channels are starved ---
-        # After a trip, fault-sensitive channels (electrical, ML) mark themselves
-        # unavailable because the motor is de-energised.  If only benign channels
-        # (e.g. thermal) remain and they say HEALTHY, the fusion result is
-        # misleading.  Override it to INDETERMINATE so the persisted diagnoses
-        # table does not contradict the SADA panel.
-        if (
-            out.trip
-            and diag.fault_type == DiagFault.HEALTHY
-            and self.sada.fault not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
-        ):
-            latched_sev = (
-                out.latched_severity
-                if (out.latched_severity is not None and out.latched_severity > 0)
-                else out.smoothed_severity
-            )
-            override_meta = {
-                "sada_latched_fault": self.sada.fault.value,
-                "sada_latched_severity": round(latched_sev, 4),
-                "reason": "channels_starved_during_trip",
-                "fault_type": self.sada.fault.value,
-                "confidence": round(diag.confidence, 4),
-                "severity": round(latched_sev, 4),
-                "sources": ["sada_latched"],
-            }
-            per_scores = {**diag.per_sensor_scores, "sada_override": override_meta}
-            diag = FusedDiagnosis(
-                t=diag.t,
-                fault_type=DiagFault.INDETERMINATE,
-                confidence=diag.confidence,
-                severity=round(latched_sev, 4),
-                per_sensor_scores=per_scores,
-                secondary=[override_meta] + diag.secondary,
-                source=diag.source,
-                schema_version=diag.schema_version,
-            )
-        # Rolling severity history (Phase 21)
-        self.severity_history.append((st.t, out.smoothed_severity))
+        # --- SADA-trip override: report the latched fault while the motor is de-energised ---
+        # After a trip the fault-sensitive channels (electrical residual, ML) mark themselves
+        # unavailable, so the fused result degrades to HEALTHY (only benign channels left),
+        # INDETERMINATE, or a stale spin-down misclassification. None of these describes the
+        # motor. While tripped, every fused result that is not the latched fault is replaced by
+        # INDETERMINATE carrying the latched fault/severity in `sada_override`, so persisted
+        # diagnoses, the Diagnosis panel and the Maintenance tab all show the latched fault.
+        diag = apply_trip_override(diag, out, self.sada.latched_fault, self._latched_confidence)
+        if not out.trip and diag.fault_type == self.sada.fault:
+            # remember how confident the fusion was in the fault SADA is acting on
+            self._latched_confidence = float(diag.confidence)
+        # Rolling severity history (Phase 21). While tripped the smoothed severity decays
+        # (channels starved), so use the latched severity -- the same value the MHI uses.
+        hist_sev = (
+            out.latched_severity
+            if (out.trip and out.latched_severity is not None and out.latched_severity > 0)
+            else out.smoothed_severity
+        )
+        self.severity_history.append((st.t, hist_sev))
 
         # Health index & error codes (Phase 20)
         chan_statuses = {k.value: getattr(v, "status", "ok") for k, v in frames.items()}
@@ -341,7 +368,12 @@ class MotorWorker:
         self.last_tick = time.monotonic()
         self._chunk_idx += 1
 
-        self._record(st, frames, diag, out, mhi, err)
+        # Track the last real diagnosis here, not in _record(): recommendations must not depend
+        # on whether persistence is configured.
+        prev_fault = self._last_fault
+        if diag.fault_type not in (DiagFault.UNKNOWN, DiagFault.INDETERMINATE):
+            self._last_fault = diag.fault_type
+        self._record(st, frames, diag, out, mhi, err, prev_fault)
         msg = self._build_message(st, frames, diag, out, mhi, err, zone)
         clean_msg = sanitize_for_wire(msg)
         assert isinstance(clean_msg, dict)
@@ -363,7 +395,7 @@ class MotorWorker:
         return clean_msg
 
     # ------------------------------------------------------------------ persistence
-    def _record(self, st, frames, diag, out, mhi: float, err: str) -> None:
+    def _record(self, st, frames, diag, out, mhi: float, err: str, prev_fault: DiagFault | None = None) -> None:
         if self.writer is None:
             return
         mid = self.cfg.motor_id
@@ -393,9 +425,8 @@ class MotorWorker:
                 )
             self._last_state = out.state
 
-        anomaly_onset = diag.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN, DiagFault.INDETERMINATE) and diag.fault_type != self._last_fault
-        if diag.fault_type not in (DiagFault.UNKNOWN, DiagFault.INDETERMINATE):
-            self._last_fault = diag.fault_type
+        prev = self._last_fault if prev_fault is None else prev_fault
+        anomaly_onset = diag.fault_type not in (DiagFault.HEALTHY, DiagFault.UNKNOWN, DiagFault.INDETERMINATE) and diag.fault_type != prev
         if anomaly_onset:
             # Raw waveforms only on anomaly onset (too heavy to store continuously)
             vib = frames.get(SensorType.VIBRATION)
@@ -599,9 +630,19 @@ class MotorWorker:
     def get_prognosis(self, derate_thresh: float = 0.5, trip_thresh: float = 0.8) -> dict:
         return estimate_time_to_threshold(list(self.severity_history), derate_thresh, trip_thresh)
 
+    def current_fault(self) -> str:
+        """Fault the operator should act on: the latched fault while tripped, else the last diagnosis."""
+        latched = self.sada.latched_fault
+        if (
+            self.sada.state == SadaState.TRIP
+            and latched is not None
+            and latched not in (DiagFault.HEALTHY, DiagFault.UNKNOWN, DiagFault.INDETERMINATE)
+        ):
+            return latched.value
+        return self._last_fault.value if hasattr(self._last_fault, "value") else str(self._last_fault)
+
     def get_recommendation(self) -> dict:
-        fault = self._last_fault.value if hasattr(self._last_fault, "value") else str(self._last_fault)
-        return get_recommendation(self.cfg.motor_id, fault, self._last_zone, self._last_mhi)
+        return get_recommendation(self.cfg.motor_id, self.current_fault(), self._last_zone, self._last_mhi)
 
     def get_mcsa(self) -> dict:
         if len(self._cur_buf) < 5:

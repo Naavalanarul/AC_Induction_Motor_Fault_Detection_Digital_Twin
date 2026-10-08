@@ -1,21 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import { api } from '../api/client'
-import type { DiagnosisRow, Frame, Motor, Page, Prognosis, Recommendation } from '../api/types'
+import { label, type DiagnosisRow, type Frame, type Motor, type Page, type Prognosis, type Recommendation } from '../api/types'
 import { HealthGauge } from './HealthGauge'
+import { formatTimeToThreshold, historyFaultLabel } from './maintenanceFormat'
 
 export interface HealthMaintenanceTabProps {
   motor: Motor
   frame?: Frame | null
-}
-
-const formatSeconds = (sec: number | null | undefined): string => {
-  if (sec === null || sec === undefined) return 'Indefinite'
-  if (sec <= 0) return 'Exceeded'
-  if (sec < 60) return `${sec.toFixed(0)} s`
-  const mins = Math.floor(sec / 60)
-  const remSec = Math.round(sec % 60)
-  return `${mins}m ${remSec}s`
 }
 
 export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ motor, frame }) => {
@@ -41,7 +33,11 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
     refetchInterval: 5000,
   })
 
+  const tripped = !!frame?.supervisory?.trip
+  const latchedFault = frame?.supervisory?.latched_fault ?? null
+  const latchedSeverity = frame?.supervisory?.latched_severity ?? null
   const prognosis = progQuery.data ?? null
+  const progError = progQuery.error?.message ?? null
   const recommendation = recQuery.data ?? null
   const history = histQuery.data?.items ?? []
   const loading = progQuery.isLoading || recQuery.isLoading
@@ -66,6 +62,24 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
       {error && (
         <div className="rounded-lg border border-rose-500/30 bg-rose-950/40 p-3 text-xs text-rose-300">
           Telemetry Error: {error}
+        </div>
+      )}
+
+      {tripped && (
+        <div
+          role="status"
+          data-testid="maintenance-trip-state"
+          className="rounded-lg border border-rose-500/40 bg-rose-950/40 p-3 text-sm text-rose-200"
+        >
+          <strong>No prognosis: motor tripped</strong>
+          {latchedFault ? (
+            <>
+              {' '}on <span className="capitalize">{label(latchedFault)}</span>
+            </>
+          ) : null}
+          {latchedSeverity != null ? `, latched severity ${latchedSeverity.toFixed(2)}` : ''}. The motor is
+          de-energised, so live diagnosis and forecasting are paused until the trip is reset. The maintenance
+          guidance below is for the latched fault.
         </div>
       )}
 
@@ -95,6 +109,15 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
                 {frame?.supervisory?.state ?? 'NORMAL'}
               </span>
             </div>
+            {tripped && latchedFault && (
+              <div className="col-span-2">
+                <span className="text-neutral-500 block text-[11px]">Latched fault</span>
+                <span className="font-semibold text-rose-300 capitalize" data-testid="latched-fault">
+                  {label(latchedFault)}
+                  {latchedSeverity != null ? ` (severity ${latchedSeverity.toFixed(2)})` : ''}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -130,21 +153,30 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
               severity history at chunk boundaries.
             </p>
 
+            {progError && (
+              <p className="mt-3 text-xs text-rose-300" role="alert" data-testid="prognosis-error">
+                Prognosis unavailable: {progError}
+              </p>
+            )}
+            {!progError && !progQuery.isLoading && prognosis && prognosis.sample_count === 0 && (
+              <p className="mt-3 text-xs text-neutral-400">No severity history yet: prognosis needs a few seconds of data.</p>
+            )}
+
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
                 <span className="text-xs text-neutral-400 block">Current Severity</span>
                 <span className="mt-1 font-mono text-2xl font-bold text-neutral-100">
-                  {(prognosis?.current_severity ?? frame?.diagnosis?.severity ?? 0).toFixed(3)}
+                  {prognosis ? prognosis.current_severity.toFixed(3) : '—'}
                 </span>
                 <span className="text-[11px] text-neutral-500 block mt-1">
-                  Slope: {(prognosis?.slope_per_s ?? 0).toFixed(5)}/s
+                  {prognosis ? `Slope: ${prognosis.slope_per_s.toFixed(5)}/s` : 'No prognosis data'}
                 </span>
               </div>
 
               <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
                 <span className="text-xs text-neutral-400 block">Time to DERATE (0.5)</span>
                 <span className="mt-1 font-mono text-2xl font-bold text-amber-400">
-                  {formatSeconds(prognosis?.time_to_derate_s)}
+                  {formatTimeToThreshold(prognosis?.time_to_derate_s, prognosis?.current_severity, 0.5, tripped)}
                 </span>
                 <span className="text-[11px] text-neutral-500 block mt-1">
                   Linear projection
@@ -154,7 +186,7 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
               <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
                 <span className="text-xs text-neutral-400 block">Time to TRIP (0.8)</span>
                 <span className="mt-1 font-mono text-2xl font-bold text-rose-400">
-                  {formatSeconds(prognosis?.time_to_trip_s)}
+                  {formatTimeToThreshold(prognosis?.time_to_trip_s, prognosis?.current_severity, 0.8, tripped)}
                 </span>
                 <span className="text-[11px] text-neutral-500 block mt-1">
                   Emergency limit
@@ -464,7 +496,7 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
                     <td className="py-2 px-3 text-neutral-400">{new Date(row.ts).toLocaleTimeString()}</td>
                     <td className="py-2 px-3 font-semibold text-cyan-400">{row.error_code || '—'}</td>
                     <td className="py-2 px-3">{row.health_index != null ? row.health_index.toFixed(1) : '—'}</td>
-                    <td className="py-2 px-3 capitalize font-sans">{row.fault_type.replace(/_/g, ' ')}</td>
+                    <td className="py-2 px-3 capitalize font-sans">{historyFaultLabel(row)}</td>
                     <td className="py-2 px-3">{row.severity_score.toFixed(3)}</td>
                     <td className="py-2 px-3">{row.confidence.toFixed(3)}</td>
                   </tr>
@@ -477,3 +509,4 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
     </div>
   )
 }
+

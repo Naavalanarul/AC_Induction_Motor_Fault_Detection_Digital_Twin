@@ -35,6 +35,15 @@ function Meter({ value, name, color = 'var(--series-1)' }: { value: number; name
 }
 
 export function DiagnosisPanel({ diagnosis, mlBackend }: { diagnosis: Diagnosis; mlBackend: string }) {
+  // While tripped the fused result is `indeterminate` (channels starved); the worker attaches the
+  // SADA-latched fault in `sada_override` -- show it so the panel names the fault being acted on.
+  const override = diagnosis.per_sensor_scores?.['sada_override'] as unknown as
+    | { sada_latched_fault?: string; sada_latched_severity?: number }
+    | undefined
+  const latchedOverride =
+    diagnosis.fault_type === 'indeterminate' && override?.sada_latched_fault
+      ? { fault: override.sada_latched_fault, severity: override.sada_latched_severity ?? null }
+      : null
   const healthy = diagnosis.fault_type === 'healthy'
   const indeterminate = diagnosis.fault_type === 'indeterminate'
 
@@ -77,6 +86,12 @@ export function DiagnosisPanel({ diagnosis, mlBackend }: { diagnosis: Diagnosis;
             <div className={`text-xl font-bold capitalize mt-0.5 ${verdictColor}`} data-testid="fused-fault">
               {label(diagnosis.fault_type)}
             </div>
+            {latchedOverride && (
+              <div className="text-xs text-rose-300 mt-0.5" data-testid="fused-latched-fault">
+                Motor tripped on <span className="capitalize">{label(latchedOverride.fault)}</span>
+                {latchedOverride.severity != null ? ` (latched severity ${latchedOverride.severity.toFixed(2)})` : ''}
+              </div>
+            )}
           </div>
           <div className="text-right">
             <span className="text-xs num text-[var(--muted)] block">t = {diagnosis.t.toFixed(1)}s</span>

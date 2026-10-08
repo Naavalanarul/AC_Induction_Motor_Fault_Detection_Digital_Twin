@@ -41,11 +41,20 @@ class ProtectionDiagnostic:
         self.thermal_accumulator = 0.0  # [0.0, 1.5] pu thermal energy
         self._stall_timer = 0.0
         self._phase_loss_timer = 0.0
+        # Start of the current energisation. The DOL start allowances below are measured from
+        # here, not from simulation t=0, so a restart after a trip reset gets the same inrush
+        # allowance as the first start (previously every restart re-tripped on TRIP_OVERCURRENT).
+        # Starts at 0.0: with no history, the motor is assumed energised since t=0 (boot).
+        self._energised_since: float | None = 0.0
+
+    # Below this per-unit current the motor is treated as de-energised (supply off / tripped).
+    DEENERGISED_PU = 0.05
 
     def reset(self) -> None:
         self.thermal_accumulator = 0.0
         self._stall_timer = 0.0
         self._phase_loss_timer = 0.0
+        self._energised_since = 0.0
 
     def update(
         self,
@@ -93,12 +102,19 @@ class ProtectionDiagnostic:
             "thermal_pu": round(self.thermal_accumulator, 3),
         }
 
-        is_running = t > 0.5 and rpm > 0.4 * self.rated_speed
+        if i_pu < self.DEENERGISED_PU:
+            self._energised_since = None
+        elif self._energised_since is None:
+            self._energised_since = t - dt  # energised at the start of this block
+        since_start = t - self._energised_since if self._energised_since is not None else 0.0
+        details["since_energised_s"] = round(since_start, 2)
+
+        is_running = since_start > 0.5 and rpm > 0.4 * self.rated_speed
 
         # 1. Instantaneous Overcurrent Protection
-        # During DOL startup subtransient inrush (t <= 0.5s), current can reach 8-11x. Trip if > 15x.
-        # Once running (t > 0.5s), trip at configured inst_oc_mult (5.0x).
-        oc_threshold = self.inst_oc_mult if (t > 0.5 and is_running) else 15.0
+        # During DOL startup subtransient inrush (first 0.5 s after energisation), current can reach
+        # 8-11x. Trip if > 15x. Once running, trip at configured inst_oc_mult (5.0x).
+        oc_threshold = self.inst_oc_mult if is_running else 15.0
         if i_pu >= oc_threshold:
             details["trip_type"] = "instantaneous_overcurrent"
             return ChannelVerdict(
@@ -113,7 +129,7 @@ class ProtectionDiagnostic:
         # 2. Locked Rotor / Stall Protection
         # Detect failure to accelerate past 0.5s, or speed collapse while running
         is_stalled = (
-            (t >= 0.5 or is_running)
+            (since_start >= 0.5 or is_running)
             and i_pu >= self.stall_current_mult
             and rpm <= self.stall_speed_ratio * self.rated_speed
         )
@@ -136,7 +152,7 @@ class ProtectionDiagnostic:
         # 3. Single-Phasing / Phase-Loss Protection
         # Detect lost phase when running or past starting window
         i_mean = (ia_rms + ib_rms + ic_rms) / 3.0
-        if (is_running or t > 1.0) and i_mean >= 0.25 * self.i_rated:
+        if (is_running or since_start > 1.0) and i_mean >= 0.25 * self.i_rated:
             i_min = min(ia_rms, ib_rms, ic_rms)
             i_max = max(ia_rms, ib_rms, ic_rms)
             unbalance = (i_max - i_min) / max(1e-3, i_mean)
@@ -161,7 +177,7 @@ class ProtectionDiagnostic:
             self._phase_loss_timer = 0.0
 
         # 4. I^2 t Inverse-Time Thermal Overload
-        if (is_running or t > 0.8) and i_pu > 1.05:
+        if (is_running or since_start > 0.8) and i_pu > 1.05:
             delta = ((i_pu**2) - 1.0) * (dt / self.tau_ovl)
             self.thermal_accumulator = min(1.5, self.thermal_accumulator + delta)
         else:

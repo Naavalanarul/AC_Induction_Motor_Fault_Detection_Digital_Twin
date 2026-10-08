@@ -40,7 +40,9 @@ class Settings(BaseSettings):
     # Simulation / streaming
     run_simulation: bool = True
     seed_demo_motor: bool = True
-    seed_default_faults: bool = True
+    # Off by default: a fresh dashboard must start healthy, otherwise pre-seeded faults hide
+    # injection bugs. Set SEED_DEFAULT_FAULTS=true for a demo that starts in a fault state.
+    seed_default_faults: bool = False
     realtime_factor: float = 1.0
     stream_hz: float = 10.0
     persist_interval_s: float = 1.0

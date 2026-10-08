@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Zap } from 'lucide-react'
-import { api, newIdempotencyKey } from '../api/client'
+import { api, newIdempotencyKey, resetTrip } from '../api/client'
 import { FAULT_TYPES, label, type ActiveFault, type FaultType } from '../api/types'
 
 function paramsFor(ft: FaultType, p: { phase: string; ecc: string; volt: string; count: number }) {
@@ -18,9 +18,26 @@ function paramsFor(ft: FaultType, p: { phase: string; ecc: string; volt: string;
   }
 }
 
-export function FaultConsole({ motorId, faults, canOperate }: { motorId: number; faults: ActiveFault[]; canOperate: boolean }) {
+// Default severity: 0.3 lands in WATCH for every fault type. Diagnosed severity tracks injected
+// severity, and SADA thresholds are WATCH 0.3 / DERATE 0.5 / TRIP 0.8, so the old 0.5 default
+// put the motor straight into DERATE.
+export const DEFAULT_FAULT_SEVERITY = 0.3
+
+export function FaultConsole({
+  motorId,
+  faults,
+  canOperate,
+  tripped = false,
+  tripReason,
+}: {
+  motorId: number
+  faults: ActiveFault[]
+  canOperate: boolean
+  tripped?: boolean
+  tripReason?: string | null
+}) {
   const [ft, setFt] = useState<FaultType>('bearing_outer')
-  const [severity, setSeverity] = useState(0.5)
+  const [severity, setSeverity] = useState(DEFAULT_FAULT_SEVERITY)
   const [p, setP] = useState({ phase: 'a', ecc: 'dynamic', volt: 'sag', count: 2 })
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -46,8 +63,22 @@ export function FaultConsole({ motorId, faults, canOperate }: { motorId: number;
   const clear = async (id: number) => {
     try {
       await api(`/motors/${motorId}/faults/${id}`, { method: 'DELETE' })
+      if (tripped) setMsg('Fault cleared. The motor stays tripped (latched) until you reset the trip.')
     } catch (e) {
       setMsg((e as Error).message)
+    }
+  }
+
+  const reset = async () => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      await resetTrip(motorId)
+      setMsg('Trip reset: motor restarting')
+    } catch (e) {
+      setMsg(`Reset refused: ${(e as Error).message}`)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -70,6 +101,25 @@ export function FaultConsole({ motorId, faults, canOperate }: { motorId: number;
             {faults.length} Active
           </span>
         </header>
+
+        {tripped && (
+          <div
+            className="mt-3 p-2.5 rounded-md border border-rose-500/30 bg-rose-500/10 text-xs text-rose-200 grid gap-2"
+            role="alert"
+            data-testid="fault-console-trip"
+          >
+            <span>
+              <strong>Motor tripped{tripReason ? ` (${tripReason})` : ''}.</strong> It stays stopped until the trip is
+              reset — clearing faults does not restart it, and faults injected now cannot be diagnosed while the motor
+              is de-energised.
+            </span>
+            {canOperate && (
+              <button className="btn justify-self-start text-[11px] py-0.5 px-2" onClick={reset} disabled={busy}>
+                Reset trip
+              </button>
+            )}
+          </div>
+        )}
 
         {canOperate ? (
           <div className="mt-3 grid gap-2.5 text-xs">

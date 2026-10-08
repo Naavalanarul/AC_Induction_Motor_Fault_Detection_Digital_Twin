@@ -183,16 +183,25 @@ class WorkerManager:
         if db is not None:
             from app.db.models import Diagnosis
 
-            latest = db.scalar(
+            # Skip indeterminate/unknown rows: after a trip they carry the latched fault in
+            # their sada_override metadata, which is the fault to recommend on.
+            rows = db.scalars(
                 select(Diagnosis)
                 .where(Diagnosis.motor_id == motor_id)
-                .order_by(Diagnosis.ts.desc())
-                .limit(1)
-            )
-            if latest is not None:
-                mhi = latest.health_index if latest.health_index is not None else 100.0
+                .order_by(Diagnosis.ts.desc(), Diagnosis.id.desc())
+                .limit(200)
+            ).all()
+            for row in rows:
+                fault: str = row.fault_type
+                if fault in ("indeterminate", "unknown"):
+                    override = (row.per_sensor_scores_json or {}).get("sada_override") or {}
+                    latched = override.get("sada_latched_fault")
+                    if not isinstance(latched, str) or not latched:
+                        continue
+                    fault = latched
+                mhi = row.health_index if row.health_index is not None else 100.0
                 zone = "D" if mhi < 50 else ("C" if mhi < 70 else ("B" if mhi < 85 else "A"))
-                return get_recommendation(motor_id, latest.fault_type, zone, mhi)
+                return get_recommendation(motor_id, fault, zone, mhi)
         return get_recommendation(motor_id, "healthy", "A", 100.0)
 
     def get_mcsa(self, motor_id: int) -> dict:

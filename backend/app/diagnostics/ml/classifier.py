@@ -32,10 +32,24 @@ def _f(vec: np.ndarray, name: str, offset: int = _Y) -> float:
     return float(vec[offset + _IDX[name]])
 
 
+# Linear map from load-zone vibration RMS [m/s^2] to severity, per bearing defect, fitted so the
+# diagnosed severity matches the injected severity of this project's simulator (rated speed,
+# 8 N*m, injected 0.05..0.7; max abs error 0.03). The previous single map
+# (rms - 0.1) / 1.6 over-reported outer-race faults (injected 0.35 -> 0.51, i.e. DERATE) and had a
+# +0.15..0.22 offset at small severities. These constants are simulator-specific: re-fit them on
+# measured data before trusting severities from a real motor (see docs/validation.md).
+BEARING_SEVERITY_FROM_RMS: dict[str, tuple[float, float]] = {
+    "bearing_outer": (0.6624, -0.2477),
+    "bearing_inner": (0.8381, -0.2442),
+    "bearing_ball": (0.8950, -0.2480),
+}
+
+
 def severity_from_features(fault: str, vec: np.ndarray) -> float:
     """Map the latest window's features to a [0, 1] severity for the given class."""
     if fault.startswith("bearing"):
-        return float(np.clip((_f(vec, "rms") - 0.1) / 1.6, 0.0, 1.0))
+        gain, offset = BEARING_SEVERITY_FROM_RMS.get(fault, BEARING_SEVERITY_FROM_RMS["bearing_outer"])
+        return float(np.clip(gain * _f(vec, "rms") + offset, 0.0, 1.0))
     if fault == "unbalance":
         return float(np.clip(_f(vec, "order_1x") / 1.4, 0.0, 1.0))
     if fault == "misalignment":

@@ -97,7 +97,7 @@ describe('FaultConsole', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Inject fault' }))
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('/api/v1/motors/1/faults')
-    expect(JSON.parse(init.body as string)).toEqual({ fault_type: 'interturn_short', severity: 0.5, params: { phase: 'c' } })
+    expect(JSON.parse(init.body as string)).toEqual({ fault_type: 'interturn_short', severity: 0.3, params: { phase: 'c' } })
     expect(await screen.findByRole('status')).toHaveTextContent('Injected interturn short')
   })
 

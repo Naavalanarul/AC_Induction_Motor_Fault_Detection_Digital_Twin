@@ -127,10 +127,36 @@ class LoadPatch(BaseModel):
     base_load_nm: float = Field(ge=0, le=2000.0)
 
 
+# Legacy/UI names that map onto an injectable fault (physically the same supply disturbance).
+FAULT_ALIASES: dict[str, tuple[str, dict]] = {
+    "voltage_sag": ("voltage_anomaly", {"type": "sag"}),
+    "supply_anomaly": ("voltage_anomaly", {"type": "imbalance"}),
+}
+# Labels the diagnostic engine can OUTPUT but the simulator cannot inject.
+DIAGNOSIS_ONLY_FAULTS = {"overheating", "overload", "overcurrent", "stall", "phase_loss"}
+
+
 class FaultIn(BaseModel):
     fault_type: FaultType
     severity: float = Field(ge=0.0, le=1.0)
     params: dict = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _aliases(cls, data):
+        if not isinstance(data, dict):
+            return data
+        ft = data.get("fault_type")
+        if ft in FAULT_ALIASES:
+            target, default_params = FAULT_ALIASES[ft]
+            data = {**data, "fault_type": target, "params": {**default_params, **(data.get("params") or {})}}
+        elif ft in DIAGNOSIS_ONLY_FAULTS:
+            injectable = ", ".join(f.value for f in FaultType)
+            raise ValueError(
+                f"'{ft}' is a diagnosis label, not an injectable fault. Injectable fault types: {injectable}. "
+                "Use PATCH /motors/{id}/load to overload the motor."
+            )
+        return data
 
     @model_validator(mode="after")
     def _check_params(self):

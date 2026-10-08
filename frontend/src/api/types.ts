@@ -184,6 +184,11 @@ export type Recommendation = {
 
 export type Page<T> = { total: number; limit: number; offset: number; items: T[] }
 
+// Injectable faults: must match backend FaultType (backend/app/simulation/faults.py), which the
+// API validates against. Diagnosis-only labels (overheating, supply_anomaly, overload, stall,
+// overcurrent, phase_loss, ...) are outputs of the diagnostic engine, not injectable faults.
+// Voltage sag / supply anomalies are injected as voltage_anomaly with params.type.
+// backend/app/tests/api/test_fault_catalog.py fails if this list drifts from the backend.
 export const FAULT_TYPES = [
   'broken_rotor_bar',
   'interturn_short',
@@ -193,14 +198,7 @@ export const FAULT_TYPES = [
   'bearing_ball',
   'unbalance',
   'misalignment',
-  'overheating',
-  'supply_anomaly',
-  'voltage_sag',
   'voltage_anomaly',
-  'overload',
-  'overcurrent',
-  'stall',
-  'phase_loss',
 ] as const
 export type FaultType = (typeof FAULT_TYPES)[number]
 

@@ -118,32 +118,10 @@ class TestIndeterminateDuringTrip:
             diag = eng.process(st.t, frames, sim.chunk_s)
             out = sada.update(diag)
 
-            # --- worker-style SADA-trip override ---
-            if (
-                out.trip
-                and diag.fault_type == DiagFault.HEALTHY
-                and sada.fault not in (DiagFault.HEALTHY, DiagFault.UNKNOWN)
-            ):
-                override_meta = {
-                    "sada_latched_fault": sada.fault.value,
-                    "sada_latched_severity": round(out.smoothed_severity, 4),
-                    "reason": "channels_starved_during_trip",
-                    "fault_type": sada.fault.value,
-                    "confidence": round(diag.confidence, 4),
-                    "severity": round(out.smoothed_severity, 4),
-                    "sources": ["sada_latched"],
-                }
-                per_scores = {**diag.per_sensor_scores, "sada_override": override_meta}
-                diag = FusedDiagnosis(
-                    t=diag.t,
-                    fault_type=DiagFault.INDETERMINATE,
-                    confidence=diag.confidence,
-                    severity=diag.severity,
-                    per_sensor_scores=per_scores,
-                    secondary=[override_meta] + diag.secondary,
-                    source=diag.source,
-                    schema_version=diag.schema_version,
-                )
+            # --- the worker's own SADA-trip override (single source of truth) ---
+            from app.runtime.worker import apply_trip_override
+
+            diag = apply_trip_override(diag, out, sada.latched_fault)
 
             sim.state.load_cmd, sim.state.tripped = out.load_cmd, out.trip
             post_trip_diags.append(diag)

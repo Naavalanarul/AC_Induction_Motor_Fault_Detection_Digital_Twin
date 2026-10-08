@@ -81,8 +81,16 @@ function Shell() {
   const trippedMotors = (motors.data || [])
     .map((m) => {
       const f = fleetFrames[m.id] || (m.id === motorId ? frame : null)
-      if ((f?.supervisory?.trip || f?.supervisory?.reason_code?.includes('SENSOR_LOSS')) && !f.supervisory.acknowledged) {
-        return { id: m.id, name: m.name, reason_code: f.supervisory.reason_code, acknowledged: f.supervisory.acknowledged }
+      // Acknowledged trips stay listed: the motor is still latched off until reset.
+      if (f?.supervisory?.trip || f?.supervisory?.reason_code?.includes('SENSOR_LOSS')) {
+        return {
+          id: m.id,
+          name: m.name,
+          reason_code: f.supervisory.reason_code,
+          acknowledged: f.supervisory.acknowledged,
+          latched_fault: f.supervisory.latched_fault,
+          latched_severity: f.supervisory.latched_severity,
+        }
       }
       return null
     })
@@ -334,7 +342,13 @@ function Shell() {
                     </section>
                   </div>
                   <ErrorBoundary fallbackTitle="Error loading Fault Injection Console">
-                    <FaultConsole motorId={motorId} faults={frame.faults} canOperate={can('operator')} />
+                    <FaultConsole
+                      motorId={motorId}
+                      faults={frame.faults}
+                      canOperate={can('operator')}
+                      tripped={frame.supervisory.trip}
+                      tripReason={frame.supervisory.reason_code}
+                    />
                   </ErrorBoundary>
                 </div>
               </div>

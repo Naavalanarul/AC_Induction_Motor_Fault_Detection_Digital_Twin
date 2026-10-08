@@ -23,6 +23,21 @@ export function saveSession(s: Session | null) {
   }
 }
 
+/** FastAPI errors: a string, or (422) a list of {loc, msg}. Render the list readably. */
+export function formatDetail(detail: unknown): string {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => {
+        const e = d as { loc?: unknown[]; msg?: string }
+        const field = Array.isArray(e.loc) ? e.loc.filter((x) => x !== 'body').join('.') : ''
+        return field ? `${field}: ${e.msg ?? 'invalid'}` : (e.msg ?? 'invalid')
+      })
+      .join('; ')
+  }
+  return JSON.stringify(detail)
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -114,7 +129,7 @@ export async function api<T>(path: string, init: RequestInit = {}, retry = true)
     let detail = r.statusText
     try {
       const body = await r.json()
-      detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail)
+      detail = formatDetail(body.detail)
     } catch {
       /* non-JSON error body */
     }
@@ -134,6 +149,14 @@ export async function login(username: string, password: string): Promise<Session
   saveSession(s)
   return s
 }
+
+/** Clear a latched SADA trip. Clearing the injected fault alone never restarts the motor. */
+export const resetTrip = (motorId: number) =>
+  api(`/motors/${motorId}/supervisory/override`, {
+    method: 'POST',
+    headers: { 'Idempotency-Key': newIdempotencyKey() },
+    body: JSON.stringify({ action: 'reset' }),
+  })
 
 export const newIdempotencyKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto

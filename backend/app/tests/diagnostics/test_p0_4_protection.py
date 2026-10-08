@@ -207,3 +207,27 @@ def test_worker_trips_on_heavy_overload():
         )
 
     asyncio.run(scenario())
+
+
+def test_restart_after_deenergisation_gets_inrush_allowance():
+    """Regression: the DOL start window used to be keyed on absolute time t<=0.5 s, so any restart
+    later in a run (e.g. after a trip reset) tripped on the 5x running overcurrent limit."""
+    params = DEFAULT_MOTOR
+    prot = ProtectionDiagnostic(params)
+    dt = 0.1
+    running = make_sin_3ph(0.95 * params.rated_current * np.sqrt(2))
+    off = make_sin_3ph(0.0)
+    inrush = make_sin_3ph(5.4 * params.rated_current * np.sqrt(2))
+    for k in range(20):
+        prot.update(0.1 * (k + 1), running, rpm=1478.0, dt=dt)
+    for k in range(50):  # tripped: supply off, rotor coasting down
+        prot.update(2.0 + 0.1 * (k + 1), off, rpm=max(0.0, 1400 - 30 * k), dt=dt)
+    # restart: first block already above 40 % speed while still drawing 5.4x inrush
+    v = prot.update(7.1, inrush, rpm=1208.0, dt=dt)
+    assert v.fault_type != DiagFault.OVERCURRENT
+    v = prot.update(7.2, running, rpm=1478.0, dt=dt)
+    assert v.fault_type == DiagFault.HEALTHY
+    # ...but a genuine 5x overcurrent once running still trips
+    for k in range(6):
+        prot.update(7.3 + 0.1 * k, running, rpm=1478.0, dt=dt)
+    assert prot.update(8.0, inrush, rpm=1478.0, dt=dt).fault_type == DiagFault.OVERCURRENT
