@@ -6,15 +6,27 @@ and drives a supervisory layer that derates or trips the motor. A React dashboar
 Every sensor sits behind an abstraction layer, so real hardware can replace a simulated channel
 through configuration. No other code has to change.
 
-See [`implementation.md`](implementation.md) for the original plan and per-phase status.
+In addition to live streaming emulation, the system provides a **Static-Value Diagnosis Mode** for
+offline evaluations: operators can enter measured static scalar values (RMS voltages, phase
+currents, speed, frequency, thermal, vibration, and spectral harmonics) without requiring a running
+simulator or hardware stream. Steady-state equivalent-circuit physics and rule-based diagnostic
+channels produce a fused verdict, Motor Health Index (MHI), error code, and advisory recommendations.
+
+See [`implementation.md`](implementation.md) for the implementation history and per-phase status.
 
 ![Dashboard with an injected outer-race bearing fault: Conv-BiLSTM detects it, SADA derates the load](docs/dashboard.png)
 
 ```
+[Live Path]
 simulator (RK4 plant + fault injectors) ─▶ 6 sensors (sim | hardware) ─▶ diagnostic engine
    electrical DT residual · Conv-BiLSTM vibration/acoustic · thermal · supply ─▶ fusion
    ─▶ SADA (gating, smoothing, derate, trip) ─▶ FastAPI REST + WebSocket ─▶ React dashboard
                                          └▶ MySQL (Alembic) · Redis pub/sub · Prometheus
+
+[Static Path]
+manual snapshot (V, I, speed, f, temp, vib, harmonics) ─▶ steady-state equivalent circuit solver
+   ─▶ multi-channel static adapters (supply, protection, thermal, electrical, mechanical, MCSA)
+   ─▶ fusion · MHI · error code · advisory recommendations (no physical trips) ─▶ Static Workbench
 ```
 
 ## Quick start (Docker)
@@ -24,8 +36,12 @@ cp .env.example .env          # set passwords and JWT_SECRET
 docker compose up --build     # mysql, redis, one-shot migration, backend, frontend
 ```
 
-Open http://localhost:8080 and sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`. A demo motor is
-created on first start. The API docs are at http://localhost:8080/api/v1/docs.
+Open http://localhost:8080 and sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+- Choose **Live twin** mode to access the real-time simulation deck and fleet manager.
+- Choose **Static analysis** mode to jump straight into the offline scalar diagnostic workbench.
+- Click and hold the eye icon next to the password input to temporarily reveal credentials.
+
+A demo motor is created on first start. The API docs are at http://localhost:8080/api/v1/docs.
 
 Set `INSTALL_ML=false` as a build arg to skip PyTorch. The vibration channel then uses the
 rule-based fallback, and everything else works the same.
@@ -57,13 +73,14 @@ cd frontend && npm ci && npm run dev         # http://localhost:5173 (proxies /a
 | Vibration/acoustic ML | `diagnostics/features.py`, `diagnostics/ml/` | 28 features × 4 channels per 0.5 s window with a 0.2 s hop. The model is Conv(32)→Conv(64)→BiLSTM(64). Training is leak-safe: grouped by run, normalization fitted on training data only, 3 seeds. A rule-based fallback takes over if torch or the model is unavailable. |
 | Thermal / supply | `diagnostics/thermal.py`, `supply.py` | Thermal uses a threshold plus rate-of-rise check. Supply uses VUF, THD and sag, so supply problems are not mistaken for motor faults. |
 | Fusion | `diagnostics/fusion.py`, `schema.py` | Weighted voting. The output schema is frozen at v1.0. |
+| Static diagnosis | `backend/app/static_analysis/` | Steady-state per-phase equivalent circuit solver (`steady_state.py`) computing theoretical stator current, power, and power factor from slip. Dedicated static adapters (`channels.py`) for supply, protection, thermal, electrical residuals, mechanical rules, and MCSA sidebands. Unassessable channels report `not assessable` with explicit reasons rather than false negatives. Fusion via `engine.py` generates MHI, error code, and advisory recommendations without control-action triggers. |
 | Supervisory SADA | `supervisory/sada.py` | Confidence gate, EMA smoothing, anti-hunting dwell times, graded derate from 100 % to 50 %, latched trip, emergency and thermal trips, and operator ack, reset and manual load. |
-| API | `backend/app/api/` | `/api/v1/...` REST, and a WebSocket at `/api/v1/ws/motors/{id}/stream`. JWT auth with viewer/operator/admin roles on every route. Idempotency keys, rate limits, Pydantic validation. Transient simulation solve and MCSA endpoints. |
+| API | `backend/app/api/` | `/api/v1/...` REST, and a WebSocket at `/api/v1/ws/motors/{id}/stream`. JWT auth with viewer/operator/admin roles on every route. Idempotency keys, rate limits, Pydantic validation. Transient simulation solve, MCSA, and static snapshot diagnosis endpoints. |
 | Runtime | `backend/app/runtime/` | One supervised worker per motor with restart backoff. Batched DB writer with high-priority audit queue. In-memory or Redis broker, with a per-motor ownership lock for multiple replicas. Retention job. |
 | Observability | `core/logging.py`, `core/metrics.py`, `deploy/` | JSON logs carry the request id and motor id. `/metrics`, `/healthz` and `/readyz` are exposed. Prometheus alert rules and a Grafana dashboard are provisioned. |
-| Frontend | `frontend/` | Fleet operations grid, motor provisioning modal (7 presets + custom dq physics), DSA priority queue, live telemetry deck with Telemetry Mode Badge (`Real Hardware Stream` vs. `Dynamic State-Space Emulation`), 4-node LPTN thermal matrix & Arrhenius RUL meter, parameters studio, database inspector, and 8-chapter interactive Engineering & Physics Documentation Book (`EngineeringDocsModal.tsx`) featuring book spine styling, turn-page navigation, dedicated chapter on Data Structures & Algorithmic Foundations (DSA: Binary Max-Heap priority queues, O(1) circular ring buffers, SADA hysteresis FSM, hash registries), dedicated main dashboard footer (`https://github.com/Naavalanarul/AC_Induction_Motor_Fault_Detection_Digital_Twin · 2026 · Naavalanarul · MIT License`), and in-depth explanations of scientific libraries, state-space ODEs, mathematical fault models, first-principles sensor synthesis, multi-modal diagnostics, system architecture, and research papers with DOI links. |
+| Frontend | `frontend/` | Fleet operations grid, motor provisioning modal (7 presets + custom dq physics), DSA priority queue, live telemetry deck with Telemetry Mode Badge (`Real Hardware Stream` vs. `Dynamic State-Space Emulation`), 4-node LPTN thermal matrix & Arrhenius RUL meter, parameters studio, database inspector, Static Diagnosis Workbench (`StaticDiagnosisPanel.tsx` with 11 physics-derived steady-state presets), accessible press-and-hold password reveal button, login session mode switcher, and 8-chapter interactive Engineering & Physics Documentation Book (`EngineeringDocsModal.tsx`). |
 | Real-data validation | `backend/app/validation/`, [docs/validation.md](docs/validation.md) | Offline sim-to-real study (no effect on the live simulation). Loaders for LIMAN-C, ESTOGU, Bruinsma (NLN-EMP) and USP BRB; grouped splits; experiments 1–9 plus severity; results in `reports/validation/`. Real data is not committed. |
-| Ops | `compose.yaml`, `compose.prod.yaml`, `deploy/`, `.github/workflows/ci.yml` | Local and production stacks, TLS edge, backups with a tested restore check, CI/CD. See [docs/operations.md](docs/operations.md). |
+| Ops | `compose.yaml`, `compose.prod.yaml`, `deploy/`, `.github/workflows/ci.yml` | Local and production stacks, TLS edge, backups with a tested restore check, CI/CD with automated Docker builds, pip/npm security audits, and Trivy container vulnerability scanning. See [docs/operations.md](docs/operations.md). |
 
 ## API summary
 
@@ -83,17 +100,22 @@ GET  /api/v1/motors/{id}/diagnoses?start&end&fault_type&limit&offset
 GET  /api/v1/motors/{id}/history             GET /api/v1/motors/{id}/alerts, POST .../alerts/{id}/ack
 POST /api/v1/motors/{id}/supervisory/override   {action: ack|reset|set_load|release_load, load?}
 WS   /api/v1/ws/motors/{id}/stream?token=... (or Sec-WebSocket-Protocol: bearer, <token>)
+POST /api/v1/static/diagnose                 diagnose static snapshot values (operator)
+GET  /api/v1/static/analyses                 paged history of manual diagnoses (viewer)
+GET  /api/v1/static/analyses/{id}            fetch specific static diagnosis report (viewer)
+GET  /api/v1/static/trend?motor_id=          severity & RUL trend projection across saved analyses
 GET  /healthz  /readyz  /metrics
 ```
 
 ## Tests
 
 ```bash
-cd backend && pytest -q --cov=app              # 290 tests, ~88 % line coverage (SQLite)
-TEST_DATABASE_URL=mysql+pymysql://dt:pw@127.0.0.1:3306/dt_test pytest app/tests/api   # same contract tests on MySQL
-TEST_REDIS_URL=redis://127.0.0.1:6379/0 pytest app/tests/runtime
-cd frontend && npm test                        # Vitest + Testing Library
-npx playwright test                            # E2E: inject fault -> diagnosis -> SADA derate (backend on :8000)
+cd backend && pytest -q --cov=app              # 382 passed, 1 skipped, >85 % line coverage (SQLite)
+TEST_DATABASE_URL=mysql+pymysql://dt:pw@127.0.0.1:3306/dt_test pytest app/tests/api   # contract tests on MySQL
+TEST_REDIS_URL=redis://127.0.0.1:6379/0 pytest app/tests/runtime                      # Redis broker pub/sub & locks
+cd frontend && npm test                        # 49 Vitest unit tests across 6 suites
+npm run lint && npm run typecheck              # ESLint & TypeScript clean
+npx playwright test                            # 7 headless Chromium E2E specs
 python backend/loadtest/ws_load.py --password ... --motors 2 --viewers 100   # load test, see backend/loadtest/RESULTS.md
 ```
 
@@ -115,6 +137,11 @@ Run it from `backend/`. It writes `artifacts/conv_bilstm.pt` and `metrics.json`.
   (3 seeds, 48 held-out runs each). That result only shows the simulator's fault signatures are
   easy to separate. It says nothing about accuracy on real motors. Retrain and re-validate on
   measured data before relying on it.
+- **Static snapshots are strictly advisory.** Static-value diagnosis operates on single scalar
+  measurements without time series or waveform windows. While it can detect supply anomalies,
+  overload, stall, severe inter-turn shorting, and gross thermal violations, transient accumulators
+  and complex acoustic wavelets are omitted. The static engine explicitly states advisory notices
+  and will never trigger physical SADA control actions, derates, or breaker trips.
 - The real-data loaders in `app/validation/` were written against the published dataset descriptions
   and tested on small synthetic stand-in files only; they have not yet been run on the real downloads.
 - The fault models are simplified lumped models, documented in `simulation/faults.py`. Examples:

@@ -1,1 +1,43 @@
-Generic single-database configuration.
+# Database Migrations (Alembic)
+
+This directory contains Alembic schema migrations for the AC Induction Motor Digital Twin.
+Migrations support both SQLite (local development and testing) and MySQL 8.4+ (production and
+integration CI).
+
+## Revision History
+
+1. **`6b48ca53b5bb` — Initial Schema**
+   - Tables: `users`, `motors`, `sensor_configs`, `fault_injections`, `diagnoses`, `alerts`, `supervisory_actions`.
+   - Core relational structure for fleet motors, sensor transducer configuration, live diagnosis history, operator fault injections, and supervisory audit records.
+
+2. **`20260927_0002` — Diagnostics Expansion**
+   - Adds `health_index` (Float, 0–100 scale) and `error_code` (String(32), standardized IEEE/NEMA diagnostic code) columns to the `diagnoses` table.
+   - Preserves backward compatibility with legacy diagnosis records.
+
+3. **`20261009_0003` — Static Analysis Persistence**
+   - Creates `static_analyses` table for storing offline scalar measurement assessments:
+     - Primary key, `user_id` (foreign key to `users`), `motor_id` (optional foreign key to `motors`), `created_at` timestamp.
+     - `inputs_json`: Full input snapshot (voltages, currents, speed, thermal, vibration, spectral harmonics).
+     - `result_json`: Fused diagnostic output, channels run/skipped, derived metrics, and advisory recommendation.
+     - Top-level queryable columns: `fault_type`, `severity`, `health_index`.
+
+## Commands
+
+Run these commands from the `backend/` directory:
+
+```bash
+# Apply all pending migrations
+alembic upgrade head
+
+# Roll back the most recent migration
+alembic downgrade -1
+
+# Roll back to empty base schema
+alembic downgrade base
+
+# Verify models match the current database schema
+alembic check
+
+# Generate a new migration revision from model changes
+alembic revision --autogenerate -m "description_of_change"
+```
