@@ -35,7 +35,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 1: State-Space Physics
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab1_physics.png',
+    path: 'test-results/docs_tab1_physics.png',
   })
 
   // 3. Switch to Chapter 2: Mathematical Faults
@@ -47,7 +47,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 2: Mathematical Faults
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab2_faults.png',
+    path: 'test-results/docs_tab2_faults.png',
   })
 
   // 4. Switch to Chapter 3: Sensor Simulation
@@ -61,7 +61,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 3: Sensor Simulation
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab3_sensors.png',
+    path: 'test-results/docs_tab3_sensors.png',
   })
 
   // 5. Switch to Chapter 4: Fault Detection
@@ -74,7 +74,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 4: Fault Detection
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab4_detection.png',
+    path: 'test-results/docs_tab4_detection.png',
   })
 
   // 6. Switch to Chapter 5: MCSA & Thermal
@@ -85,7 +85,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 5: MCSA & Thermal
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab5_thermal.png',
+    path: 'test-results/docs_tab5_thermal.png',
   })
 
   // 7. Switch to Chapter 6: System Architecture
@@ -95,7 +95,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 6: Architecture
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab6_architecture.png',
+    path: 'test-results/docs_tab6_architecture.png',
   })
 
   // 8. Switch to Chapter 7: DSA Foundations
@@ -108,7 +108,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 7: DSA Foundations
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab7_dsa.png',
+    path: 'test-results/docs_tab7_dsa.png',
   })
 
   // 9. Switch to Chapter 8: Research Papers & Standards
@@ -127,7 +127,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
 
   // Capture screenshot of Chapter 8: Research Papers & Standards
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/docs_tab8_papers.png',
+    path: 'test-results/docs_tab8_papers.png',
   })
 
   // 10. Verify Book Pagination and Page-turning Controls

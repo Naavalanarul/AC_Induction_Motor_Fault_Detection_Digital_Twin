@@ -36,7 +36,7 @@ test('profile database modal, add motor modal, and sign out modal verification',
 
   // Capture screenshot of profile modal
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/profile_database_modal.png',
+    path: 'test-results/profile_database_modal.png',
   })
 
   // Close profile modal
@@ -49,7 +49,7 @@ test('profile database modal, add motor modal, and sign out modal verification',
 
   // Capture screenshot of Add Motor modal with background color
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/add_motor_modal_page_bg.png',
+    path: 'test-results/add_motor_modal_page_bg.png',
   })
 
   // Close Add Motor modal
@@ -62,7 +62,7 @@ test('profile database modal, add motor modal, and sign out modal verification',
 
   // Capture screenshot of Sign Out modal with background color
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/signout_modal_page_bg.png',
+    path: 'test-results/signout_modal_page_bg.png',
   })
 
   // Cancel sign out

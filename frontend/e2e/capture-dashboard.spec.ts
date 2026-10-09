@@ -38,13 +38,13 @@ test('capture updated live dashboard screenshot for readme docs', async ({ page 
 
   // 4. Capture screenshot of the modern live operational deck
   await page.screenshot({
-    path: '/Users/naavalanarul/Documents/Projects/AC_induction_Motor/docs/dashboard.png',
+    path: 'docs/dashboard.png',
     fullPage: false,
   })
 
   // Also capture full page screenshot showing footer
   await page.screenshot({
-    path: '/Users/naavalanarul/.gemini/antigravity/brain/c5c295fc-927e-4ee2-ad31-d20f0b87e5b6/dashboard_with_footer.png',
+    path: 'test-results/dashboard_with_footer.png',
     fullPage: true,
   })
 })

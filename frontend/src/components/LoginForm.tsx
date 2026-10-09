@@ -100,33 +100,33 @@ export function LoginForm({ onLoginSuccess, initialMode = 'live' }: LoginFormPro
             <div className="login-subtitle">Sign in with your plant network credentials.</div>
           </div>
           <div className="login-fields">
-            <label className="login-field-group">
-              <span className="login-field-label">Username</span>
+            <div className="login-field-group">
+              <label htmlFor="login-username-input" className="login-field-label">Username</label>
               <div className="login-input-wrap">
                 <User size={16} className="login-input-icon" />
                 <input
+                  id="login-username-input"
                   className="login-input"
                   type="text"
                   placeholder="Enter operator username"
                   autoComplete="username"
-                  aria-label="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   onKeyDown={handleKeyDown}
                 />
               </div>
-            </label>
-            <label className="login-field-group">
-              <span className="login-field-label">Password</span>
+            </div>
+            <div className="login-field-group">
+              <label htmlFor="login-password-input" className="login-field-label">Password</label>
               <div className="login-input-wrap">
                 <Lock size={16} className="login-input-icon" />
                 <input
+                  id="login-password-input"
                   ref={passwordInputRef}
                   className="login-input"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter password"
                   autoComplete="current-password"
-                  aria-label="Password"
                   value={password}
                   onKeyDown={handleKeyDown}
                   onBlur={hidePassword}
@@ -160,7 +160,7 @@ export function LoginForm({ onLoginSuccess, initialMode = 'live' }: LoginFormPro
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-            </label>
+            </div>
           </div>
 
           <div className="login-mode-group">
