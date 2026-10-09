@@ -6,7 +6,7 @@ const PASS = process.env.E2E_PASS ?? 'admin-pass-123'
 test('fleet dashboard renders summary tiles and navigates to motor twin', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Username').fill(USER)
-  await page.getByLabel('Password').fill(PASS)
+  await page.getByLabel('Password', { exact: true }).fill(PASS)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Verify Fleet Dashboard elements
@@ -23,7 +23,7 @@ test('fleet dashboard renders summary tiles and navigates to motor twin', async 
 test('inject fault -> see it in the dashboard -> see SADA derate', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Username').fill(USER)
-  await page.getByLabel('Password').fill(PASS)
+  await page.getByLabel('Password', { exact: true }).fill(PASS)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Navigate to motor digital twin and open Parameters Studio section (where SADA and Fault Bench are located)
@@ -56,7 +56,7 @@ test('mode badge, 4-node LPTN thermal network and Arrhenius RUL meter render wit
 
   await page.goto('/')
   await page.getByLabel('Username').fill(USER)
-  await page.getByLabel('Password').fill(PASS)
+  await page.getByLabel('Password', { exact: true }).fill(PASS)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Navigate to motor digital twin

@@ -8,7 +8,7 @@ const PASS = process.env.E2E_PASS ?? 'admin-pass-123'
 test('trip -> maintenance tab shows latched fault -> clear + reset restores the motor', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Username').fill(USER)
-  await page.getByLabel('Password').fill(PASS)
+  await page.getByLabel('Password', { exact: true }).fill(PASS)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   await page.getByRole('button', { name: /Open digital twin for/i }).first().click()

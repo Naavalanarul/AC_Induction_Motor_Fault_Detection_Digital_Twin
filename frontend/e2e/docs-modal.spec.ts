@@ -7,7 +7,7 @@ test('engineering physics docs book modal, sensor physics, fault detection, and 
   // 1. Log in
   await page.goto('http://localhost:5173')
   await page.getByLabel('Username').fill('admin')
-  await page.getByLabel('Password').fill('admin-pass-123')
+  await page.getByLabel('Password', { exact: true }).fill('admin-pass-123')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Wait for dashboard to load
