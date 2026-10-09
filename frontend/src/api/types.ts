@@ -292,4 +292,114 @@ export type TransientSimulationResult = {
   fault_heat_w: number[]
 }
 
+export type VoltageBasis = 'line_line' | 'line_neutral'
+export type ValueBasis = 'rms' | 'peak'
+
+export interface NameplateBlock {
+  rated_power_w: number
+  rated_voltage_v: number
+  rated_current_a: number
+  rated_speed_rpm: number
+  rated_torque_nm: number
+  pole_pairs: number
+  supply_freq_hz: number
+  insulation_class: 'B' | 'F' | 'H'
+  Rs?: number | null
+  Rr?: number | null
+  Ls?: number | null
+  Lr?: number | null
+  Lm?: number | null
+  J?: number | null
+}
+
+export interface VibrationAmplitudes {
+  overall_rms_mm_s?: number | null
+  peak_1x_mm_s?: number | null
+  peak_2x_mm_s?: number | null
+  bearing_defect_mm_s?: number | null
+}
+
+export interface SpectralAmplitudes {
+  brb_sideband_db?: number | null
+  eccentricity_sideband_db?: number | null
+}
+
+export interface StaticMeasurement {
+  motor_id?: number | null
+  nameplate?: NameplateBlock | null
+  v_a: number
+  v_b: number
+  v_c: number
+  voltage_basis: VoltageBasis
+  value_basis: ValueBasis
+  i_a: number
+  i_b: number
+  i_c: number
+  speed_rpm: number
+  supply_freq_hz: number
+  winding_temp_c?: number | null
+  ambient_temp_c?: number
+  power_kw?: number | null
+  power_factor?: number | null
+  vibration?: VibrationAmplitudes | null
+  spectral?: SpectralAmplitudes | null
+  v_thd_pct?: number | null
+}
+
+export interface DerivedMetrics {
+  slip: number
+  expected_current_a: number
+  current_imbalance_pct: number
+  voltage_unbalance_pct: number
+  loading_pu: number
+  stator_current_residual_a: number
+  real_power_w?: number | null
+  power_factor?: number | null
+}
+
+export interface StaticDiagnosisOut {
+  t: number
+  fault_type: string
+  confidence: number
+  severity: number
+  per_sensor_scores: Record<string, ChannelVerdict>
+  secondary: { fault_type: string; confidence: number; severity: number; sources: string[] }[]
+  source: string
+  schema_version: string
+  health_index: number
+  zone: string
+  error_code: string
+  recommendation: {
+    urgency: string
+    action: string
+    reason?: string
+    mitigation?: string[]
+    checklists?: string[]
+    reference?: string
+  }
+  channels_run: string[]
+  channels_skipped: Record<string, string>
+  derived: DerivedMetrics
+  warnings: string[]
+  advisory_notice: string
+}
+
+export interface StaticAnalysisItem {
+  id: number
+  user: string
+  ts: string
+  motor_id: number | null
+  fault_type: string
+  severity: number
+  mhi: number
+  error_code?: string | null
+  zone?: string | null
+}
+
+export interface StaticAnalysisRecord extends StaticAnalysisItem {
+  inputs?: StaticMeasurement
+  result?: StaticDiagnosisOut
+}
+
+
 

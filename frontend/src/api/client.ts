@@ -162,3 +162,32 @@ export const newIdempotencyKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+import type { Page, StaticAnalysisItem, StaticAnalysisRecord, StaticDiagnosisOut, StaticMeasurement } from './types'
+
+export const diagnoseStatic = (measurement: StaticMeasurement, idempotencyKey?: string) =>
+  api<StaticDiagnosisOut>('/static/diagnose', {
+    method: 'POST',
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    body: JSON.stringify(measurement),
+  })
+
+export const listStaticAnalyses = (motorId?: number, limit = 50, offset = 0) => {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  if (motorId !== undefined) params.set('motor_id', String(motorId))
+  return api<Page<StaticAnalysisItem>>(`/static/analyses?${params.toString()}`)
+}
+
+export const getStaticAnalysis = (id: number) =>
+  api<StaticAnalysisRecord>(`/static/analyses/${id}`)
+
+export const getStaticTrend = (motorId: number) =>
+  api<{
+    motor_id: number
+    count: number
+    projected_hours_to_warning: number | null
+    projected_hours_to_trip: number | null
+    current_severity: number
+    slope_per_hour: number
+    advisory: string
+  }>(`/static/trend?motor_id=${motorId}`)

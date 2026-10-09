@@ -167,3 +167,19 @@ class User(Base):
     role: Mapped[RoleEnum] = mapped_column(Enum(RoleEnum, name="user_role"), default=RoleEnum.viewer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+
+
+class StaticAnalysis(Base):
+    __tablename__ = "static_analyses"
+    id: Mapped[int] = mapped_column(BIGID, primary_key=True, autoincrement=True)
+    user: Mapped[str] = mapped_column(String(64), index=True)
+    ts: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    motor_id: Mapped[int | None] = mapped_column(ForeignKey("motors.id", ondelete="SET NULL"), nullable=True, index=True)
+    inputs_json: Mapped[dict] = mapped_column(JSON)
+    result_json: Mapped[dict] = mapped_column(JSON)
+    fault_type: Mapped[str] = mapped_column(String(40))
+    severity: Mapped[float] = mapped_column(Float)
+    mhi: Mapped[float] = mapped_column(Float)
+    request_id: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    __table_args__ = (Index("ix_static_analyses_user_ts", "user", "ts"),)
+

@@ -22,6 +22,8 @@ import { ProfileDatabaseModal } from './components/ProfileDatabaseModal'
 import { AlertsModal } from './components/AlertsModal'
 import { useMotorStream } from './hooks/useMotorStream'
 
+import { StaticDiagnosisPanel } from './components/StaticDiagnosisPanel'
+
 const Motor3DViewer = lazy(() => import('./components/Motor3DViewer').then((m) => ({ default: m.Motor3DViewer })))
 const HistoryView = lazy(() => import('./components/HistoryView').then((m) => ({ default: m.HistoryView })))
 const EngineeringDocsModal = lazy(() =>
@@ -30,7 +32,7 @@ const EngineeringDocsModal = lazy(() =>
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 2000 } } })
 
-type TabKey = 'fleet' | 'live' | 'maintenance' | '3d' | 'dsa' | 'params' | 'history'
+type TabKey = 'fleet' | 'live' | 'maintenance' | '3d' | 'dsa' | 'params' | 'history' | 'static'
 
 function Shell() {
   const { session, logout, can } = useAuth()
@@ -96,10 +98,10 @@ function Shell() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
-  const isMotorView = tab !== 'fleet' && tab !== 'dsa'
+  const isMotorView = tab !== 'fleet' && tab !== 'dsa' && tab !== 'static'
   const isHardwareStream = sensors.data?.some((s) => s.mode === 'hardware') ?? false
 
-  if (!session) return <LoginForm />
+  if (!session) return <LoginForm onLoginSuccess={(mode) => setTab(mode === 'static' ? 'static' : 'fleet')} />
 
   return (
     <main ref={shellRef} className="app-shell" onPointerMove={handleGridPointer}>
@@ -134,6 +136,18 @@ function Shell() {
 
         {/* Right Island: Motor Navigation Menu (Kept at Right End with Profile, No Fleet, No 3D Twin) */}
         <div className="nav-island nav-island--actions">
+          <nav className="nav-links" aria-label="static analysis navigation">
+            <button
+              className={`nav-link${tab === 'static' ? ' is-active active' : ''}`}
+              onClick={() => setTab('static')}
+              title="Static-Value Motor Diagnosis"
+            >
+              Static Analysis
+            </button>
+          </nav>
+
+          <div className="nav-divider" />
+
           {isMotorView && (
             <nav className="nav-links" aria-label="motor views">
               <button
@@ -215,6 +229,14 @@ function Shell() {
               onSelectMotor={(id) => { setSelected(id); setTab('live') }}
               onRefreshMotors={async () => { await motors.refetch() }}
               onOpenDsa={() => setTab('dsa')}
+            />
+          </ErrorBoundary>
+        ) : tab === 'static' ? (
+          <ErrorBoundary fallbackTitle="Error loading Static Diagnosis">
+            <StaticDiagnosisPanel
+              onBackToFleet={() => setTab('fleet')}
+              motors={motors.data ?? []}
+              role={session.role as Role}
             />
           </ErrorBoundary>
         ) : motorId == null ? (
