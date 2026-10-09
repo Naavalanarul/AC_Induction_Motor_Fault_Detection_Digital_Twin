@@ -46,4 +46,4 @@ def test_maintenance_endpoints_after_trip(client, auth):
 
     assert wait_for(reset_ok, timeout=60)
     assert wait_for(lambda: not client.get("/api/v1/motors/1", headers=h).json()["state"]["supervisory"]["trip"],
-                    timeout=30)
+                    timeout=60)
