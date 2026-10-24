@@ -12,13 +12,13 @@ Every issue identified during the black-box audit has been addressed, verified a
 - **Backend Quality Gates:**
   - Python 3.11+, line length <= 120, `ruff check` clean (0 warnings, 0 errors).
   - `mypy app` clean (0 type errors across 137 source files).
-  - Pytest: **290 passed, 2 skipped** (skips are optional MySQL integration tests without live DB container).
-  - Line Coverage: **~88% total coverage** across 6,528 statements.
+  - Pytest: **382 passed, 1 skipped** (skips are optional MySQL integration tests without live DB container).
+  - Line Coverage: **87% total coverage** across 9,077 statements.
   - Zero `RuntimeWarning` or numerical overflows (`-W error::RuntimeWarning` enforced in pytest configuration).
 - **Frontend Quality Gates:**
   - `npm run lint` clean (ESLint 0 errors).
   - `npm run typecheck` clean (TypeScript `tsc -b` 0 errors).
-  - `npx vitest run`: **24 passed** (100% passing tests).
+  - `npx vitest run`: **49 passed** (100% passing tests across 6 test files).
   - `npm run build`: Production build succeeded with zero chunk size warnings (code-split via dynamic `import()` and manual chunking; all chunks <= 382 kB).
 
 ---
