@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Supervisory Layer (SADA) Variant Benchmark Across Dynamic Scenarios}
+\label{tab:sada_variants}
+\begin{tabular}{lrrrrrr}
+\toprule
+Variant & Chatter/min $\downarrow$ & False Trips $\downarrow$ & Missed Trips $\downarrow$ & Delay (s) & Unnec. Derate (s) $\downarrow$ & Load TV $\downarrow$ \\
+\midrule
+Naive & 54.7 & 1.0 & 0.0 & 0.00 & 0.0 & 34.2 \\
+EMA Only & 13.8 & 0.0 & 0.0 & 1.27 & 2.0 & 4.2 \\
+EMA + Hysteresis & 2.1 & 0.0 & 0.0 & 1.27 & 8.6 & 4.2 \\
+Full SADA (Default) & 2.1 & 0.0 & 0.0 & 1.27 & 8.6 & 4.2 \\
+Full SADA (No Confidence Gate) & 2.1 & 0.0 & 0.0 & 1.27 & 8.6 & 4.2 \\
+Full SADA (No Dwell Time) & 2.1 & 0.0 & 0.0 & 1.27 & 8.6 & 4.2 \\
+\bottomrule
+\end{tabular}
+\end{table}

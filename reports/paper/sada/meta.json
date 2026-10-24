@@ -1,0 +1,22 @@
+{
+  "timestamp_utc": "2026-10-24T10:23:42.835840+00:00",
+  "git_commit": "8b235552acc286561ecbdfe5b59714d223095dc6",
+  "git_dirty": true,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "variants": [
+    "Naive",
+    "EMA Only",
+    "EMA + Hysteresis",
+    "Full SADA (Default)",
+    "Full SADA (No Confidence Gate)",
+    "Full SADA (No Dwell Time)"
+  ],
+  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/sada_study.py --seeds 0 1 2 3 4 --out ../reports/paper/sada",
+  "duration_s": 0.2420351505279541
+}
