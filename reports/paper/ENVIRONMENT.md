@@ -1,0 +1,100 @@
+# Experiment Environment & System Specification
+
+This document records the exact runtime hardware, operating system, compiler/runtime versions, and package environment used to produce all numerical results, figures, and tables for the paper.
+
+---
+
+## 1. Hardware & Operating System
+
+- **Machine Model:** MacBook Pro (Apple Silicon Mac16,6)
+- **SoC / CPU:** Apple M4 Max (14 cores: 10 performance cores, 4 efficiency cores)
+- **GPU / Accelerator:** Integrated Apple M4 Max GPU (Metal Performance Shaders available via PyTorch `mps` / CPU fallback)
+- **System Memory:** 36 GB Unified Memory
+- **Operating System:** macOS 27.2 (Darwin Kernel Version 27.2.0, arm64)
+
+---
+
+## 2. Runtimes
+
+- **Python Interpreter:** Python 3.11.16 (`/Users/naavalanarul/.local/bin/python3.11` / virtualenv `backend/.venv`)
+- **Node.js Runtime:** Node.js v20+ / npm v10+
+- **Git Commit Baseline:** `e6b9d11` (post P0-3, prior to P1)
+
+---
+
+## 3. Pinned Python Environment (`pip freeze`)
+
+```text
+alembic==1.20.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+ast_serialize==0.11.2
+bcrypt==5.0.0
+certifi==2026.7.22
+cffi==2.1.1
+click==8.5.0
+cloudpickle==3.1.2
+contourpy==1.3.3
+coverage==7.16.1
+cryptography==50.0.1
+cycler==0.12.1
+fastapi==0.141.1
+filelock==4.0.3
+fonttools==4.66.1
+fsspec==2026.9.0
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.8.0
+httpx==0.28.1
+idna==3.20
+iniconfig==2.3.0
+Jinja2==3.1.6
+joblib==1.6.0
+kiwisolver==1.5.1
+librt==0.15.0
+Mako==1.4.3
+MarkupSafe==3.0.3
+matplotlib==3.11.2
+mpmath==1.3.0
+mypy==2.3.1
+mypy_extensions==1.1.0
+narwhals==2.26.0
+networkx==3.6
+numpy==2.4.6
+packaging==26.3
+pathspec==1.1.1
+pillow==12.3.0
+pluggy==1.6.0
+prometheus_client==0.26.0
+pycparser==3.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pydantic_core==2.46.5
+Pygments==2.21.0
+PyJWT==2.15.0
+PyMySQL==1.2.3
+pyparsing==3.3.3
+pytest==9.1.1
+pytest-cov==7.1.0
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.3
+PyWavelets==1.9.0
+PyYAML==6.0.3
+redis==7.4.1
+ruff==0.16.9
+scikit-learn==1.9.1
+scipy==1.17.1
+six==1.17.0
+SQLAlchemy==2.1.0
+starlette==1.7.0
+sympy==1.14.0
+threadpoolctl==3.7.0
+torch==2.14.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.53.0
+uvloop==0.22.1
+watchfiles==1.3.0
+websockets==17.1
+```
