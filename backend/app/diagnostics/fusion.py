@@ -35,7 +35,13 @@ def _domain(f: DiagFault) -> str:
     return "electrical" if f in ELECTRICAL else "mechanical" if f in MECHANICAL else "other"
 
 
-def fuse(t: float, verdicts: list[ChannelVerdict]) -> FusedDiagnosis:
+def fuse(
+    t: float,
+    verdicts: list[ChannelVerdict],
+    weights: dict[DiagSource, dict[str, float]] | None = None,
+    min_confidence: float = MIN_CONFIDENCE,
+) -> FusedDiagnosis:
+    active_weights = weights if weights is not None else WEIGHTS
     per_sensor = {v.source.value: v.to_dict() for v in verdicts}
     for v in verdicts:
         if (
@@ -56,7 +62,7 @@ def fuse(t: float, verdicts: list[ChannelVerdict]) -> FusedDiagnosis:
             healthy_votes += v.confidence
             healthy_weight += 1.0
             continue
-        w = WEIGHTS[v.source][_domain(v.fault_type)]
+        w = active_weights.get(v.source, {}).get(_domain(v.fault_type), 0.5)
         e = faults.setdefault(v.fault_type, {"vote": 0.0, "severity": 0.0, "sources": []})
         e["vote"] += w * v.confidence
         e["severity"] = max(e["severity"], v.severity)
@@ -76,10 +82,10 @@ def fuse(t: float, verdicts: list[ChannelVerdict]) -> FusedDiagnosis:
     if ranked:
         top, e = ranked[0]
         conf = min(1.0, e["vote"])
-        if conf >= MIN_CONFIDENCE:
+        if conf >= min_confidence:
             credible_severities = [
                 entry["severity"] for _, entry in faults.items()
-                if min(1.0, entry["vote"]) >= MIN_CONFIDENCE
+                if min(1.0, entry["vote"]) >= min_confidence
             ]
             fused_sev = max(e["severity"], max(credible_severities, default=e["severity"]))
             return FusedDiagnosis(t, top, conf, round(fused_sev, 4), per_sensor, secondary[1:])

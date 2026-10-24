@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Sensor Fusion and Channel Ablation Study Across Motor and Supply Faults}
+\label{tab:fusion_ablation}
+\begin{tabular}{lrr}
+\toprule
+Diagnostic Variant & Macro-F1 (Motor Faults) & False Motor Fault Rate on Grid Anomaly (\%) $\downarrow$ \\
+\midrule
+Electrical Only & 0.426 $\pm$ 0.040 & 5.6\% $\pm$ 0.0\% \\
+ML Only & 0.465 $\pm$ 0.036 & 0.0\% $\pm$ 0.0\% \\
+Fused (Hand-Set Domain Weights) & 0.872 $\pm$ 0.063 & 5.6\% $\pm$ 0.0\% \\
+Fused (Equal Weights) & 0.872 $\pm$ 0.063 & 5.6\% $\pm$ 0.0\% \\
+Fused (Learned Weights) & 0.885 $\pm$ 0.060 & 3.7\% $\pm$ 0.0\% \\
+Fused (Supply Channel Removed) & 0.872 $\pm$ 0.063 & 5.6\% $\pm$ 0.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}

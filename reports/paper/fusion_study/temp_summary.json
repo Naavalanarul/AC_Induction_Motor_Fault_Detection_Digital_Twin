@@ -1,0 +1,16 @@
+{
+  "duration_s": 60.0,
+  "initial_temp_c": 25.0,
+  "final_temp_c": 91.49743610393897,
+  "fd_threshold": 0.015,
+  "compensated": {
+    "max_fd": 0.0003259438439465948,
+    "mean_fd": 0.00031727037962542406,
+    "false_alarm_rate_pct": 0.0
+  },
+  "uncompensated": {
+    "max_fd": 0.11165904103674403,
+    "mean_fd": 0.08140074394171135,
+    "false_alarm_rate_pct": 96.94915254237289
+  }
+}
