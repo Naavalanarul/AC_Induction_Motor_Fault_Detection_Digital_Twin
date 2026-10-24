@@ -1,0 +1,457 @@
+{
+  "Conv-BiLSTM": {
+    "param_count": 84518,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.0025840721748493336,
+    "ece_std": 0.0018728767144060752,
+    "brier_mean": 0.00014330541946878315,
+    "brier_std": 0.00025030613950704686,
+    "latency_ms_mean": 0.3424412213110675,
+    "latency_ms_std": 0.002270443922726816,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  "1D-CNN": {
+    "param_count": 17574,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.010250004684483564,
+    "ece_std": 0.011218149335295297,
+    "brier_mean": 0.0021955534615208795,
+    "brier_std": 0.004168832586226773,
+    "latency_ms_mean": 0.19421522398867333,
+    "latency_ms_std": 0.00587155244441301,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  "BiLSTM": {
+    "param_count": 91910,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.0019659876823425295,
+    "ece_std": 0.0006239191159450974,
+    "brier_mean": 1.1969772519821001e-05,
+    "brier_std": 1.522637596920719e-05,
+    "latency_ms_mean": 0.13801400000617528,
+    "latency_ms_std": 0.0009423458859516115,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  "MLP": {
+    "param_count": 80454,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.00013898611068725587,
+    "ece_std": 0.0002658036327945524,
+    "brier_mean": 1.5778954979359687e-06,
+    "brier_std": 3.1539244541885995e-06,
+    "latency_ms_mean": 0.01961916667642072,
+    "latency_ms_std": 0.0001667455080910459,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  "Random Forest": {
+    "param_count": 1156,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.022441358024691344,
+    "ece_std": 0.021598859704859887,
+    "brier_mean": 0.011252445344650207,
+    "brier_std": 0.0175100253270135,
+    "latency_ms_mean": 1.9216536679887213,
+    "latency_ms_std": 0.011894781806223527,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  "Logistic Regression": {
+    "param_count": 3366,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.002936683098475138,
+    "ece_std": 0.004640789330048574,
+    "brier_mean": 0.0005527015595966856,
+    "brier_std": 0.001091418050253789,
+    "latency_ms_mean": 0.042828110686969005,
+    "latency_ms_std": 0.0011850202325933796,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  "Rule-Based Heuristic": {
+    "param_count": 0,
+    "macro_f1_mean": 1.0,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 1.0,
+    "accuracy_std": 0.0,
+    "ece_mean": 0.08800166048385483,
+    "ece_std": 0.027715595833031653,
+    "brier_mean": 0.0239407967830175,
+    "brier_std": 0.010818825552615348,
+    "latency_ms_mean": 0.0006525546583967905,
+    "latency_ms_std": 3.928466565934043e-05,
+    "per_class_recall": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "per_class_precision": {
+      "healthy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_inner": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_outer": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "bearing_ball": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unbalance": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "misalignment": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  }
+}

@@ -23,8 +23,8 @@ import torch
 from torch import nn
 
 from app.diagnostics.features import CHANNELS, FEATURE_NAMES
+from app.diagnostics.ml.baselines import get_baseline_model
 from app.diagnostics.ml.dataset import CLASSES, SEQ_LEN, build_dataset, group_split
-from app.diagnostics.ml.model import ConvBiLSTM
 
 ARTIFACT_DIR = Path(__file__).parent / "artifacts"
 
@@ -80,7 +80,15 @@ def normalize_stats(X: np.ndarray):
     return mean, np.where(std < 1e-8, 1.0, std)
 
 
-def run(runs_per_class: int, seeds: list[int], epochs: int, seconds: float, out_dir: Path = ARTIFACT_DIR) -> dict:
+def run(
+    runs_per_class: int,
+    seeds: list[int],
+    epochs: int,
+    seconds: float,
+    out_dir: Path = ARTIFACT_DIR,
+    model_name: str = "conv_bilstm",
+    save_artifact: bool = True,
+) -> dict:
     t0 = time.time()
     data = build_dataset(runs_per_class, seed=1234, seconds=seconds)
     print(f"dataset: {data.X.shape} from {len(np.unique(data.groups))} runs in {time.time() - t0:.1f}s")
@@ -94,18 +102,19 @@ def run(runs_per_class: int, seeds: list[int], epochs: int, seconds: float, out_
             return ((a - mean) / std).astype(np.float32)
 
         torch.manual_seed(seed)
-        model = ConvBiLSTM(data.X.shape[-1], len(CLASSES))
+        model = get_baseline_model(model_name, data.X.shape[-1], len(CLASSES), seq_len=SEQ_LEN)
         val_acc = _fit(model, nz(data.X[tr]), data.y[tr], nz(data.X[va]), data.y[va], epochs, seed)
         res = evaluate(model, nz(data.X[te]), data.y[te])
         res.update(seed=seed, val_accuracy=val_acc, n_train_runs=len(np.unique(data.groups[tr])),
                    n_test_runs=len(np.unique(data.groups[te])))
-        print(f"seed {seed}: val={val_acc:.3f} test acc={res['accuracy']:.3f} macroF1={res['macro_f1']:.3f}")
+        print(f"seed {seed} ({model_name}): val={val_acc:.3f} test acc={res['accuracy']:.3f} macroF1={res['macro_f1']:.3f}")
         per_seed.append(res)
         if final is None:
             final = (model, mean, std)
     accs = [r["accuracy"] for r in per_seed]
     f1s = [r["macro_f1"] for r in per_seed]
     metrics = {
+        "model_name": model_name,
         "protocol": "group split by simulation run (60/20/20), train-only normalization, multi-seed",
         "data": "simulated only (this project's generator); not validated on real hardware",
         "classes": CLASSES, "seq_len": SEQ_LEN, "channels": CHANNELS, "features_per_channel": len(FEATURE_NAMES),
@@ -117,10 +126,14 @@ def run(runs_per_class: int, seeds: list[int], epochs: int, seconds: float, out_
     out_dir.mkdir(parents=True, exist_ok=True)
     assert final is not None
     model, mean, std = final
-    torch.save({"state_dict": model.state_dict(), "mean": torch.tensor(mean), "std": torch.tensor(std),
-                "n_features": int(data.X.shape[-1]), "classes": CLASSES, "seq_len": SEQ_LEN},
-               out_dir / "conv_bilstm.pt")
-    (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    if save_artifact:
+        art_name = "conv_bilstm.pt" if model_name == "conv_bilstm" else f"{model_name}.pt"
+        torch.save({"state_dict": model.state_dict(), "mean": torch.tensor(mean), "std": torch.tensor(std),
+                    "n_features": int(data.X.shape[-1]), "classes": CLASSES, "seq_len": SEQ_LEN},
+                   out_dir / art_name)
+    (out_dir / f"metrics_{model_name}.json" if model_name != "conv_bilstm" else out_dir / "metrics.json").write_text(
+        json.dumps(metrics, indent=2)
+    )
     print(f"accuracy {metrics['accuracy_mean']:.3f} +/- {metrics['accuracy_std']:.3f} "
           f"(macro-F1 {metrics['macro_f1_mean']:.3f}); total {time.time() - t0:.1f}s")
     return metrics
@@ -128,12 +141,23 @@ def run(runs_per_class: int, seeds: list[int], epochs: int, seconds: float, out_
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", type=str, default="conv_bilstm", choices=["conv_bilstm", "1d_cnn", "bilstm", "mlp"])
     ap.add_argument("--runs-per-class", type=int, default=40)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--seconds", type=float, default=3.0)
+    ap.add_argument("--out-dir", type=str, default=str(ARTIFACT_DIR))
+    ap.add_argument("--no-save", action="store_true", help="Do not save model checkpoint")
     args = ap.parse_args()
-    run(args.runs_per_class, args.seeds, args.epochs, args.seconds)
+    run(
+        args.runs_per_class,
+        args.seeds,
+        args.epochs,
+        args.seconds,
+        out_dir=Path(args.out_dir),
+        model_name=args.model,
+        save_artifact=not args.no_save,
+    )
 
 
 if __name__ == "__main__":

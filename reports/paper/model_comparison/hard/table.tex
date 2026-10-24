@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{Model Comparison on Identical Grouped Simulation Splits (Mean $\pm$ Std Over Seeds)}
+\label{tab:model_comparison}
+\begin{tabular}{lrrrrrr}
+\toprule
+Model & Params & Latency (ms) & Macro-F1 & Accuracy & ECE $\downarrow$ & Brier $\downarrow$ \\
+\midrule
+Conv-BiLSTM & 84,518 & 0.35 & 0.884 $\pm$ 0.065 & 0.934 $\pm$ 0.041 & 0.067 $\pm$ 0.026 & 0.120 $\pm$ 0.068 \\
+1D-CNN & 17,574 & 0.20 & 0.889 $\pm$ 0.059 & 0.935 $\pm$ 0.035 & 0.053 $\pm$ 0.026 & 0.084 $\pm$ 0.045 \\
+BiLSTM & 91,910 & 0.14 & 0.878 $\pm$ 0.053 & 0.926 $\pm$ 0.033 & 0.068 $\pm$ 0.032 & 0.123 $\pm$ 0.071 \\
+MLP & 80,454 & 0.02 & 0.880 $\pm$ 0.053 & 0.928 $\pm$ 0.031 & 0.069 $\pm$ 0.030 & 0.120 $\pm$ 0.066 \\
+Random Forest & 2,104 & 1.99 & 0.913 $\pm$ 0.078 & 0.950 $\pm$ 0.049 & 0.052 $\pm$ 0.031 & 0.078 $\pm$ 0.081 \\
+Logistic Regression & 3,366 & 0.04 & 0.892 $\pm$ 0.066 & 0.940 $\pm$ 0.042 & 0.053 $\pm$ 0.032 & 0.100 $\pm$ 0.065 \\
+Rule-Based Heuristic & --- & 0.00 & 0.887 $\pm$ 0.060 & 0.937 $\pm$ 0.019 & 0.089 $\pm$ 0.023 & 0.116 $\pm$ 0.020 \\
+\bottomrule
+\end{tabular}
+\end{table}

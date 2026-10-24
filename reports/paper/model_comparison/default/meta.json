@@ -1,0 +1,36 @@
+{
+  "timestamp_utc": "2026-10-24T10:04:11.962167+00:00",
+  "git_commit": "a8b37e1458b1dad5c17cceba185ad1cdab7838e8",
+  "git_dirty": true,
+  "python_version": "3.11.16 (main, Sep  1 2026, 14:08:22) [Clang 22.1.3 ]",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "dataset_type": "default",
+  "runs_per_class": 20,
+  "run_seconds": 3.0,
+  "epochs": 25,
+  "classes": [
+    "healthy",
+    "bearing_inner",
+    "bearing_outer",
+    "bearing_ball",
+    "unbalance",
+    "misalignment"
+  ],
+  "models_evaluated": [
+    "Conv-BiLSTM",
+    "1D-CNN",
+    "BiLSTM",
+    "MLP",
+    "Random Forest",
+    "Logistic Regression",
+    "Rule-Based Heuristic"
+  ],
+  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/model_comparison.py --seeds 0 1 2 3 4 --out ../reports/paper/model_comparison --dataset both --runs-per-class 20 --epochs 25",
+  "duration_s": 44.02237915992737
+}

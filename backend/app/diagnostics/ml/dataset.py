@@ -16,6 +16,7 @@ import numpy as np
 
 from app.diagnostics.features import HOP_S, WINDOW_S, window_features
 from app.simulation import faults as F
+from app.simulation.params import DEFAULT_MOTOR, MotorParams, validate_motor_params
 from app.simulation.twin_state import MotorSimulator
 
 CLASSES = ["healthy", "bearing_inner", "bearing_outer", "bearing_ball", "unbalance", "misalignment"]
@@ -30,10 +31,18 @@ class Dataset:
     severity: np.ndarray # (N,)
 
 
-def simulate_run(cls: str, severity: float, load: float, noise: float, seed: int, seconds: float = 3.0,
-                 background_unbalance: float = 0.0) -> np.ndarray:
+def simulate_run(
+    cls: str,
+    severity: float,
+    load: float,
+    noise: float,
+    seed: int,
+    seconds: float = 3.0,
+    background_unbalance: float = 0.0,
+    params: MotorParams | None = None,
+) -> np.ndarray:
     """Return (n_windows, F) window features for one run."""
-    sim = MotorSimulator(seed=seed, base_load_nm=load)
+    sim = MotorSimulator(params=params or DEFAULT_MOTOR, seed=seed, base_load_nm=load)
     sim.vib.noise_rms = noise
     sim.plant.warm_start(load, seconds=0.8)
     if background_unbalance > 0:
@@ -91,3 +100,75 @@ def group_split(groups: np.ndarray, fractions=(0.6, 0.2, 0.2), seed: int = 0):
     n_va = int(round(fractions[1] * len(uniq)))
     parts = [set(uniq[:n_tr]), set(uniq[n_tr:n_tr + n_va]), set(uniq[n_tr + n_va:])]
     return tuple(np.array([i for i, gg in enumerate(groups) if gg in p]) for p in parts)
+
+
+def make_perturbed_params(rng: np.random.Generator, delta_max: float = 0.10) -> MotorParams:
+    """Sample perturbed motor parameters within delta_max while enforcing stability."""
+    for _ in range(50):
+        d_rs = float(rng.uniform(-delta_max, delta_max))
+        d_rr = float(rng.uniform(-delta_max, delta_max))
+        d_lm = float(rng.uniform(-min(0.06, delta_max), min(0.06, delta_max)))
+        new_rs = DEFAULT_MOTOR.Rs * (1.0 + d_rs)
+        new_rr = DEFAULT_MOTOR.Rr * (1.0 + d_rr)
+        new_lm = DEFAULT_MOTOR.Lm * (1.0 + d_lm)
+        diff_lm = new_lm - DEFAULT_MOTOR.Lm
+        new_ls = DEFAULT_MOTOR.Ls + diff_lm
+        new_lr = DEFAULT_MOTOR.Lr + diff_lm
+        cand = MotorParams(
+            Rs=new_rs,
+            Rr=new_rr,
+            Ls=new_ls,
+            Lr=new_lr,
+            Lm=new_lm,
+            J=DEFAULT_MOTOR.J,
+            pole_pairs=DEFAULT_MOTOR.pole_pairs,
+            rated_power=DEFAULT_MOTOR.rated_power,
+            rated_voltage=DEFAULT_MOTOR.rated_voltage,
+            rated_current=DEFAULT_MOTOR.rated_current,
+            rated_speed=DEFAULT_MOTOR.rated_speed,
+            rated_torque=DEFAULT_MOTOR.rated_torque,
+            t_ambient=DEFAULT_MOTOR.t_ambient,
+            insulation_class=DEFAULT_MOTOR.insulation_class,
+            tau_s=DEFAULT_MOTOR.tau_s,
+        )
+        ok, _ = validate_motor_params(cand)
+        if ok:
+            return cand
+    return DEFAULT_MOTOR
+
+
+def build_hard_dataset(
+    runs_per_class: int,
+    seed: int = 0,
+    seconds: float = 3.0,
+    param_perturbation_pct: float = 0.10,
+) -> Dataset:
+    """Generate challenging synthetic data with randomised motor parameters, wide loads,
+
+    higher sensor noise, and low fault severities (0.05..0.60).
+    """
+    rng = np.random.default_rng(seed)
+    X, y, g, s = [], [], [], []
+    run_id = 0
+    for ci, cls in enumerate(CLASSES):
+        for _ in range(runs_per_class):
+            sev = float(rng.uniform(0.05, 0.60)) if cls != "healthy" else 0.0
+            perturbed = make_perturbed_params(rng, delta_max=param_perturbation_pct)
+            load = float(rng.uniform(1.0, 12.0))
+            noise = float(rng.uniform(0.05, 0.20))
+            seqs = to_sequences(simulate_run(
+                cls,
+                sev,
+                load=load,
+                noise=noise,
+                seed=int(rng.integers(1 << 30)),
+                seconds=seconds,
+                background_unbalance=float(rng.uniform(0.0, 0.10)) if cls != "unbalance" else 0.0,
+                params=perturbed,
+            ))
+            X.append(seqs)
+            y += [ci] * len(seqs)
+            g += [seed * 100000 + run_id] * len(seqs)
+            s += [sev] * len(seqs)
+            run_id += 1
+    return Dataset(np.concatenate(X).astype(np.float32), np.array(y), np.array(g), np.array(s, dtype=np.float32))
