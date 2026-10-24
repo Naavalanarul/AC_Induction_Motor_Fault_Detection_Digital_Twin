@@ -1,37 +1,37 @@
 {
   "Electrical Only": {
-    "macro_f1_mean": 0.425835077456543,
-    "macro_f1_std": 0.03975826173859752,
+    "macro_f1_mean": 0.41814196195945,
+    "macro_f1_std": 0.0,
     "false_motor_rate_mean": 5.555555555555555,
     "false_motor_rate_std": 0.0
   },
   "ML Only": {
-    "macro_f1_mean": 0.46520634920634923,
-    "macro_f1_std": 0.03551675887872773,
+    "macro_f1_mean": 0.45714285714285713,
+    "macro_f1_std": 0.0,
     "false_motor_rate_mean": 0.0,
     "false_motor_rate_std": 0.0
   },
   "Fused (Hand-Set Domain Weights)": {
-    "macro_f1_mean": 0.871794084972221,
-    "macro_f1_std": 0.06300956445692088,
+    "macro_f1_mean": 0.8976475104915472,
+    "macro_f1_std": 0.0,
     "false_motor_rate_mean": 5.555555555555555,
     "false_motor_rate_std": 0.0
   },
   "Fused (Equal Weights)": {
-    "macro_f1_mean": 0.871794084972221,
-    "macro_f1_std": 0.06300956445692088,
+    "macro_f1_mean": 0.8976475104915472,
+    "macro_f1_std": 0.0,
     "false_motor_rate_mean": 5.555555555555555,
     "false_motor_rate_std": 0.0
   },
   "Fused (Learned Weights)": {
-    "macro_f1_mean": 0.8854765603326398,
-    "macro_f1_std": 0.06026341348637179,
+    "macro_f1_mean": 0.9054001317831105,
+    "macro_f1_std": 0.0,
     "false_motor_rate_mean": 3.7037037037037033,
     "false_motor_rate_std": 0.0
   },
   "Fused (Supply Channel Removed)": {
-    "macro_f1_mean": 0.871794084972221,
-    "macro_f1_std": 0.06300956445692088,
+    "macro_f1_mean": 0.8976475104915472,
+    "macro_f1_std": 0.0,
     "false_motor_rate_mean": 5.555555555555555,
     "false_motor_rate_std": 0.0
   }

@@ -1,13 +1,9 @@
 {
-  "timestamp_utc": "2026-10-24T10:16:46.568387+00:00",
-  "git_commit": "d2beabe5aef1ca3fcf576a5c785e15d5a203dd38",
+  "timestamp_utc": "2026-10-24T10:49:08.786827+00:00",
+  "git_commit": "cd65224fcd872dd7c086ec1e97515b09c607e55d",
   "git_dirty": true,
   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
+    0
   ],
   "variants": [
     "Electrical Only",
@@ -17,6 +13,6 @@
     "Fused (Learned Weights)",
     "Fused (Supply Channel Removed)"
   ],
-  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/fusion_study.py --seeds 0 1 2 3 4 --out ../reports/paper/fusion_study",
-  "duration_s": 35.29791522026062
+  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/fusion_study.py --out reports/paper/fusion_study --seeds 0",
+  "duration_s": 7.040859937667847
 }

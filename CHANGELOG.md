@@ -5,6 +5,24 @@ tagged with the git SHA and with the release tag.
 
 ## [Unreleased]
 
+## [Paper-v1 Evidence & Reproduction Suite] - 2026-10-24
+
+### Added
+- **Phase P0 (Repo Hygiene & Freeze):** Clean baseline established (382 backend tests, 87% coverage; 49 frontend tests). Code paths classified into Live, Reference, and Legacy in `docs/CODE_PATHS.md`. Pinned paper dependencies in `requirements-paper.txt` and hardware details in `reports/paper/ENVIRONMENT.md`.
+- **Phase P1 (Real-Data Protocols & Acquisition):** Created `reports/paper/DATA_ACQUISITION.md` and `PAPER_BLOCKERS.md` cataloging public repositories for Bruinsma (4TU CC0), Liman-C (Mendeley CC BY 4.0), ESTOGU (Zenodo), and USP BRB (IEEE DataPort).
+- **Phase P2 (Multi-Model Benchmark on Hard Simulator Data):** Evaluated Conv-BiLSTM against 6 baseline architectures (1D-CNN, BiLSTM, MLP, Random Forest, Logistic Regression, Rule Heuristic) across 5 seeds under severe parameter mismatch, low fault severity (0.05-0.60), and noise. Output to `reports/paper/model_comparison/hard/`.
+- **Phase P3 (Channel Fusion & Thermal Compensation):** Multi-source fusion ablation study (Macro-F1 0.426 electrical-only, 0.465 ML-only, 0.885 fused with learned weights). Evaluated dynamic temperature compensation across a 70 K thermal transient: compensated twin maintained 0.0% false alarms (FD = 0.0003), whereas uncompensated twin drifted to 96.9% false alarms (FD = 0.0814).
+- **Phase P4 (Systematic Robustness Sweeps):** Evaluated twin across 5 sweeps: sensor noise SNR (40-10 dB), mechanical load (25-110%), power quality distortions (voltage imbalance, harmonics, sag), plant vs. twin parameter mismatch (-20% to +20%), and fault severity (0.05-1.00). Output to `reports/paper/robustness/`.
+- **Phase P5 (Supervisory Layer SADA Evaluation):** Implemented scripted dynamic scenarios at 10 Hz (slow ramp, step, noisy hover, transient spike, sensor loss). Full SADA eliminated state chatter (reduced from 54.7 to 2.1 chg/min), eliminated false trips on transient spikes, and reduced torque command TV from 34.2 to 4.2. Parameter sensitivity analysis across $\pm 20\%$. Output to `reports/paper/sada/`.
+- **Phase P6 (Motor Health Index & Prognosis Extrapolation):** Evaluated MHI monotonicity, quantified supervisory transition step drops (10.6 pts at WATCH, 15.6 pts at DERATE, 27.6 pts at TRIP), analyzed weight sensitivity across 1,212 conditions, proposed smooth non-double-counted alternatives in `docs/MHI_ALTERNATIVE.md`, and evaluated prognosis time-to-threshold accuracy and 95% PI coverage across degradation profiles in `reports/paper/mhi/`.
+- **Phase P7 (Detection Latency & Long-Run False Alarms):** Evaluated detection delay (median 0.20-0.80s), WATCH delay, DERATE delay, and safety TRIP delay vs severity. Evaluated healthy continuous monitoring across 10 operating conditions, achieving 0.0 false trips/hr on nominal and derated loads. Output to `reports/paper/latency/`.
+- **Phase P8 (Paper Reproduction & Assets):**
+  - Reproduction automation: `scripts/reproduce_paper.sh` (with `--fast` flag) and `Makefile` target `make paper`.
+  - Comprehensive publication figure suite: `backend/app/validation/paper_figures.py` generating 10 figures (300 DPI PNG + vector PDF) in `reports/paper/figures/`.
+  - Literature review & gap analysis: `docs/RELATED_WORK.md` analyzing 15+ benchmark works (2019-2025) and comparative taxonomy.
+  - Complete mathematical specification: `docs/PAPER_METHOD_NOTES.md` documenting every equation, state machine transition, and master constant table.
+  - Complete asset manifest: `reports/paper/MANIFEST.md`.
+
 ### Added
 - `backend/app/validation/`: offline real-data validation and sim-to-real study. Loaders for LIMAN-C,
   ESTOGU, Bruinsma (NLN-EMP) and USP BRB returning a common record; explicit channel-evaluability report;

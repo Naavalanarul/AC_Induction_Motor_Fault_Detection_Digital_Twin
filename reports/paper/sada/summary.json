@@ -1,27 +1,27 @@
 {
   "Naive": {
-    "chatter_per_min_mean": 54.7047619047619,
-    "chatter_per_min_std": 0.6912147117775909,
+    "chatter_per_min_mean": 55.70476190476191,
+    "chatter_per_min_std": 0.0,
     "false_trips_mean": 1.0,
     "missed_trips_mean": 0.0,
     "action_delay_s_mean": 0.0,
     "action_delay_s_std": 0.0,
     "unnec_derate_s_mean": 0.0,
     "unnec_derate_s_std": 0.0,
-    "load_tv_mean": 34.16862793610302,
-    "load_tv_std": 1.4371899659401497
+    "load_tv_mean": 34.097732600795496,
+    "load_tv_std": 0.0
   },
   "EMA Only": {
-    "chatter_per_min_mean": 13.819047619047618,
-    "chatter_per_min_std": 2.1328124364061853,
+    "chatter_per_min_mean": 15.619047619047619,
+    "chatter_per_min_std": 0.0,
     "false_trips_mean": 0.0,
     "missed_trips_mean": 0.0,
     "action_delay_s_mean": 1.2666666666666677,
     "action_delay_s_std": 0.0,
-    "unnec_derate_s_mean": 1.9600000000000004,
-    "unnec_derate_s_std": 0.43174066289845836,
-    "load_tv_mean": 4.2475000000000005,
-    "load_tv_std": 0.21194786151315584
+    "unnec_derate_s_mean": 2.400000000000001,
+    "unnec_derate_s_std": 0.0,
+    "load_tv_mean": 4.2728,
+    "load_tv_std": 0.0
   },
   "EMA + Hysteresis": {
     "chatter_per_min_mean": 2.119047619047619,
@@ -30,10 +30,10 @@
     "missed_trips_mean": 0.0,
     "action_delay_s_mean": 1.2666666666666677,
     "action_delay_s_std": 0.0,
-    "unnec_derate_s_mean": 8.579999999999988,
-    "unnec_derate_s_std": 0.8494704232638091,
-    "load_tv_mean": 4.2475000000000005,
-    "load_tv_std": 0.21194786151315584
+    "unnec_derate_s_mean": 9.699999999999982,
+    "unnec_derate_s_std": 0.0,
+    "load_tv_mean": 4.2728,
+    "load_tv_std": 0.0
   },
   "Full SADA (Default)": {
     "chatter_per_min_mean": 2.119047619047619,
@@ -42,10 +42,10 @@
     "missed_trips_mean": 0.0,
     "action_delay_s_mean": 1.2666666666666677,
     "action_delay_s_std": 0.0,
-    "unnec_derate_s_mean": 8.579999999999988,
-    "unnec_derate_s_std": 0.8494704232638091,
-    "load_tv_mean": 4.2475000000000005,
-    "load_tv_std": 0.21194786151315584
+    "unnec_derate_s_mean": 9.699999999999982,
+    "unnec_derate_s_std": 0.0,
+    "load_tv_mean": 4.2728,
+    "load_tv_std": 0.0
   },
   "Full SADA (No Confidence Gate)": {
     "chatter_per_min_mean": 2.119047619047619,
@@ -54,10 +54,10 @@
     "missed_trips_mean": 0.0,
     "action_delay_s_mean": 1.2666666666666677,
     "action_delay_s_std": 0.0,
-    "unnec_derate_s_mean": 8.579999999999988,
-    "unnec_derate_s_std": 0.8494704232638091,
-    "load_tv_mean": 4.2475000000000005,
-    "load_tv_std": 0.21194786151315584
+    "unnec_derate_s_mean": 9.699999999999982,
+    "unnec_derate_s_std": 0.0,
+    "load_tv_mean": 4.2728,
+    "load_tv_std": 0.0
   },
   "Full SADA (No Dwell Time)": {
     "chatter_per_min_mean": 2.119047619047619,
@@ -66,9 +66,9 @@
     "missed_trips_mean": 0.0,
     "action_delay_s_mean": 1.2666666666666677,
     "action_delay_s_std": 0.0,
-    "unnec_derate_s_mean": 8.579999999999988,
-    "unnec_derate_s_std": 0.8494704232638091,
-    "load_tv_mean": 4.2475000000000005,
-    "load_tv_std": 0.21194786151315584
+    "unnec_derate_s_mean": 9.699999999999982,
+    "unnec_derate_s_std": 0.0,
+    "load_tv_mean": 4.2728,
+    "load_tv_std": 0.0
   }
 }

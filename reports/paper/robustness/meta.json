@@ -1,11 +1,9 @@
 {
-  "timestamp_utc": "2026-10-24T10:20:56.195736+00:00",
-  "git_commit": "9c4724401c0b5d3a1f3d6680496cbd6ea4a2cdb7",
+  "timestamp_utc": "2026-10-24T10:49:42.364318+00:00",
+  "git_commit": "cd65224fcd872dd7c086ec1e97515b09c607e55d",
   "git_dirty": true,
   "seeds": [
-    0,
-    1,
-    2
+    0
   ],
   "sweeps": [
     "noise",
@@ -14,6 +12,6 @@
     "param_mismatch",
     "severity"
   ],
-  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/robustness.py --seeds 0 1 2 --out ../reports/paper/robustness",
-  "duration_s": 90.7542998790741
+  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/robustness.py --out reports/paper/robustness --seeds 0",
+  "duration_s": 30.126044988632202
 }
