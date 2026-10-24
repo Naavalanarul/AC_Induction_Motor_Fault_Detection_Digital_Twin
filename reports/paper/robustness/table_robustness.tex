@@ -1,0 +1,45 @@
+\begin{table}[htbp]
+\centering
+\caption{Parametric Robustness Sweeps: Macro-F1 Under Environmental and Operating Variations}
+\label{tab:robustness_sweeps}
+\begin{tabular}{llrrr}
+\toprule
+Sweep Factor & Value & Fused Channel & Electrical-Only & ML-Only \\
+\midrule
+Noise & 40 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Noise & 30 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Noise & 20 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Noise & 10 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+\midrule
+Load & 25 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Load & 50 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Load & 75 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Load & 100 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Load & 110 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+\midrule
+Supply & Balanced & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Supply & Unbalance 2% & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 \\
+Supply & Unbalance 5% & 0.000 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 \\
+Supply & Harmonic 5% & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 \\
+Supply & Harmonic 10% & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 \\
+Supply & Sag 10% & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 \\
+Supply & Sag 20% & 0.000 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 \\
+\midrule
+Param Mismatch & -20% & 0.067 $\pm$ 0.000 & 0.067 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Param Mismatch & -10% & 0.733 $\pm$ 0.000 & 0.280 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Param Mismatch & -5% & 0.733 $\pm$ 0.000 & 0.280 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Param Mismatch & 0% & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Param Mismatch & +5% & 0.733 $\pm$ 0.000 & 0.280 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Param Mismatch & +10% & 0.733 $\pm$ 0.000 & 0.280 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Param Mismatch & +20% & 0.500 $\pm$ 0.000 & 0.280 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+\midrule
+Severity & 0.05 & 0.733 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.280 $\pm$ 0.000 \\
+Severity & 0.1 & 0.733 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.280 $\pm$ 0.000 \\
+Severity & 0.2 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Severity & 0.4 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Severity & 0.6 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Severity & 0.8 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+Severity & 1.0 & 1.000 $\pm$ 0.000 & 0.500 $\pm$ 0.000 & 0.500 $\pm$ 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
