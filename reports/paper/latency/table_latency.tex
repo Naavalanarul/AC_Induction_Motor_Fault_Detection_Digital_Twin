@@ -1,0 +1,39 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Fault detection latency, supervisory action delays, and long-run false-alarm rates.}
+\label{tab:latency_study}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Fault Severity $s$} & \textbf{Detection Latency} & \textbf{WATCH Latency} & \textbf{DERATE Latency} & \textbf{TRIP Latency} \\
+\midrule
+0.05 & 0.80s [0.82s] & -- & -- & -- \\
+0.10 & 0.40s [0.60s] & -- & -- & -- \\
+0.20 & 0.50s [0.79s] & 2.70s [2.70s] & -- & -- \\
+0.40 & 0.30s [0.60s] & 2.10s [2.30s] & 3.00s [3.00s] & -- \\
+0.60 & 0.25s [0.60s] & 1.40s [3.90s] & 2.30s [2.70s] & 2.90s [2.90s] \\
+0.80 & 0.20s [0.60s] & 1.10s [2.10s] & 1.70s [1.74s] & 2.20s [2.50s] \\
+1.00 & 0.20s [0.80s] & 0.85s [1.70s] & 1.20s [2.90s] & 1.30s [2.20s] \\
+\midrule
+\multicolumn{5}{l}{\textbf{Long-Run Healthy Operational Stability (False Alarms per Simulated Hour):}} \\
+\midrule
+\textbf{Evaluation Condition} & \textbf{Sim Hours} & \textbf{False Detect / hr} & \textbf{False Watch / hr} & \textbf{False Trip / hr} \\
+\midrule
+Load 25pct & 0.03h & 0.0 & 0.0 & 0.0 \\
+Load 50pct & 0.03h & 0.0 & 0.0 & 0.0 \\
+Load 75pct & 0.03h & 0.0 & 0.0 & 0.0 \\
+Load 100pct & 0.03h & 0.0 & 0.0 & 0.0 \\
+High sensor noise & 0.03h & 33330.0 & 0.0 & 0.0 \\
+Parameter mismatch 15pct & 0.03h & 35700.0 & 0.0 & 0.0 \\
+With supply channel & 0.03h & 0.0 & 0.0 & 0.0 \\
+Without supply channel & 0.03h & 0.0 & 0.0 & 0.0 \\
+Sada with ema & 0.03h & 0.0 & 0.0 & 0.0 \\
+Sada without ema & 0.03h & 0.0 & 0.0 & 0.0 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item \textit{Note:} Latencies reported as median [90th percentile] across 3 seeds and 4 fault classes.
+False alarms measured under 10 Hz continuous supervisory cycle ($3{,}600$--$36{,}000$ steps).
+\end{tablenotes}
+\end{table}

@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-10-24T10:44:09.645844+00:00",
+  "git_commit": "cd65224fcd872dd7c086ec1e97515b09c607e55d",
+  "git_dirty": true,
+  "command": "/Users/naavalanarul/Documents/Projects/AC_induction_Motor/backend/app/validation/latency_study.py --out reports/paper/latency --steps 1200 --seeds 0 1 2",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps_per_condition": 1200,
+  "python_version": "3.11.16 (main, Sep  1 2026, 14:08:22) [Clang 22.1.3 ]"
+}
