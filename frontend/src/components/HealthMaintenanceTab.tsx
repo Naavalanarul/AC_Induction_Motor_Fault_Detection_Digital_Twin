@@ -149,7 +149,7 @@ export const HealthMaintenanceTab: React.FC<HealthMaintenanceTabProps> = ({ moto
             </div>
 
             <p className="mt-2 text-xs text-neutral-400">
-              Ordinary Least Squares polynomial projection calculated from a rolling 120-sample
+              Ordinary linear least-squares projection calculated from a rolling 120-sample
               severity history at chunk boundaries.
             </p>
 
