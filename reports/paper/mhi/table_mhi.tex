@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Motor Health Index (MHI) operational behavior, transition step drops, and parameter sensitivity.}
+\label{tab:mhi_evaluation}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Operating State} & \textbf{Severity Range} & \textbf{State Penalty} & \textbf{Zone} & \textbf{Transition Drop ($\Delta$ MHI)} \\
+\midrule
+NORMAL & $[0.00, 0.20)$ & 0 & A / B & Baseline \\
+WATCH  & $[0.20, 0.50)$ & 10 & B / C & -10.6 pts \\
+DERATE & $[0.50, 0.80)$ & 25 & C / D & -15.6 pts \\
+TRIP   & $[0.80, 1.00]$ & 60 & D     & -27.6 pts \\
+\midrule
+\multicolumn{5}{l}{\textbf{Weight Perturbation Sensitivity ($\pm 20\%$) across 1,212 Operating Conditions:}} \\
+\midrule
+\textbf{Perturbation Factor} & \multicolumn{2}{c}{\textbf{Zone Assignment Stability}} & \multicolumn{2}{c}{\textbf{Mean Absolute $\Delta$ MHI (pts)}} \\
+\midrule
+Severity Penalty Factor ($\pm 20\%$) & \multicolumn{2}{c}{90.8\% / 87.2\%} & \multicolumn{2}{c}{4.67 $\pm$ 0.00 pts} \\
+State Penalty Factor ($\pm 20\%$)    & \multicolumn{2}{c}{95.7\% / 94.8\%} & \multicolumn{2}{c}{2.93 $\pm$ 0.00 pts} \\
+Channel Penalty Factor ($\pm 20\%$)  & \multicolumn{2}{c}{96.4\% / 96.0\%} & \multicolumn{2}{c}{1.53 $\pm$ 0.00 pts} \\
+Simultaneous Drift ($\pm 20\%$)       & \multicolumn{2}{c}{84.7\% / 75.0\%} & \multicolumn{2}{c}{8.59 $\pm$ 0.00 pts} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,38 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Empirical prognosis extrapolation performance across degradation profiles and observation horizons $N$.}
+\label{tab:prognosis_evaluation}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Profile} & \textbf{$N$ (s)} & \textbf{Derate Err (s)} & \textbf{Trip Err (s)} & \textbf{Trip Rel Err (\%)} & \textbf{95\% PI Coverage} \\
+\midrule
+Linear & 30 & 0.2 $\pm$ 0.2 & 0.4 $\pm$ 0.4 & 0.3\% & 100\% \\
+Linear & 45 & 0.6 $\pm$ 0.2 & 0.7 $\pm$ 0.1 & 0.6\% & 100\% \\
+Linear & 60 & 0.6 $\pm$ 0.3 & 0.5 $\pm$ 0.4 & 0.5\% & 100\% \\
+Linear & 75 & 1.0 $\pm$ 0.1 & 0.7 $\pm$ 0.5 & 0.8\% & 100\% \\
+Linear & 90 & 0.9 $\pm$ 0.2 & 0.5 $\pm$ 0.3 & 0.7\% & 100\% \\
+Linear & 105 & 0.0 $\pm$ 0.0 & 0.7 $\pm$ 0.4 & 1.2\% & 100\% \\
+Linear & 120 & 0.0 $\pm$ 0.0 & 0.6 $\pm$ 0.3 & 1.4\% & 100\% \\
+Exponential & 30 & 299.5 $\pm$ 0.0 & 565.7 $\pm$ 0.0 & 392.1\% & 0\% \\
+Exponential & 45 & 246.3 $\pm$ 0.0 & 477.2 $\pm$ 0.0 & 369.1\% & 0\% \\
+Exponential & 60 & 198.2 $\pm$ 0.0 & 397.4 $\pm$ 0.0 & 347.7\% & 0\% \\
+Exponential & 75 & 154.7 $\pm$ 0.0 & 325.5 $\pm$ 0.0 & 327.9\% & 0\% \\
+Exponential & 90 & 115.4 $\pm$ 0.0 & 260.8 $\pm$ 0.0 & 309.4\% & 0\% \\
+Exponential & 105 & 79.8 $\pm$ 0.0 & 202.6 $\pm$ 0.0 & 292.4\% & 0\% \\
+Exponential & 120 & 47.5 $\pm$ 0.0 & 150.3 $\pm$ 0.0 & 276.9\% & 0\% \\
+Step noisy & 30 & 23.8 $\pm$ 7.1 & 86.0 $\pm$ 73.0 & 23.3\% & 33\% \\
+Step noisy & 45 & 22.1 $\pm$ 2.6 & 77.6 $\pm$ 62.5 & 24.7\% & 0\% \\
+Step noisy & 60 & 3.4 $\pm$ 3.1 & 43.2 $\pm$ 50.7 & 6.2\% & 67\% \\
+Step noisy & 75 & 2.5 $\pm$ 2.3 & 35.1 $\pm$ 40.5 & 6.2\% & 67\% \\
+Step noisy & 90 & 2.2 $\pm$ 1.0 & 28.4 $\pm$ 38.4 & 1.4\% & 67\% \\
+Step noisy & 105 & 5.6 $\pm$ 0.8 & 28.4 $\pm$ 34.4 & 5.5\% & 67\% \\
+Step noisy & 120 & 0.0 $\pm$ 0.0 & 23.9 $\pm$ 15.3 & 21.9\% & 0\% \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item \textit{Note:} Empirical linear trend extrapolation evaluated under app.diagnostics.prognosis.
+Physics-based fatigue RUL (rul\_engine.py) assumes nominal bearing ratings (ISO 281 L10h) and is not calibrated to physical run-to-failure data.
+\end{tablenotes}
+\end{table}
